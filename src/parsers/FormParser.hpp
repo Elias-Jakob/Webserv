@@ -11,7 +11,7 @@
 class FormParser : public ABodyParser
 {
 	private:
-		std::map<std::string, std::string>	_result;
+		// std::map<std::string, std::string>	_result;
 		void urlDecode(std::string &date);
 
 	public:
@@ -19,7 +19,7 @@ class FormParser : public ABodyParser
 		~FormParser();
 
 		bool parse(std::string &str);
-		std::map<std::string, std::string> getResult();
+		// std::map<std::string, std::string> getResult();
 		void	appendToFile(std::string filename); // should not be in parser but in POST or HTTPREQUEST
 };
 

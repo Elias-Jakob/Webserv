@@ -3,6 +3,7 @@
 # include <iostream>
 # include <map>
 # include <vector>
+# include "../../structs.h"
 
 class AMethod
 {
@@ -21,6 +22,8 @@ class AMethod
 				std::vector<std::string> >	_headers;
 
 		std::string	_contentType;
+		s_ContentData	_contentData;
+		std::map<std::string, s_FormField>	_parsedBody;
 
 	public:
 		AMethod();
@@ -29,7 +32,8 @@ class AMethod
 
 		void setResource(std::string &reqURI, std::string &host);
 		void setHeaders(std::map<std::string, std::vector<std::string> > &heads);
-		void setBody(std::string &body);
+		void setBody(std::map<std::string, s_FormField> &parsedBody);
+		void setContentData(s_ContentData contentData);
 
 		virtual bool execute(void) = 0;
 		std::string &getBody();

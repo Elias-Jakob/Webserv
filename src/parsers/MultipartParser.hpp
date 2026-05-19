@@ -13,12 +13,14 @@
 class MultipartParser : public ABodyParser
 {
 	private:
+		// std::map<std::string, std::string> _result;
 
 	public:
 		MultipartParser();
 		~MultipartParser();
 
 		bool parse(std::string &str);
+		// std::map<std::string, std::string> getResult();
 };
 
 #endif

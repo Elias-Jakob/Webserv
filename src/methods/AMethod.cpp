@@ -26,10 +26,15 @@ void AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads
     std::cout << "setHeaders..." << std::endl;
 }
 
-void AMethod::setBody(std::string &body)
+void AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
 {
-    _body = body;
+    _parsedBody = parsedBody;
     std::cout << "setBody..." << std::endl;
+}
+
+void AMethod::setContentData(s_ContentData contentData)
+{
+    _contentData = contentData;
 }
 
 std::string &AMethod::getBody()

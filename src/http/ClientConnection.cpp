@@ -13,7 +13,7 @@ ClientConnection::ClientConnection() :
 ClientConnection::~ClientConnection()
 {
 	std::cout << "ClientConnection destroyed, cleaning up..." << std::endl;
-	std::cout << "___________________________________________"
+	std::cout << "___________________________________________\n"
 		<< "___________________________________________" << std::endl;
 	if (request)
 	{

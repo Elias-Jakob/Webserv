@@ -1,6 +1,9 @@
 #include "FormParser.hpp"
 
-FormParser::FormParser(){}
+FormParser::FormParser()
+{
+	std::cout << "FormParser constructed" << std::endl;
+}
 
 FormParser::~FormParser(){}
 
@@ -35,26 +38,23 @@ bool FormParser::parse(std::string &str)
 			urlDecode(key);
 			urlDecode(value);
 			// std::cout << "key: " << key << " = " << "value: " << value << std::endl;
-			_result[key] = value;
+			s_FormField	field;
+			field.value = value;
+			_result[key] = field;
 		}
 	}
 	return true;
 }
 
-std::map<std::string, std::string> FormParser::getResult()
-{
-	return _result;
-}
-
 void FormParser::appendToFile(std::string filename)
 {
 	std::ofstream	output(filename.c_str());
-	std::map<std::string, std::string>::iterator it = _result.begin();
-	std::map<std::string, std::string>::iterator ite = _result.end();
+	std::map<std::string, s_FormField>::iterator it = _result.begin();
+	std::map<std::string, s_FormField>::iterator ite = _result.end();
 
 	while (it != ite)
 	{
-		output << it->first << " = " << it->second << std::endl;
+		output << it->first << " = " << it->second.value << std::endl;
 		it++;
 	}
 	output.close();
