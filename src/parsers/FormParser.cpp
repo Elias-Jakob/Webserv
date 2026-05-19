@@ -1,0 +1,88 @@
+#include "FormParser.hpp"
+
+FormParser::FormParser(){}
+
+FormParser::~FormParser(){}
+
+/*
+implement the encoding (URL-decode)
+*/
+bool FormParser::parse(std::string &str)
+{
+	std::vector<std::string> splittedStrings;
+	size_t	start = 0;
+	size_t	end = 0;
+
+	while ((end = str.find('&', start)) < str.size())
+	{
+		splittedStrings.push_back(str.substr(start, end));
+		start = end + 1;
+	}
+	if (end > start)
+		splittedStrings.push_back(str.substr(start, end));
+
+	std::string	key;
+	std::string	value;
+	for (size_t i = 0; i < splittedStrings.size(); i++)
+	{
+		end = 0;
+		start = 0;
+		end = splittedStrings[i].find('=', start);
+		if (end < splittedStrings[i].size() && end > start)
+		{
+			key = splittedStrings[i].substr(start, end);
+			value = splittedStrings[i].substr(end + 1, splittedStrings[i].size());
+			urlDecode(key);
+			urlDecode(value);
+			// std::cout << "key: " << key << " = " << "value: " << value << std::endl;
+			_result[key] = value;
+		}
+	}
+	return true;
+}
+
+std::map<std::string, std::string> FormParser::getResult()
+{
+	return _result;
+}
+
+void FormParser::appendToFile(std::string filename)
+{
+	std::ofstream	output(filename.c_str());
+	std::map<std::string, std::string>::iterator it = _result.begin();
+	std::map<std::string, std::string>::iterator ite = _result.end();
+
+	while (it != ite)
+	{
+		output << it->first << " = " << it->second << std::endl;
+		it++;
+	}
+	output.close();
+}
+
+
+void FormParser::urlDecode(std::string &data)
+{
+    std::string result;
+
+    for (size_t i = 0; i < data.length(); ++i)
+	{
+        if (data[i] == '+')
+		{
+            result += ' ';
+        }
+		else if (data[i] == '%' && i + 2 < data.length())
+		{
+			std::string hex = data.substr(data[i+1], data[i+2]);
+			std::cout << "hex" << hex << std::endl;
+			char *end;
+			result += std::strtod(hex.c_str(), &end);
+            i += 2;
+        }
+		else
+		{
+            result += data[i];
+        }
+    }
+    data = result;
+}
