@@ -5,9 +5,9 @@ AMethod::AMethod()
 	std::cout << "AMethod constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _AMethod(name)
+AMethod::AMethod(std::string name): _method(name)
 {
-	std::cout << "AMethod constructed " << _AMethod << std::endl;
+	std::cout << "AMethod constructed " << _method << std::endl;
 }
 
 AMethod::~AMethod()

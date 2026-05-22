@@ -12,7 +12,7 @@ class AMethod
 		AMethod &operator=(const AMethod &other);
 
 	protected:
-		std::string _AMethod;
+		std::string _method;
 		std::string _resource;
 		std::string	_body;
 

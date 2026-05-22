@@ -2,12 +2,12 @@
 
 Get::Get() : AMethod()
 {
-	std::cout << "GET -> " << _AMethod << std::endl;
+	std::cout << "GET -> " << _method << std::endl;
 }
 
 Get::Get(std::string name) : AMethod()
 {
-	_AMethod = name;
+	_method = name;
 	std::cout << "GET Method constructed" << std::endl;
 }
 

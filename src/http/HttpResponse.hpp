@@ -12,6 +12,7 @@
 # include "../methods/AMethod.hpp"
 # include "../methods/Get.hpp"
 # include "../methods/Post.hpp"
+# include "../methods/Delete.hpp"
 # include "../parsers/ABodyParser.hpp"
 # include "../parsers/FormParser.hpp"
 # include "../parsers/MultipartParser.hpp"
@@ -58,6 +59,8 @@ class HttpResponse
 		// create AMethod
 		static AMethod	*createGet(std::string name);
 		static AMethod	*createPost(std::string name);
+		static AMethod	*createDelete(std::string name);
+
 		// create ABodyParser
 		bool	createBodyParser();
 		ABodyParser *createMultiParser();

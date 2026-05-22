@@ -6,6 +6,7 @@ void handleClientWrite(int client_fd, std::vector<struct pollfd> &fds, size_t in
 
 int main(void)
 {
+	srand(rand());
 // getaddr()
 	struct addrinfo	*res;
 	int				ret;

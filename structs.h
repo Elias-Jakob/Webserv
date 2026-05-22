@@ -17,4 +17,27 @@ typedef struct s_ContentData
 	std::string boundary;
 }				t_ContentData;
 
+typedef struct s_headerValue
+{
+	std::string			value;
+	std::map<
+		std::string,
+		std::string>	params;
+}						t_headerValue;
+
+typedef struct	s_node
+{
+	std::string type;
+	s_node	*l;
+	s_node	*r;
+}				t_node;
+
+typedef struct	s_token
+{
+	std::string	type;
+	size_t		start;
+	size_t		end;
+	size_t		posDel;
+}				t_token;
+
 #endif

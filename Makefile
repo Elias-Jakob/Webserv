@@ -2,6 +2,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/http/HttpRequest.cpp \
 		src/http/HttpResponse.cpp \
 		src/methods/AMethod.cpp \
+		src/methods/Delete.cpp \
 		src/methods/Get.cpp \
 		src/methods/Post.cpp \
 		src/parsers/ABodyParser.cpp \

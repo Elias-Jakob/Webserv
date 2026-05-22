@@ -31,22 +31,25 @@ HttpResponse::HttpResponse(HttpRequest *request) :
 	_parser(NULL)
 {
 	std::cout << "\33[36m" << "_____________________\nHTTP_RESPONSE building..." << std::endl;
-	if (_reqLine.method == "GET" || _reqLine.method == "POST")
+	if (_reqLine.method == "GET" || _reqLine.method == "POST" || _reqLine.method == "DELETE")
 	{
 		if (_reqLine.method == "GET")
 			method = createGet(_reqLine.method);
 		else if (_reqLine.method == "POST")
 		{
 			createBodyParser();
+			_parser->setContentData(_contentData);
 			_parser->parse(_reqBody);
 			_parsedResult = _parser->getResult();
 			if (_parsedResult.size() > 0)
 				std::cout << "_parsedResult returned something..." << std::endl;
 			method = createPost(_reqLine.method);
 		}
+		else if (_reqLine.method == "DELETE")
+			method = createDelete(_reqLine.method);
 		method->setResource(_reqLine.requestURI, _reqHeaders["Host"][0]);
 		method->setHeaders(_reqHeaders);
-		method->setBody(_parsedResult);
+		method->setBody(_parsedResult); // is result of parsing
 		method->setContentData(_contentData);
 		method->execute();
 
@@ -126,6 +129,11 @@ AMethod *HttpResponse::createGet(std::string name)
 AMethod *HttpResponse::createPost(std::string name)
 {
 	return new Post(name);
+}
+
+AMethod *HttpResponse::createDelete(std::string name)
+{
+	return new Delete(name);
 }
 
 /**
