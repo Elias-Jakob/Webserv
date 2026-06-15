@@ -3,8 +3,12 @@
 
 # include "Config.hpp"
 # include "Socket.hpp"
+// CPP
 # include <iostream>
 # include <vector>
+
+// POSIX
+# include <sys/epoll.h>
 
 class Server
 {
@@ -25,7 +29,9 @@ class Server
 		const char	*interface;
 		const char	*port;
 		//
-		std::vector<Socket>	listSocks; // listening sockets
+		std::vector<Socket>	sockets;
+		
+		int	epollFd;
 };
 
 #endif // !SERVER_HPP

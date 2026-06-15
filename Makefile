@@ -7,7 +7,9 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/ABodyParser.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
-		server.cpp
+		src/server/Server.cpp \
+		src/server/Socket.cpp \
+		src/main.cpp
 
 OBJDIR = obj
 OBJ = $(SRC:%.cpp=$(OBJDIR)/%.o)
