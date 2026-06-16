@@ -38,8 +38,11 @@ Socket::Socket(const int epollFd, const int fd) : fd(fd), listenSock(false)
 
 Socket::~Socket()
 {
-	if (this->fd != -1)
+	if (this->fd != -1) {
+		// TODO: clean up the poll
+		// epoll_ctl();
 		close(this->fd);
+	}
 }
 
 // Add the sockets fd to the interest list of epoll

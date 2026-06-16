@@ -1,14 +1,25 @@
 # include "Server.hpp"
 
 Server::Server(const char *interface, const char *port) :
-	interface(interface), port(port)
-{
-
-}
+	epollFd(-1), interface(interface), port(port)
+{}
 
 Server::~Server()
 {
+	if (this->epollFd != -1)
+		close(this->epollFd);
+}
 
+bool	Server::listenSock(int readyFd)
+{
+	// Check only the nListeningSockets
+	for (std::vector<Socket>::iterator	it = this->sockets.begin();
+				it != this->sockets.end(); ++it) {
+		if (!(*(it).isListenSock())) break;
+		if ((*it).getFd() == readyFd)
+			return (true);
+	}
+	return (false);
 }
 
 void	Server::serverStartup()
@@ -28,4 +39,16 @@ void	Server::serverStartup()
 	Socket	sock(this->epollFD, hints, this->interface, this->port);
 	this->sockets.push_back(sock);
 	
+	int	n = 1;
+	struct epoll_event	ready_clients[n];
+	int	efd;
+
+	while (true)
+	{
+		if (wait_epoll(this->epollFd, ev, n, 10000) == -1)
+			throw std::runtime_error(std::strerror(errno));
+		if (this->listenSock(ev[0]))
+			; // -> add client socket to sockets
+		else if () // check for read or write
+	}
 }
