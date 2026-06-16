@@ -8,7 +8,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
 		src/server/Server.cpp \
-		src/server/Socket.cpp \
+		src/server/ServerEventLoop.cpp \
 		src/main.cpp
 
 OBJDIR = obj

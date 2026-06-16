@@ -2,13 +2,22 @@
 # define SERVER_HPP
 
 # include "Config.hpp"
-# include "Socket.hpp"
+# include "../src/http/ClientConnection.hpp"
 // CPP
 # include <iostream>
+# include <string>
 # include <vector>
+# include <map>
+# include <stdexcept>
+# include <cerrno>
+# include <cstring> // for std::memset
 
 // POSIX
+# include <sys/socket.h>
 # include <sys/epoll.h>
+# include <stdlib.h>
+# include <unistd.h>
+#include <netdb.h>
 
 class Server
 {
@@ -29,9 +38,16 @@ class Server
 		const char	*interface;
 		const char	*port;
 		//
-		std::vector<Socket>	sockets;
-		
+		std::vector<int>	listenSockets;
+		std::map<int, ClientConnection>	clients;
 		int	epollFd;
+
+		void	initListenSockets();
+		bool	isListenSock(int fd);
+		void	eventLoop();
+		void	handleNewClient(int listenFd);
+		void	handleClientRead(int);
+		void	handleClientWrite(int);
 };
 
 #endif // !SERVER_HPP
