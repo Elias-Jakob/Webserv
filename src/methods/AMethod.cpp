@@ -5,31 +5,50 @@ AMethod::AMethod()
 	std::cout << "AMethod constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _AMethod(name)
+AMethod::AMethod(std::string name): _method(name)
 {
-	std::cout << "AMethod constructed " << _AMethod << std::endl;
+	std::cout << "AMethod constructed " << _method << std::endl;
 }
 
-AMethod::~AMethod()
-{}
+AMethod::~AMethod(){}
+
+/**
+    * sets the needed data for methods
+**/
+bool    AMethod::setRequiredData(
+                        s_RequestLine &reqLine,
+                        std::map<std::string,
+                        std::vector<std::string> > &reqHeads,
+                        std::map<std::string, s_FormField> &parsedResult,
+                        s_ContentData &contentData)
+{
+    std::cout << "setting data for Method..." << std::endl;
+    setResource(reqLine.requestURI, reqHeads["Host"][0]);
+    setHeaders(reqHeads);
+    setBody(parsedResult);
+    setContentData(contentData);
+    return true;
+}
 
 void AMethod::setResource(std::string &reqURI, std::string &host)
 {
-	if (host != ".")
+    if (_method == "DELETE")
+        _resource = "./www" + reqURI;
+	else if (host != ".")
 		_resource = "." + reqURI;
-	std::cout << "setResource -> " << _resource << std::endl;
+	// std::cout << "setResource -> " << _resource << std::endl;
 }
 
 void AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads)
 {
 	_headers = heads;
-    std::cout << "setHeaders..." << std::endl;
+    // std::cout << "setHeaders..." << std::endl;
 }
 
 void AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
 {
     _parsedBody = parsedBody;
-    std::cout << "setBody..." << std::endl;
+    // std::cout << "setBody..." << std::endl;
 }
 
 void AMethod::setContentData(s_ContentData contentData)

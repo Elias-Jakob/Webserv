@@ -2,12 +2,12 @@
 
 Get::Get() : AMethod()
 {
-	std::cout << "GET -> " << _AMethod << std::endl;
+	std::cout << "GET -> " << _method << std::endl;
 }
 
 Get::Get(std::string name) : AMethod()
 {
-	_AMethod = name;
+	_method = name;
 	std::cout << "GET Method constructed" << std::endl;
 }
 
@@ -17,11 +17,10 @@ Get::~Get()
 bool Get::execute()
 {
 	struct stat fileInfo;
-    
+
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
-		_code = "404";
-		_phrase = "NOT FOUND";
+		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
 	// if the request is a directory check for index.html
@@ -29,16 +28,14 @@ bool Get::execute()
         _resource += "/index.html";
 	if (!isFileAccessible(_resource))
 	{
-		_code = "403";
-		_phrase = "Forbidden";
+		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
 	std::ifstream stream(_resource.c_str());
 	std::string line;
 	if (!stream)
 	{
-		_code = "404";
-		_phrase = "NOT FOUND";
+		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
 
@@ -46,8 +43,7 @@ bool Get::execute()
 		_body += line + "\n";
 
 	stream.close();    
-	_code = "200";
-	_phrase = "OK";
+	HttpStatus::setStatus(200, _code, _phrase);
 	return true;
 }
 

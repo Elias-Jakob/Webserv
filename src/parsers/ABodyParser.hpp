@@ -8,11 +8,17 @@ class ABodyParser
 {
 	protected:
 		std::map<std::string, s_FormField>	_result;
+		s_ContentData	_contentData;
 
 	public:
 		virtual ~ABodyParser();
+
 		virtual bool parse(std::string &body) = 0;
+
 		std::map<std::string, s_FormField> getResult();
+
+		void	setContentData(s_ContentData &contentData);
 };
+
 
 #endif

@@ -1,33 +1,41 @@
 #ifndef POST_HPP
 # define POST_HPP
-
 # include "AMethod.hpp"
 # include <fstream>
 # include <sys/stat.h>
 # include "../parsers/FormParser.hpp"
 # include "../parsers/MultipartParser.hpp"
 
-// typedef struct s_ContentData
-// {
-// 	std::string type;
-// 	std::string subtype;
-// 	std::string boundary;
-// }				t_ContentData;
+#include <iostream>
+// #include <fstream>
+#include <vector>
+#include <filesystem>
+#include <sys/time.h> // gettimeofday
+#include <sstream> // int to string
+#include <cstdlib> // srand()
 
 class Post : public AMethod
 {
 	private:
-		std::string parse_type;
-		std::map<std::string, std::string>	parsed_body;
-		// s_ContentData	_contentData;
-		// ABodyParser *_parser;
-		void appendToFile(std::string filename);
+		void	appendToFile(std::string filename); // form POST (./submit)
+		void	uploadFile(); // multipart POST (./upload)
+
 	public:
 		Post();
 		Post(std::string name);
 		~Post();
 
-		bool execute();
+		bool	execute();
+		void	printParsedResult();
+
+		std::string	generateRandomFilename(std::string	&recvFilename);
+		std::string	extractFileExtension(std::string &recvFilename);
+		std::string	getCurrentTime();
+		std::string	generateRandomNumber();
+		// void	setParsedResult(std::map<std::string, s_FormField> res);
 };
 
+/*
+	Implement file upload
+*/
 #endif

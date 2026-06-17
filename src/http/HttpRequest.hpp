@@ -8,6 +8,11 @@
 
 # include <sstream>
 # include <vector>
+# include "../../limits_defines.hpp"
+# include "../parsers/ABodyParser.hpp"
+# include "../parsers/FormParser.hpp"
+# include "../parsers/MultipartParser.hpp"
+# include "../../structs.h"
 
 typedef struct s_RequestLine
 {
@@ -16,47 +21,79 @@ typedef struct s_RequestLine
 	std::string	version;
 }				t_RequestLine;
 
+enum e_parsingState
+{
+	PARSING_REQUEST_LINE,
+	PARSING_HEADERS,
+	PARSING_BODY,
+	PARSING_COMPLETE,
+	PARSING_ERROR
+};
+
+/**
+	* @class HttpRequest // HttpRequestParser
+	* @brief parses the raw http-message and splits/stores it into the 
+	*  data structure.
+*/
 class HttpRequest
 {
 	private:
-		t_RequestLine					requestLine;
-		std::map<
-			std::string,
-			std::vector<std::string> >	requestHeaders;
-		std::string						requestBody;
+		e_parsingState	_state;
+		size_t			_current_pos;
+		std::string		_messageBuffer;
+		std::string		_fullMessageBody;
+
+		ABodyParser		*_bodyParser;
+		t_ContentData	_contentData;
+		// PARSED DATA
+		t_RequestLine	_requestLine;
+		std::map<std::string, std::vector<std::string> >	_headers;
+		std::map<std::string, s_FormField> _parsedMessageBody;
+		// ERROR
+		int				_errorCode;
 
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
+		bool	setErrorCode(int code);
+		bool	isValidMethod();
+		bool	isHttpVersionSupported();
+		bool	foundEndOfRequest();
 
 	protected:
-		bool	parseRequestLine(const std::string &input, size_t *currentPos);
-		bool	parseRequestHeaders(const std::string &input, size_t *currentPos);
-		bool	parseRequestBody(const std::string &input, size_t *currentPos);
+		// HELPERS
+		bool	parseRequestLine();
+		bool	parseHeaderLine();
+		bool	extractBody();
+		bool	createBodyParser();
+
+		// BODY PARSING
+		std::string	parseContentType(std::vector<std::string> value);
+		ABodyParser *createMultiParser();
+		ABodyParser *createFormParser();
 
 	public:
 		HttpRequest();
 		~HttpRequest();
 
-		void	printRequest(void);
-		bool	parseRequest(const std::string &input);
+		// METHODS
+		bool	parseRequest(const std::string &partialMessage);
+		bool 	parsingComplete();
+		bool	keepConnectionAlive();
+		bool 	validRequest();
+
+		// GETTERS
 		s_RequestLine	&getRequestLine();
 		std::map<
 			std::string,
-			std::vector<std::string> > &getRequestHeaders();
+			std::vector<std::string> >	&getRequestHeaders();
 		std::string		&getRequestBody();
+		std::map<std::string, s_FormField>	&getParsedBody();
+		t_ContentData	&getContentData();
+		std::string		&getMethod();
+		int	getErrorCode();
+
+		// OUTPUT
+		void	printRequest(void);
 };
 
 #endif
-/* Parse header-values as simple strings, because we only need certain headers
-completely parsed for some AMethods. So it is faster not to parse everything
-by default.
-*/
-
-// AMethods = GET, POST, DELETE
-// typedef struct s_headerValue
-// {
-// 	std::string	type;
-// 	std::string subtype;
-// 	std::string param;
-// 	float		priority;
-// }				t_headerValue;
