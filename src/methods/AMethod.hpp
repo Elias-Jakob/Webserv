@@ -4,6 +4,8 @@
 # include <map>
 # include <vector>
 # include "../../structs.h"
+# include "../http/HttpStatus.hpp"
+# include "../http/HttpRequest.hpp"
 
 class AMethod
 {
@@ -30,12 +32,20 @@ class AMethod
 		AMethod(std::string name);
 		virtual ~AMethod();
 
-		void setResource(std::string &reqURI, std::string &host);
-		void setHeaders(std::map<std::string, std::vector<std::string> > &heads);
-		void setBody(std::map<std::string, s_FormField> &parsedBody);
-		void setContentData(s_ContentData contentData);
+		bool	setRequiredData(
+						s_RequestLine &reqLine,
+                        std::map<std::string,
+                        std::vector<std::string> > &reqHeads,
+                        std::map<std::string, s_FormField> &parsedResult,
+                        s_ContentData &contentData);
 
-		virtual bool execute(void) = 0;
+		void	setResource(std::string &reqURI, std::string &host);
+		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
+		void	setBody(std::map<std::string, s_FormField> &parsedBody);
+		void	setContentData(s_ContentData contentData);
+		
+		virtual bool execute() = 0;
+
 		std::string &getBody();
 
 		// status infos

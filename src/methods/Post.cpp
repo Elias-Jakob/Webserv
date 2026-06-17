@@ -31,10 +31,10 @@ bool Post::execute()
 	}
 	else
 	{
+		std::cout << _contentData.type << std::endl;
 		std::cout << "No Post execution implemented!" << std::endl;
 	}
-	_code = "200";
-	_phrase = "OK";
+	HttpStatus::setStatus(200, _code, _phrase);
 	std::cout << "POST->execute() end\n" << std::endl;
 	return true;
 }

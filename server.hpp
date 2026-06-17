@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <poll.h>
 
-#include "src/http/HttpResponse.hpp"
+#include "src/http/MethodExecuter.hpp"
 #include "src/http/ClientConnection.hpp"
 
 #endif

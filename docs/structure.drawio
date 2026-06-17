@@ -1,0 +1,243 @@
+<mxfile host="65bd71144e">
+    <diagram id="kmpPwEpBpoAPYhg2uI3-" name="Page-1">
+        <mxGraphModel dx="1501" dy="2103" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Request" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="80" width="200" height="290" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Request-Line" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="10" y="30" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="10" y="80" width="180" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="*(( general-header" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="20" y="80" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="| request-header" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="20" y="120" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="|&amp;nbsp; entity-header ) CRLF)" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="20" y="160" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="CRLF" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="10" y="200" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="[message-body]" style="rounded=0;whiteSpace=wrap;html=1;" parent="2" vertex="1">
+                    <mxGeometry x="10" y="240" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="edgeStyle=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="3" target="16" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="360" y="90.81818181818176" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="360" y="135"/>
+                            <mxPoint x="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="16" value="Request-Line" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="-40" width="360" height="80" as="geometry">
+                        <mxRectangle x="360" y="20" width="110" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="17" value="Method" style="rounded=0;whiteSpace=wrap;html=1;" parent="16" vertex="1">
+                    <mxGeometry x="10" y="30" width="80" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="HTTP-Version" style="rounded=0;whiteSpace=wrap;html=1;" parent="16" vertex="1">
+                    <mxGeometry x="270" y="30" width="80" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="SP" style="rounded=0;whiteSpace=wrap;html=1;" parent="16" vertex="1">
+                    <mxGeometry x="220" y="30" width="50" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="Request-URI" style="rounded=0;whiteSpace=wrap;html=1;" parent="16" vertex="1">
+                    <mxGeometry x="140" y="30" width="80" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="SP" style="rounded=0;whiteSpace=wrap;html=1;" parent="16" vertex="1">
+                    <mxGeometry x="90" y="30" width="50" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="32" value="General-Header" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="80" width="160" height="310" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="Cache-Control" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="30" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="Transfer-Encoding" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="180" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="Trailer" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="150" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" value="Pragma" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="120" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="Date" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="90" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="Connection" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="60" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="Upgrade" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="210" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" value="Via" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="240" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" value="Warning" style="rounded=0;whiteSpace=wrap;html=1;" parent="32" vertex="1">
+                    <mxGeometry x="10" y="270" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" value="Description" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="440" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="45" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Dont relate to specific content being transmitted.&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Apply to the message as a whole, regardles if it is a request or response.&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;They handle the logistics of the current connection and message delivery.&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="44" vertex="1">
+                    <mxGeometry x="5" y="30" width="185" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="46" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="32" target="44" edge="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="670" y="250" as="sourcePoint"/>
+                        <mxPoint x="720" y="200" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="48" value="Request-Header" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="80" width="160" height="610" as="geometry"/>
+                </mxCell>
+                <mxCell id="49" value="Accept" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="30" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" value="Excpect" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="180" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" value="Authorization" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="150" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="53" value="Accept-Language" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="120" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="54" value="Accept-Charset" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="60" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="55" value="From" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="210" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" value="Host" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="240" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="57" value="If-Match" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="270" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="75" value="User-Agent" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="570" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="74" value="TE" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="540" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="73" value="Referer" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="510" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="72" value="Range" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="480" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="71" value="Proxy-Authorization" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="450" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="70" value="Max-Forwards" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="420" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="69" value="If-Unmodified-Since" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="390" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="68" value="If-Modifies-Since" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="300" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="77" value="If-None-Match" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="330" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" value="Accept-Encoding" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="90" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="78" value="If-Range" style="rounded=0;whiteSpace=wrap;html=1;" parent="48" vertex="1">
+                    <mxGeometry x="10" y="360" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="58" value="Entity-Header" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="80" width="160" height="370" as="geometry"/>
+                </mxCell>
+                <mxCell id="59" value="Allow" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="30" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="60" value="Content-MD5" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="180" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="61" value="Content-Location" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="150" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="62" value="Content-Length" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="120" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="63" value="Content-Language" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="90" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="64" value="Content-Encoding" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="60" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="65" value="Content-Range" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="210" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="66" value="Content-Type" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="240" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="67" value="Expires" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="270" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="83" value="extension-header" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="330" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="82" value="Last-Modified" style="rounded=0;whiteSpace=wrap;html=1;" parent="58" vertex="1">
+                    <mxGeometry x="10" y="300" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="79" value="Description" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="740" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="80" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Allow client to pass additional information about the request and about client itself.&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;These fields act as request modifiers&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="79" vertex="1">
+                    <mxGeometry x="5" y="30" width="185" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="81" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="48" target="79" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="86" value="Description" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="520" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="87" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Define metainformation about the entity-body, or if no body present, about the resource identified by&amp;nbsp; the request.&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="86" vertex="1">
+                    <mxGeometry x="5" y="30" width="185" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="88" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="58" target="86" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="91" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="89" target="90">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="89" value="HttpRequest" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="640" width="130" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="90" value="parses request-line and headers." style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="295" y="670" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="95" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="92" target="94">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="92" value="body into string" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="790" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="97" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="94" target="96">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="94" value="POST" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="930" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="96" value="ABodyParser" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="205" y="1060" width="130" height="110" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

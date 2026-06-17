@@ -22,8 +22,7 @@ bool	Delete::execute()
 		return false;   
     if (!isDeletable(_resource))
 	{
-        _code = "403";
-        _phrase = "Forbidden";
+		HttpStatus::setStatus(403, _code, _phrase);
         return false;
     }
 	if (!deleteResource())
@@ -39,20 +38,23 @@ bool	Delete::execute()
 bool Delete::resourceExistsAndIsFile(void)
 {
 	struct stat fileInfo;
-
-	if (stat(_resource.c_str(), &fileInfo) != 0)
+	std::cout << "==RESOURCE TO DELETE = " << _resource << std::endl;
+	if (stat(_resource.c_str(), &fileInfo) == -1)
 	{
-		_code = "404";
-		_phrase = "Not Found";
+		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
-    }
+	}
 	if (S_ISDIR(fileInfo.st_mode))
 	{
-		_code = "403";
-		_phrase = "Forbidden";
+		HttpStatus::setStatus(403, _code, _phrase);
 		_body = "Cannot delete directories";
 		return false;
-    }
+	}
+	if (S_ISLNK(fileInfo.st_mode))
+	{
+		HttpStatus::setStatus(403, _code, _phrase);
+    	return false;
+	}
 	return true;
 }
 
@@ -82,9 +84,9 @@ bool Delete::isDeletable(const std::string &path)
 **/
 bool	Delete::deleteResource()
 {
-	if (unlink(_resource.c_str()) != 0) {
-		_code = "500";
-		_phrase = "Internal Server Error";
+	if (unlink(_resource.c_str()) != 0)
+	{
+		HttpStatus::setStatus(500, _code, _phrase);
 		perror("unlink");
 		return false;
 	}
@@ -97,7 +99,6 @@ bool	Delete::deleteResource()
 **/
 void	Delete::setSuccess()
 {
-	_code = "204";
-    _phrase = "No Content";
+	HttpStatus::setStatus(204, _code, _phrase);
     _body = "";
 }
