@@ -11,7 +11,7 @@
  * @return
  * @note
  **/
-void	Server::handleNewClient(int listenFd)
+void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder)
 {
 	int	fd;
 	struct epoll_event	epEvent;
@@ -19,13 +19,15 @@ void	Server::handleNewClient(int listenFd)
 	fd = accept(listenFd, NULL, NULL);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
+	fcntl(fd, F_SETFL, O_NONBLOCK); // make it nonblocking
 
 	// Initialize client connection directly in map (avoid copy issues)
 	this->clients[fd] = ClientConnection();
 	this->clients[fd].fd = fd;
 	this->clients[fd].state = READING_REQUEST;
 	this->clients[fd].request = new HttpRequest();
-	this->clients[fd].response = NULL;
+	this->clients[fd].executor = &methodExecuter;
+	this->clients[fd].responseBuilder = &responseBuilder;
 	this->clients[fd].bytes_sent = 0;
 
 	// TODO: clean up
@@ -38,25 +40,39 @@ void	Server::handleNewClient(int listenFd)
 
 void	Server::handleClientRead(int clientFd)
 {
-	std::cout << "handleClientRead" << std::endl;
+	struct epoll_event	epEvent;
+
+
 	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
 	char buffer[4096];
 	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
-	struct epoll_event	epEvent;
 
-	if (bytes <= 0) // Connection closed or error
+	if (bytes < 0)
 	{
-		std::cout << "Connection closed or error fd: " << clientFd << std::endl;
+		// Non-blocking socket: EAGAIN/EWOULDBLOCK means no data available yet
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			std::cout << "No data available yet (non-blocking)" << std::endl;
+			return;  // Not an error, just try again later
+		}
+		// Real error
 		close(clientFd);
-		// TODO: is it necessary to remove the clientFd from the interest list of epoll?
-		clients.erase(clientFd);  // Clean up client data
+		clients.erase(clientFd);
+		// INFO: i dont think that it is necessary to close & erase the client here
+		throw std::runtime_error(std::strerror(errno));
+	}
+	else if (bytes == 0)
+	{
+		// Client closed connection
+		std::cout << "Client closed connection" << std::endl;
+		close(clientFd);
+		clients.erase(clientFd);
 		return;
 	}
-	buffer[bytes] = '\0';
+
 	std::cout << "Received " << bytes << " bytes from " << clientFd << std::endl;
-    
-	// Check if request pointer is valid
-	if (clients[clientFd].request == NULL)
+
+	if (clients[clientFd].request == NULL)// Check if request pointer is valid
 	{
 		std::cerr << "ERROR: request pointer is NULL!" << std::endl;
 		close(clientFd);
@@ -64,53 +80,61 @@ void	Server::handleClientRead(int clientFd)
 		return;
 	}
 
-	// Parse request
-	clients[clientFd].request->parseRequest(buffer);
-	clients[clientFd].state = PROCESSING;
-	// Build response (store in ClientConnection, not local variable!)
-	clients[clientFd].response = new HttpResponse(clients[clientFd].request);
-	clients[clientFd].state = SENDING_RESPONSE;
-    
-	// Switch to POLLOUT to send response
-	// fds[index].events = POLLOUT;
-	epEvent.events = EPOLLIN | EPOLLOUT;
-	epEvent.data.fd = clientFd;
-	if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
-		throw std::runtime_error(std::strerror(errno));
-}
+	// Parse request - use string constructor with length to avoid buffer overflow
+	std::string request_data(buffer, bytes);
+	clients[clientFd].request->parseRequest(request_data);
+	if (clients[clientFd].request->parsingComplete())
+	{
+		clients[clientFd].state = PROCESSING;
+		clients[clientFd].processRequest();
+		clients[clientFd].state = SENDING_RESPONSE;
 
-void	Server::handleClientWrite(int clientFd)
-{
-	std::cout << "handleClientWrite" << std::endl;
-	ssize_t		sent, totalResponseSize;
-	ClientConnection	&client = clients.at(clientFd);
-	struct epoll_event	epEvent;
-
-	if (!client.response)
-		return ;
-
-	std::string status_line = client.response->getStatusLine();
-	sent = send(clientFd, status_line.c_str(), status_line.size(), 0);
-	std::cout << "\033[36m____________________\nRESPONSE sending...\n\033[35m" << status_line << std::endl;
-
-	std::string message_headers = client.response->getMessageHeaders();
-	sent += send(clientFd, message_headers.c_str(), message_headers.size(), 0);
-	std::cout << message_headers << std::endl;
-
-	std::string message_body = client.response->getMessageBody();
-	sent += send(clientFd, message_body.c_str(), message_body.size(), 0);
-	std::cout << message_body << "____________________\033[m"<< std::endl;
-	// std::cout << "bytest sent" << sent << std::endl;
-	if (sent < 0)
-		perror("send");
-	totalResponseSize = status_line.size() + message_headers.size() + message_body.size();
-	std::cout << "send bytes = " << sent << " totalResponseSize = " << totalResponseSize << std::endl;
-	if (sent == totalResponseSize) {
-		epEvent.events = EPOLLIN;
+		epEvent.events = EPOLLIN | EPOLLOUT;
 		epEvent.data.fd = clientFd;
 		if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
 			throw std::runtime_error(std::strerror(errno));
 	}
+}
+
+void	Server::handleClientWrite(int clientFd)
+{
+	struct epoll_event	epEvent;
+
+
+	ssize_t		sent;
+
+	std::cout << "\033[35m==========\nRESPONSE sending...\n" << std::endl;
+	sent = send(clientFd, clients[clientFd].response_buffer.c_str(), clients[clientFd].response_buffer.size(), 0);
+	
+	if (sent < 0)
+	{
+		// Non-blocking socket: EAGAIN/EWOULDBLOCK means can't send right now
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+		{
+			std::cout << "Socket not ready for writing, try again later" << std::endl;
+			return;  // Keep connection open, try again on next POLLOUT
+		}
+		// Real error
+		std::cout << "send() error: " << strerror(errno) << std::endl;
+		close(clientFd);
+		clients.erase(clientFd);
+		throw std::runtime_error(std::strerror(errno));
+	}
+	
+	std::cout << "bytes sent: " << sent << "\n==========\033[m" << std::endl;
+	std::cout << "response_buffer: " << clients[clientFd].response_buffer << std::endl;
+	// Clean up: close connection and remove from tracking
+	if (clients[clientFd].keep_alive == false)
+	{
+		close(clientFd);
+		clients.erase(clientFd);  // This will call destructor and free request/response
+		return;
+	}
+	epEvent.events = EPOLLIN;
+	epEvent.data.fd = clientFd;
+	if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
+		throw std::runtime_error(std::strerror(errno));
+	clients[clientFd].cleanUpClient();
 }
 
 bool	Server::isListenSock(int fd)
@@ -127,6 +151,8 @@ void	Server::eventLoop()
 {
 	int	n = 1, nReady;
 	struct epoll_event	ev[n];
+	MethodExecuter	methodExecuter;
+	ResponseBuilder	responseBuilder;
 
 	while (sigFlag != SIGINT)//true)
 	{
@@ -134,7 +160,7 @@ void	Server::eventLoop()
 			throw std::runtime_error(std::strerror(errno));
 		for (int	i = 0; i < nReady; ++i) {
 			if (this->isListenSock(ev[i].data.fd))
-				this->handleNewClient(ev[i].data.fd);
+				this->handleNewClient(ev[i].data.fd, methodExecuter, responseBuilder);
 			else if (ev[i].events & EPOLLIN) // the client is available for read
 				this->handleClientRead(ev[i].data.fd);
 			else if (ev[i].events & EPOLLOUT) // the client is available for write

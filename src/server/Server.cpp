@@ -46,6 +46,7 @@ void	Server::initListenSockets()
 			freeaddrinfo(res);
 			throw std::runtime_error(std::strerror(errno));
 		}
+		fcntl(fd, F_SETFL, O_NONBLOCK); // make it nonblocking
 		this->listenSockets.push_back(fd);
 		// TODO: use setsockopt here to avoid the error: Address already in use
 		// TODO: setsockopt

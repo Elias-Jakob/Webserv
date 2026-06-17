@@ -3,6 +3,7 @@
 
 # include "Config.hpp"
 # include "../src/http/ClientConnection.hpp"
+#include "../src/http/MethodExecuter.hpp"
 // CPP
 # include <iostream>
 # include <string>
@@ -19,6 +20,7 @@
 # include <unistd.h>
 # include <netdb.h>
 # include <signal.h>
+# include <fcntl.h>
 
 extern sig_atomic_t	sigFlag;
 
@@ -48,7 +50,7 @@ class Server
 		void	initListenSockets();
 		bool	isListenSock(int fd);
 		void	eventLoop();
-		void	handleNewClient(int listenFd);
+		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
 		void	handleClientRead(int);
 		void	handleClientWrite(int);
 };
