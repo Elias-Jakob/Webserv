@@ -31,7 +31,7 @@ void	Server::initListenSockets()
 	hints.ai_flags = AI_PASSIVE; // indicates that the returned socket address structure is intended for use in a call to bind
 
 	// ?
-	epEvent.events = EPOLLIN;// | EPOLLOUT;
+	epEvent.events = EPOLLIN;
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
@@ -48,6 +48,14 @@ void	Server::initListenSockets()
 		}
 		this->listenSockets.push_back(fd);
 		// TODO: use setsockopt here to avoid the error: Address already in use
+		// TODO: setsockopt
+		int opt = 1;
+		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+			freeaddrinfo(res);
+			throw std::runtime_error(std::strerror(errno));
+		}
+		//
+
 		if (bind(fd, res->ai_addr, res->ai_addrlen) == -1) {
 			freeaddrinfo(res);
 			throw std::runtime_error(std::strerror(errno));

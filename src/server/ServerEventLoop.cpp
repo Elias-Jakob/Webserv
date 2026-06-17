@@ -13,28 +13,27 @@
  **/
 void	Server::handleNewClient(int listenFd)
 {
-	std::cout << "Start of handleNewClient" << std::endl;
 	int	fd;
 	struct epoll_event	epEvent;
-	// for now i dont know why i would need addr and addrlen
-	//                     ↓     ↓
+
 	fd = accept(listenFd, NULL, NULL);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
 
 	// Initialize client connection directly in map (avoid copy issues)
+	this->clients[fd] = ClientConnection();
 	this->clients[fd].fd = fd;
 	this->clients[fd].state = READING_REQUEST;
 	this->clients[fd].request = new HttpRequest();
 	this->clients[fd].response = NULL;
 	this->clients[fd].bytes_sent = 0;
-	// TODO: add encapsulation and constructors to ClientConnection class
-	
-	epEvent.events = EPOLLIN;// | EPOLLOUT;
+
+	// TODO: clean up
+	// this->clients[fd] = ClientConnection(fd);
+	epEvent.events = EPOLLIN;
 	epEvent.data.fd = fd;
 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
 		throw std::runtime_error(std::strerror(errno));
-	std::cout << "New client: " << fd << std::endl;
 }
 
 void	Server::handleClientRead(int clientFd)
@@ -43,10 +42,11 @@ void	Server::handleClientRead(int clientFd)
 	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
 	char buffer[4096];
 	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
+	struct epoll_event	epEvent;
 
 	if (bytes <= 0) // Connection closed or error
 	{
-		std::cout << "Connection closed or error" << std::endl;
+		std::cout << "Connection closed or error fd: " << clientFd << std::endl;
 		close(clientFd);
 		// TODO: is it necessary to remove the clientFd from the interest list of epoll?
 		clients.erase(clientFd);  // Clean up client data
@@ -73,8 +73,7 @@ void	Server::handleClientRead(int clientFd)
     
 	// Switch to POLLOUT to send response
 	// fds[index].events = POLLOUT;
-	struct epoll_event	epEvent;
-	epEvent.events = EPOLLOUT;
+	epEvent.events = EPOLLIN | EPOLLOUT;
 	epEvent.data.fd = clientFd;
 	if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
 		throw std::runtime_error(std::strerror(errno));
@@ -83,30 +82,35 @@ void	Server::handleClientRead(int clientFd)
 void	Server::handleClientWrite(int clientFd)
 {
 	std::cout << "handleClientWrite" << std::endl;
-	ssize_t		sent;
-	ClientConnection	client;
+	ssize_t		sent, totalResponseSize;
+	ClientConnection	&client = clients.at(clientFd);
+	struct epoll_event	epEvent;
 
-	client = clients.at(clientFd);
 	if (!client.response)
 		return ;
+
 	std::string status_line = client.response->getStatusLine();
 	sent = send(clientFd, status_line.c_str(), status_line.size(), 0);
 	std::cout << "\033[36m____________________\nRESPONSE sending...\n\033[35m" << status_line << std::endl;
 
-	std::string message_headers = clients[clientFd].response->getMessageHeaders();
+	std::string message_headers = client.response->getMessageHeaders();
 	sent += send(clientFd, message_headers.c_str(), message_headers.size(), 0);
 	std::cout << message_headers << std::endl;
 
-	std::string message_body = clients[clientFd].response->getMessageBody();
+	std::string message_body = client.response->getMessageBody();
 	sent += send(clientFd, message_body.c_str(), message_body.size(), 0);
 	std::cout << message_body << "____________________\033[m"<< std::endl;
 	// std::cout << "bytest sent" << sent << std::endl;
 	if (sent < 0)
 		perror("send");
-    
-	// Clean up: close connection and remove from tracking
-	close(clientFd);
-	clients.erase(clientFd);  // This will call destructor and free request/response
+	totalResponseSize = status_line.size() + message_headers.size() + message_body.size();
+	std::cout << "send bytes = " << sent << " totalResponseSize = " << totalResponseSize << std::endl;
+	if (sent == totalResponseSize) {
+		epEvent.events = EPOLLIN;
+		epEvent.data.fd = clientFd;
+		if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
+			throw std::runtime_error(std::strerror(errno));
+	}
 }
 
 bool	Server::isListenSock(int fd)
@@ -124,7 +128,7 @@ void	Server::eventLoop()
 	int	n = 1, nReady;
 	struct epoll_event	ev[n];
 
-	while (true)
+	while (sigFlag != SIGINT)//true)
 	{
 		if ((nReady = epoll_wait(this->epollFd, ev, n, -1)) == -1)
 			throw std::runtime_error(std::strerror(errno));

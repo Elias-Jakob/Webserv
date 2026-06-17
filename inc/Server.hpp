@@ -17,7 +17,10 @@
 # include <sys/epoll.h>
 # include <stdlib.h>
 # include <unistd.h>
-#include <netdb.h>
+# include <netdb.h>
+# include <signal.h>
+
+extern sig_atomic_t	sigFlag;
 
 class Server
 {
