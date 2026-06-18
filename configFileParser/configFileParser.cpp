@@ -10,7 +10,11 @@ void	ConfigFileParser::parseFile(const std::string &filePath)
 	std::ifstream	fs(filePath.c_str());
 	std::string		str;
 	std::string		buffer;
-
+	if (!fs.is_open())
+	{
+		std::cerr << "Error: File could not be opened!" << std::endl;
+		return ;
+	}
 	while (std::getline(fs, buffer))
 		str += buffer + '\n';
 
@@ -21,7 +25,8 @@ void	ConfigFileParser::parseFile(const std::string &filePath)
 	printTokens();
 	// validate_tokens()
 	parseToDataStructure();
-
+	parseEndpoints();
+	printServer();
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
@@ -74,11 +79,11 @@ bool ConfigFileParser::isValidChar(char c)
 {
 	if (c == ' ' || c == ';' || c == '\n' || c == ',')
 		return false;
-	if (c >= 'A' && c <= 'z')
+	if (isalpha(c))
 		return true;
 	if (c == '{' || c == '}')
 		return true;
-	if (c == '=' || c == '/' || c == ':' || c == '_' || c == '.')
+	if (c == '=' || c == '/' || c == ':' || c == '_' || c == '.' || c == '-')
 		return true;
 	if (c >= '0' && c <= '9')
 		return true;
@@ -122,6 +127,10 @@ std::string ConfigFileParser::printTokenType(e_TokenType type)
 		return "STR";
 	if (type == COMMA)
 		return "COMMA";
+	if (type == PATH_LOCATION)
+		return "PATH_LOCATION)";
+	if (type == NUMBER)
+		return "NUMBER";
 	return "UNKNOWN";
 }
 
@@ -129,14 +138,28 @@ void ConfigFileParser::adjustTokens()
 {
 	for (size_t i = 0; i < _tokens.size(); i++)
 	{
-		if (_tokens[i].type == ASSIGN)
+		if (_tokens[i].type == ASSIGN && i > 0 && i + 1 < _tokens.size())
 		{
-			if (_tokens[i - 1].type == STR)
+			if (_tokens[i - 1].type == STR && isNbr(_tokens[i -1].val))
+				_tokens[i - 1].type = NUMBER;
+			else if (_tokens[i - 1].type == STR)
 				_tokens[i - 1].type = IDENTIFIER;
 			if (_tokens[i + 1].type == STR)
 				_tokens[i + 1].type = VALUE;
 		}
+		if (_tokens[i].type == LOCATION && i + 1 < _tokens.size())
+			_tokens[i + 1].type = PATH_LOCATION;
 	}
+}
+
+bool ConfigFileParser::isNbr(const std::string &s)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		if (s[i] < '0' || s[i] > '9')
+			return false;
+	}
+	return true;
 }
 
 void ConfigFileParser::printTokens()
@@ -154,46 +177,143 @@ void ConfigFileParser::printTokens()
 
 void ConfigFileParser::parseToDataStructure()
 {
-	bool inServer = false;
-
 	for (size_t i = 0; i < _tokens.size(); i++)
 	{
-		if (_tokens[i].type == SERVER && !inServer)
+		if (_tokens[i].type == SERVER)
 		{
-			i = createServer(i);
+			createServer(&i);
 		}
 	}
-	printServer();
 }
 
-size_t ConfigFileParser::createServer(size_t current_token)
+size_t ConfigFileParser::createServer(size_t *i)
 {
 	size_t	j;
 
-	for (j = current_token; j < _tokens.size(); j++)
+	for (j = *i; j < _tokens.size(); j++)
 	{
-		// if (_tokens[j].type == LOCATION)
-		// {
-		// 	j += createLocation(j);
-		// }
-		if (_tokens[j].type == ASSIGN)
+		if (j >= 2 
+			&&_tokens[j].type == ASSIGN
+			&& _tokens[j - 1].type == NUMBER
+			&& _tokens[j - 2].val == "error_page")
+		{
+			std::stringstream	ss(_tokens[j - 1].val);
+			int	errorCode;
+			ss >> errorCode;
+			_server.errorPages[errorCode] = _tokens[j + 1].val;
+			j += 1;
+		}
+		else if (_tokens[j].type == ASSIGN)
 		{
 			if (checkIdentifier(_tokens[j-1].val))
 				setValue(_tokens[j-1].val, j);
 		}
-		if (_tokens[j].type == LOCATION)
+		else if (_tokens[j].type == LOCATION)
 		{
 			std::cout << _tokens[j+1].val << std::endl;
-			t_Location newLocationObj;
-			newLocationObj = createLocation(j);
+			j += createLocation(j);
 		}
 	}
+	*i += j;
 	return j;
 }
 
-t_Location	ConfigFileParser::createLocation(size_t i)
+size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 {
+	if (_tokens[i - 1].val == "root")
+		loc->root = _tokens[i + 1].val;
+	if (_tokens[i - 1].val == "accepted_methods")
+	{
+		size_t	j = i + 1;
+		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
+		{
+			loc->allowedMethods.push_back(_tokens[j].val);
+			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
+				j += 2;
+			else
+				break;
+		}
+		return j;
+	}
+	if (_tokens[i - 1].val == "cgi_extension")
+	{
+		size_t	j = i + 1;
+		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
+		{
+			loc->cgiExtensions.push_back(_tokens[j].val);
+			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
+				j += 2;
+			else
+				break;
+		}
+		return j;
+	}
+	if (_tokens[i - 1].val == "upload_enable")
+		loc->upload = true;
+	if (_tokens[i - 1].val == "upload_store")
+		loc->uploadStore = _tokens[i + 1].val;
+	if (_tokens[i -1].val == "index")
+		loc->defaultPage = _tokens[i+1].val;
+	if (_tokens[i -1].val == "return")
+	{
+		loc->redirect = true;
+		loc->redirectCode = std::atoi(_tokens[i+1].val.c_str());
+		if (i+2 < _tokens.size())
+			loc->redirectURL = _tokens[i + 2].val;
+		return i + 2;
+	}
+	if (_tokens[i - 1].val == "autoindex" && _tokens[i + 1].val == "on")
+		loc->autoIndex = true;
+	return i + 1;
+}
+
+size_t ConfigFileParser::createLocation(size_t i)
+{
+	t_Location	tempLoc;
+	size_t		j = i;
 	
+	tempLoc.path = _tokens[i+1].val;
+	tempLoc.redirect = false;
+	tempLoc.upload = false;
+	tempLoc.autoIndex = false;
+	while (_tokens.size() > j && _tokens[j].type != BRACE_CLOSE && _tokens[j].type != END_OF_FILE)
+	{
+		if (_tokens[j].type == ASSIGN)
+		{
+			j = setLocationVal(j, &tempLoc);
+			j--;
+		}
+		j++;
+	}
+	_server.locations.push_back(tempLoc);
+	return (j - i);
+}
+
+// accepting multiple Ports on one interface map<string, vector<string>>
+void	ConfigFileParser::parseEndpoints()
+{
+	size_t	seperator = 0;
+	for (size_t i = 0; i < _server.listenInterfaces.size(); i++)
+	{
+		seperator = _server.listenInterfaces[i].find(':', 0);
+		if (seperator != std::string::npos)
+		{
+			std::string	s = _server.listenInterfaces[i];
+			std::string	interface;
+			std::string	port;
+
+			interface = s.substr(0, seperator);
+			port = s.substr(seperator + 1, s.size() - seperator -1);
+
+			std::map<std::string, std::vector<std::string> >::iterator it = _server.endpoints.find(interface);
+			if (it != _server.endpoints.end())
+			{
+				it->second.push_back(port);
+			}
+			else
+				_server.endpoints[interface].push_back(port);//  = port;
+		}
+	}
 }
 
 bool	ConfigFileParser::checkIdentifier(const std::string identifier)
@@ -221,17 +341,85 @@ void ConfigFileParser::setValue(const std::string id, size_t j)
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
 {
 	size_t	size;
+	char	suffix = 0;
 	std::stringstream ss(value);
+	ss >> size >> suffix;
 
-	ss >> size;
+	if (suffix == 'M' || suffix == 'm')
+		size *= 1024 * 1024;
+	else if (suffix == 'K' || suffix == 'k')
+		size *= 1024;
 	return size;
 }
 
 void ConfigFileParser::printServer()
 {
-	std::cout << _server.serverName << std::endl;
-	std::cout << _server.maxBodySize << std::endl;
-	for (size_t i = 0; i < _server.listenInterfaces.size(); i++)
-		std::cout << _server.listenInterfaces[i] << std::endl;
-}
+	std::cout << "\n\nSERVER DATA{" << std::endl;
+	std::cout << "name: "<< _server.serverName << std::endl;
+	std::cout << "max_body_size: " << _server.maxBodySize << std::endl;
+	std::map<std::string, std::vector<std::string> >::iterator itIP = _server.endpoints.begin();
+	std::map<std::string, std::vector<std::string> >::iterator itIPe = _server.endpoints.end();
+	std::cout << "Endpoints {\n";
+	while (itIP != itIPe)
+	{
+		std::cout << "\t[" << itIP->first << "] = ";
+		for (size_t i = 0; i < itIP->second.size(); i++)
+		{
+			std::cout << itIP->second[i] << ", ";
+		}
+		std::cout << std::endl;
+		itIP++;
+	}
+	std::cout << "}" << std::endl;
 
+	std::map<int, std::string>::iterator it = _server.errorPages.begin();
+	std::map<int, std::string>::iterator ite = _server.errorPages.end();
+	std::cout << "errorPages{\n";
+	while (it != ite)
+	{
+		std::cout << "\t[" << it->first << "] = " << it->second << std::endl;
+		it++;
+	}
+	std::cout << "}" << std::endl;
+	for (size_t i = 0; i < _server.locations.size(); i++)
+	{
+		std::cout << "location {" << std::endl;
+		std::cout << "\tpath= " << _server.locations[i].path << std::endl;
+		std::cout << "\troot= " << _server.locations[i].root << std::endl;
+		if (_server.locations[i].defaultPage.size() > 0)
+			std::cout << "\tindex= " << _server.locations[i].defaultPage << std::endl;
+		if (_server.locations[i].allowedMethods.size() > 0)
+		{
+			std::cout << "\tmethods= ";
+			for(size_t j = 0; j < _server.locations[i].allowedMethods.size(); j++)
+			{
+				if (j + 1 == _server.locations[i].allowedMethods.size())
+					std::cout << _server.locations[i].allowedMethods[j] << std::endl;
+				else
+					std::cout << _server.locations[i].allowedMethods[j] << ", ";
+			}
+		}
+		if (_server.locations[i].redirect)
+		{
+			std::cout << "\tredirectCode: " << _server.locations[i].redirectCode << std::endl;
+			std::cout << "\tredirectURL: " << _server.locations[i].redirectURL << std::endl;
+		}
+		if (_server.locations[i].upload)
+			std::cout << "\tuploadStorage: " << _server.locations[i].uploadStore << std::endl;
+		if (_server.locations[i].cgiExtensions.size() > 0)
+		{
+			std::cout << "\tcgiExtensions: ";
+			for (size_t j = 0; j < _server.locations[i].cgiExtensions.size(); j++)
+			{
+				if (j + 1 == _server.locations[i].cgiExtensions.size())
+					std::cout << _server.locations[i].cgiExtensions[j] << std::endl;
+				else
+					std::cout << _server.locations[i].cgiExtensions[j] << ", ";
+			}
+		}
+		if (_server.locations[i].autoIndex)
+			std::cout << "\tautoindex: " << "on" << std::endl;
+		std::cout<< "}" << std::endl;		
+	}
+	std::cout << "}" << std::endl;
+}

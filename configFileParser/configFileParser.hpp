@@ -14,8 +14,10 @@ enum e_TokenType
 	IDENTIFIER,
 	ASSIGN,
 	VALUE,
-	STR,
 	COMMA,
+	PATH_LOCATION,
+	NUMBER,
+	STR,
 	END_OF_FILE
 };
 
@@ -31,8 +33,11 @@ typedef struct s_Location
 	std::string		root;
 	bool			redirect;
 	std::string		redirectURL;
+	int				redirectCode;
 	bool			upload;
 	std::string		uploadStore;
+	bool			autoIndex; // directory listing
+	std::string		defaultPage;
 	std::vector<std::string>	allowedMethods;
 	std::vector<std::string>	cgiExtensions;
 }	t_Location;
@@ -44,6 +49,8 @@ typedef struct s_Server
 	std::vector<std::string>	listenInterfaces;
 	std::map<int, std::string>	errorPages;
 	std::vector<t_Location>		locations;
+
+	std::map<std::string, std::vector<std::string> >	endpoints;
 }	t_Server;
 
 class ConfigFileParser
@@ -64,19 +71,23 @@ class ConfigFileParser
 		std::string printTokenType(e_TokenType type);
 		void		adjustTokens();
 		void		printTokens();
-		
+		bool		isNbr(const std::string &s);
+
 		// PARSING
 		t_Server	_server;
 
 		void 	parseToDataStructure();
-		size_t	createServer(size_t i);
+		size_t	createServer(size_t *i);
 		// size_t	createLocation(size_t i);
 		bool	checkIdentifier(const std::string identifier);
 		void	setValue(const std::string id, size_t j);
 		void	printServer();
 		size_t	convertStrToSize(const std::string value);
 		
-		t_Location	createLocation(size_t i);
+		size_t	createLocation(size_t i);
+		size_t	setLocationVal(size_t i, t_Location *loc);
+
+		void	parseEndpoints();
 };
 
 /*
