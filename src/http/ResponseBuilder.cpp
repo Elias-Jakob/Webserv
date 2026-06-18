@@ -22,17 +22,7 @@ std::string ResponseBuilder::formatResponse(t_executionResult result)
 	std::string statusLine = "HTTP/1.1 " + result.statusCode + " " + result.statusPhrase + "\r\n";
 	// buildHeaders
 	std::string messageHeaders;
-
-	messageHeaders = "Content-Type: " + result.contentType + "\r\n";
-	// messageHeaders += "Content-Length: " + result.body.size() + "\r\n";
-	messageHeaders += "Date: " + getHttpDate() + "\r\n";
-	messageHeaders += "Server: webserv/1.0\r\n";
-	// messageHeaders += "Connection: close\r\n";
-	if (result.keep_alive)
-		messageHeaders+= "Connection: keep-alive\r\n";
-	else
-		messageHeaders += "Connection: close\r\n";
-	messageHeaders += "\r\n";
+	messageHeaders = setResponseHeaders(result);
 
 	resp = statusLine + messageHeaders + result.body + "\r\n";
 	return resp;
@@ -51,12 +41,34 @@ std::string	ResponseBuilder::buildErrorResponse(int errorCode)
 	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
 	response = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
 	body = generateErrorPage(statusCode, statusPhrase);
-	response += setResponseHeaders(body.size());
+	response += setErrorResponseHeaders(body.size());
 	response += body;
 	return response;
 }
 
-std::string ResponseBuilder::setResponseHeaders(size_t contentLength)
+std::string	ResponseBuilder::setResponseHeaders(t_executionResult &result)
+{
+	std::string	messageHeaders;
+
+	if (result.contentType.size() > 0)
+	{
+		std::stringstream ss;
+		ss << result.body.size();
+
+		messageHeaders = "Content-Type: " + result.contentType + "\r\n";
+		messageHeaders += "Content-Length: " + ss.str() + "\r\n";
+	}
+	messageHeaders += "Date: " + getHttpDate() + "\r\n";
+	messageHeaders += "Server: webserv/1.0\r\n";
+	if (result.keep_alive)
+		messageHeaders+= "Connection: keep-alive\r\n";
+	else
+		messageHeaders += "Connection: close\r\n";
+	messageHeaders += "\r\n";
+	return messageHeaders;
+}
+
+std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 {
 	std::string headers;
 	std::stringstream ss;
@@ -66,6 +78,7 @@ std::string ResponseBuilder::setResponseHeaders(size_t contentLength)
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
 	headers += "Content-Length: " + ss.str() + "\r\n";
+	// check if Connection should be closed.
 	headers += "Connection: close\r\n";
 	headers += "\r\n";
 	return headers;

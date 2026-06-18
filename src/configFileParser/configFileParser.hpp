@@ -60,6 +60,7 @@ class ConfigFileParser
 		~ConfigFileParser();
 
 		void parseFile(const std::string &filePath);
+		t_Server	getServerConfigData();
 
 	private:
 		// TOKENIZATION

@@ -15,7 +15,8 @@
 class ResponseBuilder
 {
 	private:
-		std::string setResponseHeaders(size_t contentLength);
+		std::string setErrorResponseHeaders(size_t contentLength);
+		std::string setResponseHeaders(t_executionResult &result);
 		std::string generateErrorPage(const std::string &code, const std::string &phrase);
 
 	public:
