@@ -55,4 +55,8 @@ class Server
 		void	handleClientWrite(int);
 };
 
+// DEBUG HELPERS
+void	printSocketInfo(int sockfd);
+//
+
 #endif // !SERVER_HPP

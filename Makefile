@@ -12,6 +12,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/MultipartParser.cpp \
 		src/server/Server.cpp \
 		src/server/ServerEventLoop.cpp \
+		src/server/DebugHelper.cpp \
 		src/main.cpp
 
 OBJDIR = obj

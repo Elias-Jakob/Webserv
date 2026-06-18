@@ -19,10 +19,12 @@ void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, Respo
 	fd = accept(listenFd, NULL, NULL);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
+	std::cout << "New client connected... socket file descriptor = " << fd << " ";
+	printSocketInfo(fd);
 	fcntl(fd, F_SETFL, O_NONBLOCK); // make it nonblocking
 
 	// Initialize client connection directly in map (avoid copy issues)
-	this->clients[fd] = ClientConnection();
+	//this->clients[fd] = ClientConnection();
 	this->clients[fd].fd = fd;
 	this->clients[fd].state = READING_REQUEST;
 	this->clients[fd].request = new HttpRequest();
@@ -41,7 +43,6 @@ void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, Respo
 void	Server::handleClientRead(int clientFd)
 {
 	struct epoll_event	epEvent;
-
 
 	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
 	char buffer[4096];
@@ -126,6 +127,7 @@ void	Server::handleClientWrite(int clientFd)
 	// Clean up: close connection and remove from tracking
 	if (clients[clientFd].keep_alive == false)
 	{
+		std::cout << "Client connection is not set to keep-alive, closing socket..." << std::cout;
 		close(clientFd);
 		clients.erase(clientFd);  // This will call destructor and free request/response
 		return;
