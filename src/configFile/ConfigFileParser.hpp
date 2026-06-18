@@ -1,9 +1,11 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <sstream>
+#ifndef CONFIG_FILE_PARSER_HPP
+# define CONFIG_FILE_PARSER_HPP
+# include <iostream>
+# include <fstream>
+# include <vector>
+# include <map>
+# include <algorithm>
+# include <sstream>
 
 enum e_TokenType
 {
@@ -91,6 +93,7 @@ class ConfigFileParser
 		void	parseEndpoints();
 };
 
+#endif
 /*
 	TOKENS:
 		KEYWORD("server"),
