@@ -60,10 +60,11 @@ std::string	ResponseBuilder::setResponseHeaders(t_executionResult &result)
 	}
 	messageHeaders += "Date: " + getHttpDate() + "\r\n";
 	messageHeaders += "Server: webserv/1.0\r\n";
-	if (result.keep_alive)
-		messageHeaders+= "Connection: keep-alive\r\n";
-	else
-		messageHeaders += "Connection: close\r\n";
+	messageHeaders+= "Connection: keep-alive\r\n";
+	// if (result.keep_alive)
+	// 	messageHeaders+= "Connection: keep-alive\r\n";
+	// else
+	// 	messageHeaders += "Connection: close\r\n";
 	messageHeaders += "\r\n";
 	return messageHeaders;
 }

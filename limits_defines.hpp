@@ -9,8 +9,9 @@
 #define MAX_URI_LENGTH 1024
 
 // Network & Connction
+# define EPOLL_MAX_EVENTS 10
 #define MAX_CONNECTIONS 32
-#define KEEP_ALIVE_TIMEOUT 10
+# define KEEP_ALIVE_TIMEOUT 30
 #define READ_TIMEOUT 10
 #define WRTIE_TIMEOUT 10
 

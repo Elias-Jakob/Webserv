@@ -12,6 +12,9 @@
 # include <stdexcept>
 # include <cerrno>
 # include <cstring> // for std::memset
+// for std::find
+# include <algorithm>
+//
 
 // POSIX
 # include <sys/socket.h>
@@ -48,15 +51,14 @@ class Server
 		int	epollFd;
 
 		void	initListenSockets();
-		bool	isListenSock(int fd);
 		void	eventLoop();
 		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
 		void	handleClientRead(int);
 		void	handleClientWrite(int);
+		void	removeInactiveClients();
 };
 
 // DEBUG HELPERS
-void	printSocketInfo(int sockfd);
 //
 
 #endif // !SERVER_HPP

@@ -14,12 +14,13 @@
 ClientConnection::ClientConnection() : 
 	fd(-1),
 	state(READING_REQUEST),
-	bytes_sent(0),
+	bytesSent(0),
 	request(NULL),
 	_currentMethod(NULL),
 	executor(NULL),
 	responseBuilder(NULL),
-	keep_alive(false)
+	keep_alive(false),
+	inactiveTime(0)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }
@@ -87,7 +88,7 @@ void ClientConnection::cleanUpClient()
 	delete request;
 	request = new HttpRequest();
 	response_buffer = "";
-	bytes_sent = 0;
+	bytesSent = 0;
 }
 
 // =========================================================================
