@@ -9,12 +9,13 @@ void	sigIntHandler(int sig)
 
 int	main(int argc, char *argv[])
 {
-	(void)argc;
-	(void)argv;
-	// TODO: config file parsing
-	Server	serv("127.0.0.1", "8080"); // server constructor will take the config class as argument
-	
+	ConfigFileParser	conf;
+
 	try {
+		if (argc != 2)
+			throw std::invalid_argument("Error: wrong number of arguments...\n"
+				"Expected usage: ./webserv <webserver.conf>");
+		Server	serv(conf.parseFile(argv[1]));
 		// TODO: signal
 		if (signal(SIGINT, &sigIntHandler) == SIG_ERR)
 			throw std::runtime_error(std::strerror(errno));

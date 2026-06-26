@@ -1,9 +1,10 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include "Config.hpp"
+# include "ConfigFileParser.hpp"
 # include "../src/http/ClientConnection.hpp"
 #include "../src/http/MethodExecuter.hpp"
+# include "SyscallError.hpp"
 // CPP
 # include <iostream>
 # include <string>
@@ -11,7 +12,7 @@
 # include <map>
 # include <stdexcept>
 # include <cerrno>
-# include <cstring> // for std::memset
+# include <cstring>
 // for std::find
 # include <algorithm>
 //
@@ -30,9 +31,7 @@ extern sig_atomic_t	sigFlag;
 class Server
 {
 	public:
-		// TODO: repalce constructor arguments with config class
-		// Server(const Config	config);
-		Server(const char *interface, const char *port);
+		Server(const t_Configs &configs);
 		~Server();
 
 		void	serverStartup();
@@ -41,16 +40,13 @@ class Server
 		Server(const Server &other);
 		Server	&operator=(const Server &other);
 
-		// Config	config;
-		// TODO: remove tmp
-		const char	*interface;
-		const char	*port;
-		//
+		const t_Configs	&configs;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
 		int	epollFd;
 
-		void	initListenSockets();
+		void	setupSocketAddr(struct addrinfo *res, int &fd);
+		bool	initListenSockets();
 		void	eventLoop();
 		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
 		void	handleClientRead(int);

@@ -20,7 +20,8 @@ void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, Respo
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
 	std::cout << "New client connected... socket file descriptor = " << fd << std::endl;
-	fcntl(fd, F_SETFL, O_NONBLOCK); // make it nonblocking
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) // make it nonblocking
+		throw std::runtime_error(std::strerror(errno));
 
 	// Initialize client connection directly in map (avoid copy issues)
 	//this->clients[fd] = ClientConnection();

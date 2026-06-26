@@ -1,7 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(const char *interface, const char *port) :
-	interface(interface), port(port), epollFd(-1)
+Server::Server(const t_Configs &configs) : configs(configs)
 {}
 
 Server::~Server()
@@ -9,15 +8,44 @@ Server::~Server()
 	std::cout << "Destructing server..." << std::endl;
 	for (std::vector<int>::iterator	it = this->listenSockets.begin();
 			it != this->listenSockets.end(); ++it)
-		close(*it);
+		if (*it != -1) close(*it);
 	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 			it != this->clients.end(); ++it)
-		close(it->first);
+		if (it->first != -1) close(it->first);
 	if (this->epollFd != -1)
 		close(this->epollFd);
 }
 
-void	Server::initListenSockets()
+void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
+{
+	fd = -1;
+	for (struct addrinfo	*cur = res; cur != NULL; cur = cur->ai_next) {
+		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (fd == -1) {
+			if (errno == EAFNOSUPPORT || errno == EPROTONOSUPPORT) // || errno == EPROTOYTPE)
+				continue;
+			throw std::runtime_error(std::strerror(errno));
+		}
+		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+			throw std::runtime_error(std::strerror(errno));
+		// TODO: setsockopt
+		int opt = 1;
+		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+			throw std::runtime_error(std::strerror(errno));
+		//
+		if (bind(fd, res->ai_addr, res->ai_addrlen) == 0)
+			break ;
+		close(fd);
+		fd = -1;
+	}
+	if (fd == -1 || listen(fd, SOMAXCONN) == -1)
+		throw std::runtime_error(std::strerror(errno));
+	freeaddrinfo(res);
+	res = NULL;
+}
+
+// TESTING: todo
+bool	Server::initListenSockets()
 {
 	struct addrinfo	hints, *res;
 	int	gaiErr, fd;
@@ -35,39 +63,33 @@ void	Server::initListenSockets()
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
-		gaiErr = getaddrinfo(this->interface, this->port, &hints, &res);
-		if (gaiErr != 0)
-			throw std::runtime_error(gai_strerror(gaiErr));
-		// for (struct addrinfo	*cur = data.addrinfoRes; cur != NULL; cur = cur->ai_next)
-		// 	std::cout << "ai_canonname: " << cur->ai_canonname << std::endl;
-		// arguments are equivalent to AF_INET, SOCK_STREAM, IPPROTO_TCP
-		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-		if (fd == -1) {
-			freeaddrinfo(res);
-			throw std::runtime_error(std::strerror(errno));
+	for (t_Endpoints::const_iterator	interface = this->configs.endpoints.begin();
+			interface != this->configs.endpoints.end(); ++interface) {
+		for (std::vector<std::string>::const_iterator	port = interface->second.begin();
+				port != interface->second.end(); ++port) {
+			res = NULL;
+			gaiErr = getaddrinfo(interface->first.c_str(), (*port).c_str(), &hints, &res);
+			try {
+				if (gaiErr != 0)
+					throw std::runtime_error(gai_strerror(gaiErr));
+				this->setupSocketAddr(res, fd);
+				epEvent.data.fd = fd;
+				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
+					throw std::runtime_error(std::strerror(errno));
+				std::cout << "Listening endpoint " << interface->first << ":" << *port
+					<< " has been sucessfully set up" << std::endl;
+				this->listenSockets.push_back(fd);
+			} catch (const std::runtime_error	&e) {
+				std::cerr << "Failed to set up listening endpoint " << interface->first
+					<< ":" << *port << std::endl;
+				if (res != NULL)
+				freeaddrinfo(res);
+				if (fd != -1)
+					close(fd);
+			}
 		}
-		fcntl(fd, F_SETFL, O_NONBLOCK); // make it nonblocking
-		this->listenSockets.push_back(fd);
-		// TODO: use setsockopt here to avoid the error: Address already in use
-		// TODO: setsockopt
-		int opt = 1;
-		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
-			freeaddrinfo(res);
-			throw std::runtime_error(std::strerror(errno));
-		}
-		//
-
-		if (bind(fd, res->ai_addr, res->ai_addrlen) == -1) {
-			freeaddrinfo(res);
-			throw std::runtime_error(std::strerror(errno));
-		}
-		freeaddrinfo(res);
-		// TODO: backlog
-		if (listen(fd, 10) == -1)
-			throw std::runtime_error(std::strerror(errno));
-		epEvent.data.fd = fd;
-		if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-			throw std::runtime_error(std::strerror(errno));
+	}
+	return (this->listenSockets.size() > 0);
 }
 
 void	Server::serverStartup()
@@ -75,6 +97,7 @@ void	Server::serverStartup()
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1)
 		throw std::runtime_error(std::strerror(errno));
-	this->initListenSockets();
+	if (!this->initListenSockets())
+		throw std::runtime_error("Failed to set up any listening sockets");
 	this->eventLoop();
 }
