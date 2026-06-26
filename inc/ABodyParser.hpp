@@ -2,7 +2,7 @@
 # define A_BODY_PARSER_HPP
 # include <iostream>
 # include <map>
-# include "../../structs.h"
+# include "structs.h"
 
 class ABodyParser
 {

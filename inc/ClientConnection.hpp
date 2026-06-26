@@ -3,7 +3,7 @@
 # include "HttpRequest.hpp"
 # include "MethodExecuter.hpp"
 # include "ResponseBuilder.hpp"
-# include "../../structs.h"
+# include "structs.h"
 
 enum ConnectionState
 {

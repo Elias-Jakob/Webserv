@@ -3,9 +3,9 @@
 # include <iostream>
 # include <map>
 # include <vector>
-# include "../../structs.h"
-# include "../http/HttpStatus.hpp"
-# include "../http/HttpRequest.hpp"
+# include "structs.h"
+# include "HttpStatus.hpp"
+# include "HttpRequest.hpp"
 
 class AMethod
 {

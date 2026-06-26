@@ -2,8 +2,8 @@
 # define SERVER_HPP
 
 # include "ConfigFileParser.hpp"
-# include "../src/http/ClientConnection.hpp"
-#include "../src/http/MethodExecuter.hpp"
+# include "ClientConnection.hpp"
+# include "MethodExecuter.hpp"
 # include "SyscallError.hpp"
 // CPP
 # include <iostream>

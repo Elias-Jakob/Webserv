@@ -1,7 +1,7 @@
 #ifndef RESPONSE_BUILDER_HPP
 # define RESPONSE_BUILDER_HPP
 # include <iostream>
-# include "../../structs.h"
+# include "structs.h"
 # include <map>
 
 # include <iostream>

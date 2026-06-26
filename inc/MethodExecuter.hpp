@@ -9,14 +9,14 @@
 # include <sstream>
 # include <vector>
 # include "HttpRequest.hpp"
-# include "../methods/AMethod.hpp"
-# include "../methods/Get.hpp"
-# include "../methods/Post.hpp"
-# include "../methods/Delete.hpp"
-# include "../parsers/ABodyParser.hpp"
-# include "../parsers/FormParser.hpp"
-# include "../parsers/MultipartParser.hpp"
-# include "../../structs.h"
+# include "AMethod.hpp"
+# include "Get.hpp"
+# include "Post.hpp"
+# include "Delete.hpp"
+# include "ABodyParser.hpp"
+# include "FormParser.hpp"
+# include "MultipartParser.hpp"
+# include "structs.h"
 
 class MethodExecuter
 {

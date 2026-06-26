@@ -3,8 +3,8 @@
 # include "AMethod.hpp"
 # include <fstream>
 # include <sys/stat.h>
-# include "../parsers/FormParser.hpp"
-# include "../parsers/MultipartParser.hpp"
+# include "FormParser.hpp"
+# include "MultipartParser.hpp"
 
 #include <iostream>
 // #include <fstream>
