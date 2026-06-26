@@ -7,12 +7,14 @@
 # include <unistd.h>
 # include <limits.h>
 # include <stdlib.h>
+# include "../config/ConfigFileParser.hpp"
 
 class Get : public AMethod
 {
 	public:
 		Get();
 		Get(std::string name);
+		Get(std::string name, t_Location *location);
 		~Get();
 
 		bool execute();

@@ -10,6 +10,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/ABodyParser.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
+		src/config/ConfigFileParser.cpp \
 		server.cpp
 
 OBJDIR = obj

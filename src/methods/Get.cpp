@@ -11,6 +11,13 @@ Get::Get(std::string name) : AMethod()
 	std::cout << "GET Method constructed" << std::endl;
 }
 
+Get::Get(std::string name, t_Location *location) : AMethod()
+{
+	_method = name;
+	_location = location;
+	std::cout << "GET Method with _location constructed" << std::endl;
+}
+
 Get::~Get()
 {}
 
@@ -18,6 +25,8 @@ bool Get::execute()
 {
 	struct stat fileInfo;
 
+	// _resource = "." + _resource; // already added . in AMethod::setResource() for the relative path.
+	std::cout << "GET() -> resource: " << _resource << std::endl;
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
 		HttpStatus::setStatus(404, _code, _phrase);

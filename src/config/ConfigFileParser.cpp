@@ -22,7 +22,7 @@ void	ConfigFileParser::parseFile(const std::string &filePath)
 	tokenize(str);
 	adjustTokens();
 	// printTokens();
-	// validate_tokens()
+	// validate_tokens();
 	parseToDataStructure();
 	parseEndpoints();
 	printServer();

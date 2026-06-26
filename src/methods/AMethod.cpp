@@ -1,11 +1,11 @@
 #include "AMethod.hpp"
 
-AMethod::AMethod()
+AMethod::AMethod(): _location(NULL)
 {
 	std::cout << "AMethod constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _method(name)
+AMethod::AMethod(std::string name): _method(name), _location(NULL)
 {
 	std::cout << "AMethod constructed " << _method << std::endl;
 }
@@ -32,7 +32,13 @@ bool    AMethod::setRequiredData(
 
 void AMethod::setResource(std::string &reqURI, std::string &host)
 {
-    if (_method == "DELETE")
+    if (_location != NULL)
+    {
+        std::cout << "setting _resource from _location->root" << std::endl;
+        _resource = "." + _location->root;
+        std::cout << "AMethod::setResource(), _resource = " << _location->root << std::endl;
+    }
+    else if (_method == "DELETE")
         _resource = "./www" + reqURI;
 	else if (host != ".")
 		_resource = "." + reqURI;

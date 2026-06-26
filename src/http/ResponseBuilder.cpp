@@ -9,6 +9,13 @@ ResponseBuilder::ResponseBuilder()
 ResponseBuilder::~ResponseBuilder()
 {}
 
+bool ResponseBuilder::setConfig(t_Server *serverConfig)
+{
+	_serverConfig = serverConfig;
+	std::cout << "ResponseBuilder::setConfig() : server_name = " << _serverConfig->serverName << std::endl;
+	return true;
+}
+
 /**
 	* @brief builds the response string, which will be send back to client.
 	* @param result is the result of the executed Method.

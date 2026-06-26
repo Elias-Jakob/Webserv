@@ -21,5 +21,5 @@
 
 #include "src/http/MethodExecuter.hpp"
 #include "src/http/ClientConnection.hpp"
-
+#include "src/config/ConfigFileParser.hpp"
 #endif

@@ -6,6 +6,7 @@
 # include "../../structs.h"
 # include "../http/HttpStatus.hpp"
 # include "../http/HttpRequest.hpp"
+# include "../config/ConfigFileParser.hpp"
 
 class AMethod
 {
@@ -26,10 +27,13 @@ class AMethod
 		std::string	_contentType;
 		s_ContentData	_contentData;
 		std::map<std::string, s_FormField>	_parsedBody;
-
+		t_Location	*_location;
+	
 	public:
 		AMethod();
 		AMethod(std::string name);
+		AMethod(std::string name, t_Location *location);
+
 		virtual ~AMethod();
 
 		bool	setRequiredData(

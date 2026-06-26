@@ -72,6 +72,11 @@ int HttpRequest::getErrorCode()
 	return _errorCode;
 }
 
+std::string &HttpRequest::getURI()
+{
+	return _requestLine.requestURI;
+}
+
 // =========================================================================
 // Public Methods
 // =========================================================================
@@ -89,9 +94,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 	std::cout << "\33[33m==========\n" 
 		<< "HTTP_REQUEST received..." << std::endl;
 	std::cout << "parsing request..." << std::endl;
-	std::cout << partialMessage << std::endl;
+	// std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
-	std::cout << _state << std::endl;
+	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -123,7 +128,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 				}
 				else
 					std::cout << "NO BODY PARSING NEEDED" << std::endl; //
-				printRequest();
+				// printRequest();
 				_state = PARSING_COMPLETE;
 				break;
 			case PARSING_ERROR:
@@ -184,7 +189,7 @@ bool	HttpRequest::parseRequestLine()
 		return setErrorCode(414);
     }
     size_t posSP1 = reqLine.find(' '); // Find first space (after METHOD)
-	std::cout << "SP1: " << posSP1 << std::endl;
+	// std::cout << "SP1: " << posSP1 << std::endl;
     if (posSP1 == std::string::npos)
     {
         _state = PARSING_ERROR;
@@ -201,7 +206,7 @@ bool	HttpRequest::parseRequestLine()
 	_requestLine.version = reqLine.substr(posSP2 + 1);
 
 	_current_pos = posCRLF + 2;  // Skip \r\n
-	std::cout << "current_pos " << _current_pos << std::endl; 
+	// std::cout << "current_pos " << _current_pos << std::endl; 
 	if (foundEndOfRequest())
 	{
 		std::cout << "request ends after request-line" << std::endl;

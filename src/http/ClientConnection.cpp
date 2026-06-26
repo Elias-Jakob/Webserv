@@ -60,14 +60,18 @@ void ClientConnection::processRequest()
 	else
 	{
 		std::cout << "executing method" << std::endl;
-		// (executor->isValidMethod(request->getMethod()))
-		_currentMethod = executor->createMethod(request->getMethod());
-
-		t_executionResult result = executor->execute(_currentMethod, request);
-		response_buffer = responseBuilder->formatResponse(result);
-
-		keep_alive = request->keepConnectionAlive();
-		result.keep_alive = keep_alive;
+		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
+		if (_currentMethod != NULL)
+		{
+			t_executionResult result = executor->execute(_currentMethod, request);
+			response_buffer = responseBuilder->formatResponse(result);
+			keep_alive = request->keepConnectionAlive();
+			result.keep_alive = keep_alive;
+		}
+		else
+		{
+			response_buffer = responseBuilder->buildErrorResponse(405);
+		}
 	}
 	state = SENDING_RESPONSE;
 	

@@ -90,7 +90,8 @@ class HttpRequest
 		std::map<std::string, s_FormField>	&getParsedBody();
 		t_ContentData	&getContentData();
 		std::string		&getMethod();
-		int	getErrorCode();
+		int				getErrorCode();
+		std::string		&getURI();
 
 		// OUTPUT
 		void	printRequest(void);

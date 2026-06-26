@@ -5,8 +5,21 @@ void handleNewConnection(int listen_fd, std::vector<struct pollfd> &fds, std::ma
 void handleClientRead(int client_fd, std::vector<struct pollfd> &fds, size_t index, std::map<int, ClientConnection> &clients);
 void handleClientWrite(int client_fd, std::vector<struct pollfd> &fds, size_t index, std::map<int, ClientConnection> &clients);
 
-int main(void)
+int main(int argc, char *argv[])
 {
+// ConfigFileParser
+	if (argc != 2)
+		std::cout << "No configuration file provided" << std::endl;
+	ConfigFileParser configFile;
+	configFile.parseFile(argv[1]);
+	t_Server	serverConfig;
+	serverConfig = configFile.getServerConfigData();
+	MethodExecuter	methodExecuter;
+	ResponseBuilder	responseBuilder;
+	methodExecuter.setConfig(&serverConfig);
+	responseBuilder.setConfig(&serverConfig);
+	std::cout << "ConfigFile server_name = " << serverConfig.serverName << std::endl;
+
 	srand(rand());
 // getaddr()
 	struct addrinfo	*res;
@@ -60,8 +73,6 @@ int main(void)
 	pfd.revents = 0;
 	fds.push_back(pfd);
 	std::map<int, ClientConnection> clients;
-	MethodExecuter	methodExecuter;
-	ResponseBuilder	responseBuilder;
 	while (1)
 	{
 		int	ready = poll(&fds[0], fds.size(), -1); // wait for activity on any socket
