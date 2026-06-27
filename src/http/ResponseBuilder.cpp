@@ -23,38 +23,32 @@ bool ResponseBuilder::setConfig(t_Server *serverConfig)
 */
 std::string ResponseBuilder::formatResponse(t_executionResult result)
 {
-	std::string	resp;
+	std::cout << "ResponseBuilder::formatResponse()" << std::endl;
+	std::string	response;
+	std::string statusLine;
+	std::string	messageHeaders;
 
-	// build statusLine
-	std::string statusLine = "HTTP/1.1 " + result.statusCode + " " + result.statusPhrase + "\r\n";
-	// buildHeaders
-	std::string messageHeaders;
-	messageHeaders = setResponseHeaders(result);
+	statusLine = buildStatusLine(&result);
+	// std::string statusLine = "HTTP/1.1 " + result.statusCode + " " + result.statusPhrase + "\r\n";
+	messageHeaders = buildResponseHeaders(result);
 
-	resp = statusLine + messageHeaders + result.body + "\r\n";
-	return resp;
-}
-
-/**
-	* @brief builds an error message-response based on the happend error.
-*/
-std::string	ResponseBuilder::buildErrorResponse(int errorCode)
-{
-	std::string response;
-	std::string	statusCode;
-	std::string	statusPhrase;
-	std::string body;
-
-	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
-	response = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
-	body = generateErrorPage(statusCode, statusPhrase);
-	response += setErrorResponseHeaders(body.size());
-	response += body;
+	response = buildFullResponse(statusLine, messageHeaders, result.body);
+	// resp = statusLine + messageHeaders + result.body + "\r\n";
 	return response;
 }
 
-std::string	ResponseBuilder::setResponseHeaders(t_executionResult &result)
+std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
 {
+	std::cout << "ResponseBuilder::buildStatusLine()" << std::endl;
+	std::string statusLine;
+
+	statusLine = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
+	return statusLine;
+}
+
+std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
+{
+	std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
 	std::string	messageHeaders;
 
 	if (result.contentType.size() > 0)
@@ -75,8 +69,40 @@ std::string	ResponseBuilder::setResponseHeaders(t_executionResult &result)
 	return messageHeaders;
 }
 
+std::string ResponseBuilder::buildFullResponse(const std::string &statusLine,
+										const std::string &messageHeaders,
+										const std::string &resultBody)
+{
+	std::cout << "ResponseBuilder::buildFullResponse()" << std::endl;
+	std::string	response;
+
+	response = statusLine + messageHeaders + resultBody + "\r\n";
+	return response;
+}
+/**
+	* @brief builds an error message-response based on the happend error.
+*/
+std::string	ResponseBuilder::buildErrorResponse(int errorCode)
+{
+	std::cout << "ResponseBuilder::buildErrorResponse()" << std::endl;
+	std::string response;
+	std::string	statusCode;
+	std::string	statusPhrase;
+	std::string body;
+
+	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
+	response = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
+	body = generateErrorPage(statusCode, statusPhrase);
+	response += setErrorResponseHeaders(body.size());
+	response += body;
+	return response;
+}
+
+
+
 std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 {
+	std::cout << "ResponseBuilder::setErrorResponseHeaders()" << std::endl;
 	std::string headers;
 	std::stringstream ss;
 	ss << contentLength;
@@ -93,7 +119,9 @@ std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 
 std::string ResponseBuilder::generateErrorPage(const std::string &code, const std::string &phrase)
 {
+	std::cout << "ResponseBuilder::generateErrorPage()" << std::endl;
 	std::string body;
+
 	body = "<!DOCTYPE html>\n";
     body += "<html>\n<head>\n";
     body += "<title>" + code + " " + phrase + "</title>\n";

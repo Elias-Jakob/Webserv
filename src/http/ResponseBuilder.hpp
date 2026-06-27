@@ -26,7 +26,11 @@ class ResponseBuilder
 	private:
 		t_Server	*_serverConfig;
 		std::string setErrorResponseHeaders(size_t contentLength);
-		std::string setResponseHeaders(t_executionResult &result);
+		std::string buildStatusLine(t_executionResult *result);
+		std::string buildResponseHeaders(t_executionResult &result);
+		std::string buildFullResponse(const std::string &statusLine,
+										const std::string &messageHeaders,
+										const std::string &resultBody);
 		std::string generateErrorPage(const std::string &code, const std::string &phrase);
 };
 

@@ -43,7 +43,8 @@ class AMethod
                         std::map<std::string, s_FormField> &parsedResult,
                         s_ContentData &contentData);
 
-		void	setResource(std::string &reqURI, std::string &host);
+		bool    setRequiredData(HttpRequest *req, const std::string modifiedURI);
+		void	setResource(const std::string &modifiedURI);
 		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
 		void	setBody(std::map<std::string, s_FormField> &parsedBody);
 		void	setContentData(s_ContentData contentData);

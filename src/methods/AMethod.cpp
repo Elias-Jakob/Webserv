@@ -2,12 +2,12 @@
 
 AMethod::AMethod(): _location(NULL)
 {
-	std::cout << "AMethod constructed" << std::endl;
+	std::cout << "AMethod::AMethod() -> default constructed" << std::endl;
 }
 
 AMethod::AMethod(std::string name): _method(name), _location(NULL)
 {
-	std::cout << "AMethod constructed " << _method << std::endl;
+	std::cout << "AMethod::AMethod() -> parameterized constructed " << _method << std::endl;
 }
 
 AMethod::~AMethod(){}
@@ -15,49 +15,42 @@ AMethod::~AMethod(){}
 /**
     * sets the needed data for methods
 **/
-bool    AMethod::setRequiredData(
-                        s_RequestLine &reqLine,
-                        std::map<std::string,
-                        std::vector<std::string> > &reqHeads,
-                        std::map<std::string, s_FormField> &parsedResult,
-                        s_ContentData &contentData)
+bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI)
 {
-    std::cout << "setting data for Method..." << std::endl;
-    setResource(reqLine.requestURI, reqHeads["Host"][0]);
-    setHeaders(reqHeads);
-    setBody(parsedResult);
-    setContentData(contentData);
-    return true;
+	std::cout << "AMethod::setRequiredData()" << std::endl;
+
+	setHeaders(req->getRequestHeaders());
+	setBody(req->getParsedBody());
+	setContentData(req->getContentData());
+	setResource(modifiedURI);
+
+	// std::cout << "\tresource = " << _resource << ", modifiedURI = " << modifiedURI << std::endl;
+
+	return true;
 }
 
-void AMethod::setResource(std::string &reqURI, std::string &host)
+/**
+	* @brief Sets the Identified Resource
+*/
+void	AMethod::setResource(const std::string &modifiedURI)
 {
-    if (_location != NULL)
-    {
-        std::cout << "setting _resource from _location->root" << std::endl;
-        _resource = "." + _location->root;
-        std::cout << "AMethod::setResource(), _resource = " << _location->root << std::endl;
-    }
-    else if (_method == "DELETE")
-        _resource = "./www" + reqURI;
-	else if (host != ".")
-		_resource = "." + reqURI;
-	// std::cout << "setResource -> " << _resource << std::endl;
+	// std::cout << "AMethod::setResource()" << std::endl;
+	_resource = "." + modifiedURI;
 }
 
-void AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads)
+void    AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads)
 {
 	_headers = heads;
     // std::cout << "setHeaders..." << std::endl;
 }
 
-void AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
+void    AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
 {
     _parsedBody = parsedBody;
     // std::cout << "setBody..." << std::endl;
 }
 
-void AMethod::setContentData(s_ContentData contentData)
+void    AMethod::setContentData(s_ContentData contentData)
 {
     _contentData = contentData;
 }

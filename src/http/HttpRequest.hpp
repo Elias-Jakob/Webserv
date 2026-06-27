@@ -55,7 +55,7 @@ class HttpRequest
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		bool	setErrorCode(int code);
-		bool	isValidMethod();
+		bool	isImplementedMethod();
 		bool	isHttpVersionSupported();
 		bool	foundEndOfRequest();
 
@@ -82,16 +82,20 @@ class HttpRequest
 		bool 	validRequest();
 
 		// GETTERS
-		s_RequestLine	&getRequestLine();
+		s_RequestLine						&getRequestLine();
 		std::map<
 			std::string,
-			std::vector<std::string> >	&getRequestHeaders();
-		std::string		&getRequestBody();
+			std::vector<std::string> >		&getRequestHeaders();
+		std::string							&getRequestBody();
 		std::map<std::string, s_FormField>	&getParsedBody();
-		t_ContentData	&getContentData();
-		std::string		&getMethod();
-		int				getErrorCode();
-		std::string		&getURI();
+		t_ContentData						&getContentData();
+		std::string							&getMethod();
+		int									getErrorCode();
+		std::string							&getURI();
+
+		// SETTERS
+		// function to set the identifiedResource ("." + requestURI)
+		// void			setRequestURI(const std::string modifiedURI);
 
 		// OUTPUT
 		void	printRequest(void);

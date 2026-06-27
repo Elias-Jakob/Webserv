@@ -50,8 +50,8 @@ ClientConnection::~ClientConnection()
 */
 void ClientConnection::processRequest()
 {
+	std::cout << "ClientConnection::processRequest()" << std::endl;
 	request->validRequest();
-	std::cout << "error: " << request->getErrorCode() << std::endl;
 	if (request->getErrorCode() != 0)
 	{
 		std::cout << "ERROR occured: " << request->getErrorCode() << std::endl;
@@ -59,11 +59,14 @@ void ClientConnection::processRequest()
 	}
 	else
 	{
-		std::cout << "executing method" << std::endl;
+			std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
+			std::cout << "==========* EXECUTING METHOD *==========" << std::endl;
 		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
 		if (_currentMethod != NULL)
 		{
 			t_executionResult result = executor->execute(_currentMethod, request);
+			std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
+			std::cout << "==========* BUILDING RESPONSE * ==========" << std::endl;
 			response_buffer = responseBuilder->formatResponse(result);
 			keep_alive = request->keepConnectionAlive();
 			result.keep_alive = keep_alive;
@@ -73,6 +76,7 @@ void ClientConnection::processRequest()
 			response_buffer = responseBuilder->buildErrorResponse(405);
 		}
 	}
+	std::cout << "==========* BUILT RESPONSE *==========" << std::endl;
 	state = SENDING_RESPONSE;
 	
 	if (_currentMethod)

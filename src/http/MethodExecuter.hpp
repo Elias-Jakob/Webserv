@@ -25,21 +25,25 @@ class MethodExecuter
 		MethodExecuter();
 		~MethodExecuter();
 
-		bool				isValidMethod(const std::string &methodName);
+		bool				isImplementedMethod(const std::string &methodName);
 		AMethod				*createMethod(const std::string &methodName, const std::string &path);
 		t_executionResult	execute(AMethod *method, HttpRequest *request);
 		bool				setConfig(t_Server *serverConfig);
 		t_Location			*availableLocation(const std::string &path);
+		std::string			modifyRequestURI(HttpRequest *req);
 
 	private:
 		t_Server	*_serverConfig;
+		std::map<std::string, std::string>	_rootedLocations;
 
 		static AMethod	*createGet(std::string name);
 		static AMethod	*createPost(std::string name);
 		static AMethod	*createDelete(std::string name);
 		static AMethod	*createGet(std::string name, t_Location *locationObj);
 		
-		bool	isAllowedMethodInLocation(t_Location *location, const std::string &method);
+		bool	isAllowedMethod(t_Location *location, const std::string &method);
+		std::vector<std::string> splitPath(const std::string &path);
+		std::vector<std::string> splitPathDir(const std::string &path);
 };
 
 #endif

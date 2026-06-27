@@ -25,7 +25,7 @@ void	ConfigFileParser::parseFile(const std::string &filePath)
 	// validate_tokens();
 	parseToDataStructure();
 	parseEndpoints();
-	printServer();
+	// printServer();
 }
 
 void ConfigFileParser::tokenize(const std::string &input)

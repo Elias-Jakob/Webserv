@@ -68,7 +68,7 @@ std::string &HttpRequest::getMethod()
 
 int HttpRequest::getErrorCode()
 {
-	std::cout << "errorCode: " << _errorCode << std::endl;
+	std::cout << "HttpRequest::getErrorCode() => " << _errorCode << std::endl;
 	return _errorCode;
 }
 
@@ -92,8 +92,9 @@ std::string &HttpRequest::getURI()
 bool	HttpRequest::parseRequest(const std::string &partialMessage)
 {
 	std::cout << "\33[33m==========\n" 
-		<< "HTTP_REQUEST received..." << std::endl;
-	std::cout << "parsing request..." << std::endl;
+		<< "HTTP_REQUEST received...\n" << std::endl;
+	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
+	std::cout << "HttpRequest::parseRequest()" << std::endl;
 	// std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
 	// std::cout << _state << std::endl;
@@ -116,7 +117,6 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
-					std::cout << "SHOULD PARSE BODY HERE" << std::endl;
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -126,8 +126,8 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 							std::cout << "_parsedBody returned something..." << std::endl;
 					}
 				}
-				else
-					std::cout << "NO BODY PARSING NEEDED" << std::endl; //
+				// else
+				// 	std::cout << "NO BODY PARSING NEEDED" << std::endl; //
 				// printRequest();
 				_state = PARSING_COMPLETE;
 				break;
@@ -363,6 +363,7 @@ std::string HttpRequest::parseContentType(std::vector<std::string> value)
 **/
 bool HttpRequest::createBodyParser()
 {
+	std::cout << "HttpRequest::createBodyParser()" << std::endl;
 	parseContentType(_headers["Content-Type"]);
 	if (_contentData.type == "multipart")
 	{
@@ -389,7 +390,7 @@ ABodyParser *HttpRequest::createFormParser()
 	return new FormParser();
 }
 
-bool HttpRequest::isValidMethod() // 501
+bool HttpRequest::isImplementedMethod() // 501
 {
 	if (_requestLine.method == "GET"
 		|| _requestLine.method == "POST"
@@ -407,13 +408,14 @@ bool HttpRequest::isHttpVersionSupported() // 505
 
 bool HttpRequest::validRequest()
 {
-	std::cout << "validRequest()" << std::endl;
+	std::cout << "HttpRequest::validRequest()" << std::endl;
 	if (_errorCode != 0)
 		return false;
-	if (!isValidMethod())
+	if (!isImplementedMethod())
 		_errorCode = 501;
 	if (!isHttpVersionSupported())
 		_errorCode = 505;
+
     std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("Host");
 	if (it == _headers.end() || it->second.size() == 0)
@@ -514,8 +516,12 @@ bool HttpRequest::foundEndOfRequest()
 	if (end != std::string::npos)
 	{
 		if (end == _current_pos - 2)
+		{
+			std::cout << "HttpRequest::foundEndOfRequest() => TRUE" << std::endl;
 			return true;
+		}
 	}
-	std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
+	// std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
+	std::cout << "HttpRequest::foundEndOfRequest() => FALSE" << std::endl;
 	return false;
 }
