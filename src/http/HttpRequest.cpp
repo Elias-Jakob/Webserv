@@ -77,6 +77,19 @@ std::string &HttpRequest::getURI()
 	return _requestLine.requestURI;
 }
 
+std::string	HttpRequest::getRedirectLocation()
+{
+	std::cout << "HttpRequest::getRedirectLocatio()" << std::endl;
+	std::string	location;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+
+	std::cout << "\t_headers.size = " << _headers.size() << std::endl;
+	it = _headers.find("Location");
+	if (it != _headers.end())
+		location = it->second[0];
+	return location;
+}
+
 // =========================================================================
 // Public Methods
 // =========================================================================
@@ -126,9 +139,8 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 							std::cout << "_parsedBody returned something..." << std::endl;
 					}
 				}
-				// else
-				// 	std::cout << "NO BODY PARSING NEEDED" << std::endl; //
-				// printRequest();
+				if (PRINT_REQUEST)
+					printRequest();
 				_state = PARSING_COMPLETE;
 				break;
 			case PARSING_ERROR:
@@ -150,7 +162,7 @@ bool HttpRequest::parsingComplete()
 bool	HttpRequest::keepConnectionAlive()
 {
 	std::map<std::string, std::vector<std::string> >::iterator it;
-	it = _headers.find("Connection");
+	it = _headers.find("connection");
 	if (it != _headers.end() && !it->second.empty())
 	{
 		if (it->second[0] == "keep-alive")
@@ -252,12 +264,14 @@ bool HttpRequest::parseHeaderLine()
         if (colonPos != std::string::npos)
         {
             std::string key = line.substr(0, colonPos);
+			toLowerCase(key); // header-field to lowercase
 			size_t valueStart = colonPos + 1;// Skip ": " and any leading spaces
             while (valueStart < line.size() && line[valueStart] == ' ')
                 valueStart++;
             std::string value = line.substr(valueStart);
-            _headers[key] = splitHeaderValByComma(value);
-        }
+			// (key = host || content-length) only one value allowed -> bad request(400).
+			addHeader(key, value);
+		}
 		else
 		{
 			_state = PARSING_ERROR;
@@ -280,7 +294,7 @@ bool	HttpRequest::extractBody()
     size_t contentLength = 0;
     std::map<std::string, std::vector<std::string> >::iterator it;
 
-    it = _headers.find("Content-Length"); // Get Content-Length from headers
+    it = _headers.find("content-length"); // Get Content-Length from headers
     if (it != _headers.end() && !it->second.empty())
     {
         contentLength = atoi(it->second[0].c_str());
@@ -417,20 +431,22 @@ bool HttpRequest::validRequest()
 		_errorCode = 505;
 
     std::map<std::string, std::vector<std::string> >::iterator it;
-    it = _headers.find("Host");
+    it = _headers.find("host");
 	if (it == _headers.end() || it->second.size() == 0)
 		_errorCode = 400;
 	if (_requestLine.method == "POST")
 	{
-		it = _headers.find("Content-Length");
+		it = _headers.find("content-length");
 		if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
 			_errorCode = 411;
 	}
 	if (_errorCode != 0)
 	{
+		std::cout << "\t==> FALSE" << std::endl;
 		printRequest();
 		return false;
 	}
+	std::cout << "\t==> TRUE" << std::endl;
 	return true;
 }
 
@@ -524,4 +540,27 @@ bool HttpRequest::foundEndOfRequest()
 	// std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
 	std::cout << "HttpRequest::foundEndOfRequest() => FALSE" << std::endl;
 	return false;
+}
+
+std::string	HttpRequest::toLowerCase(std::string &str)
+{
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+}
+
+void	HttpRequest::addHeader(const std::string &key, const std::string &value)
+{
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	it = _headers.find(key);
+	if (it == _headers.end()) // new header-field
+           _headers[key] = splitHeaderValByComma(value);
+	else // header-field already exists
+	{
+		if (key == "host" || key == "content-length")
+			setErrorCode(400);
+		std::vector<std::string>	temp;
+		temp = splitHeaderValByComma(value);
+		for (size_t i = 0; i < temp.size(); i++)
+			it->second.push_back(temp[i]);
+	}
 }

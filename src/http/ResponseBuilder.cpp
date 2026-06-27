@@ -37,6 +37,23 @@ std::string ResponseBuilder::formatResponse(t_executionResult result)
 	return response;
 }
 
+/**
+	* @brief 
+*/
+std::string	ResponseBuilder::redirectResponse(t_executionResult *result, const std::string &redirectURL)
+{
+	std::cout << "ResponseBuilder::redirectResponse()" << std::endl;
+	std::string response;
+
+	response = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
+	response += "Location: " + redirectURL + "\r\n";
+	response += "Content-Length: 0";
+	response += "\r\n\r\n";
+	return response;
+}
+
+
+/**/
 std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
 {
 	std::cout << "ResponseBuilder::buildStatusLine()" << std::endl;

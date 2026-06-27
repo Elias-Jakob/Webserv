@@ -23,17 +23,32 @@ Get::~Get()
 
 bool Get::execute()
 {
+	std::cout << "Get::execute() -> resource: " << _resource << std::endl;
+	if (_location && _location->redirect) // redirect
+	{
+		HttpStatus::setStatus(_location->redirectCode, _code, _phrase);
+		std::vector<std::string>	tmp;
+		tmp.push_back(_location->redirectURL);
+		_headers["Location"] = tmp;
+		std::cout << "\t_headers.size = " << _headers.size() << std::endl;
+		std::cout << "REDIRECT -> code: " << _code << " ,phrase: " << _phrase << std::endl;
+		return false;
+	}
+
 	struct stat fileInfo;
 
-	std::cout << "Get::execute() -> resource: " << _resource << std::endl;
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
-	// if the request is a directory check for index.html
 	if (S_ISDIR(fileInfo.st_mode))
-        _resource += "/index.html";
+	{
+		if (_location->defaultPage.size() > 0) 
+			_resource += "/" + _location->defaultPage; // check before adding
+		else
+			_resource += "/index.html";
+	}
 	if (!isFileAccessible(_resource))
 	{
 		HttpStatus::setStatus(403, _code, _phrase);
@@ -55,26 +70,41 @@ bool Get::execute()
 	return true;
 }
 
+/**
+	* @brief Converts identified-Resource & _location->root's relative-PATH 
+	*	to the Real-PATH. (./www/file.html => /dirOne/ProjectFolder/www/file.html)
+	* @param path -> identified resource (./www/file.html)
+	* @return false (if realpath could not be created 
+					|| resource-PATH & root-PATH not matching).
+*/
 bool Get::isFileAccessible(const std::string &path)
 {
-    // 1. Check if file is readable
-    if (access(path.c_str(), R_OK) != 0)
-        return false;  // 403 Forbidden
-    
-    // 2. Resolve real path (prevents ../ tricks)
-    char realPath[PATH_MAX];
-    if (realpath(path.c_str(), realPath) == NULL)
-        return false;
+	std::cout << "Get::isFileAccessible()\n\tpath = " << path << std::endl;
+	if (access(path.c_str(), R_OK) != 0)
+		return false;
 
-    // 3. Check if inside document root
-    // std::string docRoot = "/sgoinfre/cgeringe/webserv/www";  // your root
-    // std::string resolved(realPath);
-    // if (resolved.find(docRoot) != 0)
-    //     return false;  // Path escape attempt!
-    
-    // 4. Optional: Block hidden files
-    // if (resolved.find("/.") != std::string::npos)
-    //     return false;
-    
-    return true;
+	char realPath[PATH_MAX];
+	if (realpath(path.c_str(), realPath) == NULL)
+		return false;
+
+	if (!_location || _location->root.empty())
+		return false;
+
+	char resolvedRoot[PATH_MAX];
+	std::string	tmpRoot = "." + _location->root;
+	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
+		return false;
+
+	std::string docRoot = std::string(resolvedRoot) + '/';
+	std::string resolved = std::string(realPath) + '/'; // trailing slash so dirs match too
+	// std::cout << "docRoot = " << docRoot << "\n"
+	// 	<< "resolved = " << resolved << std::endl;
+
+	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
+		return false;
+
+	if (resolved.find("/.") != std::string::npos)
+		return false;
+
+	return true;
 }

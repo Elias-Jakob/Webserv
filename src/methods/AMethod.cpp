@@ -90,6 +90,11 @@ std::string AMethod::getContentType()
     
     return "application/octet-stream";
 }
+
+std::string AMethod::getRedirectURL()
+{
+    return _location->redirectURL;
+}
 // bool AMethod::execute()
 // {
 // 	std::cout << "AMethod::execute() called... " << std::endl;

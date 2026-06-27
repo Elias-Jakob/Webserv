@@ -137,6 +137,7 @@ LARGE_BODY=$(printf 'A%.0s' {1..5000})
 REQUEST="POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5000\r\n\r\n$LARGE_BODY"
 STATUS=$(send_request "$REQUEST")
 check_status "Body exceeding MAX_BODY_SIZE should return 413" "413" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 9: URI Too Long (414)
@@ -147,6 +148,7 @@ LONG_URI=$(printf 'A%.0s' {1..1100})
 REQUEST="GET /$LONG_URI HTTP/1.1\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
 check_status "URI exceeding MAX_URI_LENGTH should return 414" "414" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 10: Unsupported Media Type (415)
@@ -155,6 +157,7 @@ print_test "Test 10: Unsupported Content-Type"
 REQUEST="POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Type: unsupported/type\r\nContent-Length: 5\r\n\r\nhello"
 STATUS=$(send_request "$REQUEST")
 check_status "Unsupported Content-Type should return 415" "415" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 11: Unknown Method (501 Not Implemented)
@@ -163,6 +166,7 @@ print_test "Test 11: Unknown HTTP method"
 REQUEST="PATCH /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
 check_status "Unknown HTTP method should return 501" "501" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 12: Unknown Method (OPTIONS)
@@ -171,6 +175,7 @@ print_test "Test 12: OPTIONS method (not implemented)"
 REQUEST="OPTIONS /index.html HTTP/1.1\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
 check_status "OPTIONS method should return 501" "501" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 13: Unsupported HTTP Version (505)
@@ -179,6 +184,7 @@ print_test "Test 13: Unsupported HTTP version (HTTP/2.0)"
 REQUEST="GET /index.html HTTP/2.0\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
 check_status "HTTP/2.0 should return 505" "505" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 14: Unsupported HTTP Version (HTTP/1.0)
@@ -187,6 +193,7 @@ print_test "Test 14: Unsupported HTTP version (HTTP/1.0)"
 REQUEST="GET /index.html HTTP/1.0\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
 check_status "HTTP/1.0 should return 505" "505" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 15: Valid POST with Content-Length
@@ -195,6 +202,7 @@ print_test "Test 15: Valid POST request with Content-Length"
 REQUEST="POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 13\r\n\r\nname=testuser"
 STATUS=$(send_request "$REQUEST")
 check_status "Valid POST with Content-Length should return 200" "200" "$STATUS"
+sleep 1
 
 # ============================================
 # TEST 16: Valid DELETE Request
@@ -209,6 +217,7 @@ if [[ "$STATUS" =~ ^(200|204|404)$ ]]; then
 else
     print_fail "Valid DELETE request" "200/204/404" "$STATUS"
 fi
+sleep 1
 
 # ============================================
 # TEST 8: Payload Too Large (413)
@@ -219,6 +228,7 @@ LARGE_BODY=$(printf 'A%.0s' {1..5000})
 REQUEST="POST /submit HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5000\r\n\r\n$LARGE_BODY"
 STATUS=$(send_request "$REQUEST")
 check_status "Body exceeding MAX_BODY_SIZE should return 413" "413" "$STATUS"
+sleep 1
 
 # ============================================
 # SUMMARY

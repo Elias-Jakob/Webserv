@@ -36,13 +36,6 @@ class AMethod
 
 		virtual ~AMethod();
 
-		bool	setRequiredData(
-						s_RequestLine &reqLine,
-                        std::map<std::string,
-                        std::vector<std::string> > &reqHeads,
-                        std::map<std::string, s_FormField> &parsedResult,
-                        s_ContentData &contentData);
-
 		bool    setRequiredData(HttpRequest *req, const std::string modifiedURI);
 		void	setResource(const std::string &modifiedURI);
 		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
@@ -57,6 +50,7 @@ class AMethod
 		std::string &getPhrase();
 		std::string	&getCode();
 		std::string getContentType();
+		std::string getRedirectURL();
 };
 
 #endif

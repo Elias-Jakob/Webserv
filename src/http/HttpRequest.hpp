@@ -13,6 +13,7 @@
 # include "../parsers/FormParser.hpp"
 # include "../parsers/MultipartParser.hpp"
 # include "../../structs.h"
+# include "../../print_controls.hpp"
 
 typedef struct s_RequestLine
 {
@@ -58,6 +59,8 @@ class HttpRequest
 		bool	isImplementedMethod();
 		bool	isHttpVersionSupported();
 		bool	foundEndOfRequest();
+		std::string	toLowerCase(std::string &str);
+		void	addHeader(const std::string &key, const std::string &value);
 
 	protected:
 		// HELPERS
@@ -92,10 +95,7 @@ class HttpRequest
 		std::string							&getMethod();
 		int									getErrorCode();
 		std::string							&getURI();
-
-		// SETTERS
-		// function to set the identifiedResource ("." + requestURI)
-		// void			setRequestURI(const std::string modifiedURI);
+		std::string							getRedirectLocation();
 
 		// OUTPUT
 		void	printRequest(void);

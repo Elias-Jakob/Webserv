@@ -67,9 +67,16 @@ void ClientConnection::processRequest()
 			t_executionResult result = executor->execute(_currentMethod, request);
 			std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
 			std::cout << "==========* BUILDING RESPONSE * ==========" << std::endl;
-			response_buffer = responseBuilder->formatResponse(result);
-			keep_alive = request->keepConnectionAlive();
-			result.keep_alive = keep_alive;
+			if (result.statusCode == "301") // REDIRECTION
+			{
+				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
+			}
+			else
+			{
+				response_buffer = responseBuilder->formatResponse(result);
+				keep_alive = request->keepConnectionAlive();
+				result.keep_alive = keep_alive;
+			}
 		}
 		else
 		{

@@ -1,0 +1,9 @@
+#ifndef PRINT_CONTROLS_HPP
+# define PRINT_CONTROLS_HPP
+
+# define PRINT_REQUEST 			0
+# define PRINT_RESPONSE 		1
+# define PRINT_SERVER_CONFIG	0
+
+
+#endif

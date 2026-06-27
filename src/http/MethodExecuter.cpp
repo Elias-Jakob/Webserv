@@ -120,6 +120,8 @@ bool	MethodExecuter::isImplementedMethod(const std::string &methodName)
 */
 bool	MethodExecuter::isAllowedMethod(t_Location *location, const std::string &method)
 {
+	if (location->redirect)
+		return true;
 	for (size_t i = 0; i < location->allowedMethods.size(); i++)
 	{
 		if (method == location->allowedMethods[i])
@@ -147,6 +149,8 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 	location = availableLocation(path);
 	if (location != NULL)
 	{
+		if (location->redirect)
+			std::cout << "SHOULD REDIRECT" << std::endl;
 		if (isAllowedMethod(location, methodName) && methodName == "GET") // Implement for all Methods
 		{
 			tempMethod = createGet(methodName, location);
@@ -196,7 +200,7 @@ AMethod *MethodExecuter::createDelete(std::string name)
 */
 t_Location	*MethodExecuter::availableLocation(const std::string &path)
 {
-	std::cout << "MethodExecuter::availableLocation(), path = " << path << std::endl;
+	std::cout << "\nMethodExecuter::availableLocation(), path = " << path << std::endl;
 	t_Location	*loc;
 	loc = NULL;
 
@@ -207,13 +211,20 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path)
 		for (size_t j = 0; j < pathParts.size(); j++)
 		{
 			if (_serverConfig->locations[i].path == pathParts[j])
+			{
+				std::cout << "location: " << _serverConfig->locations[i].path 
+					<< " == " << pathParts[j] << std::endl; 
 				loc = &_serverConfig->locations[i];
+			}
 		}
 	}
 	if (loc != NULL) // print result
-		std::cout << "\t ==> location " << loc->root << " {..}" << std::endl;
+		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
 	else
 		std::cout << "\t ==> location NULL" << std::endl;
+	std::cout << loc->path << ", redirect = " << loc->redirect << std::endl; // tmp
+	std::cout << std::endl;
+	// why is loc->root /www if it is location oldPage -> return (redirection)???
 	return loc;
 }
 
@@ -224,6 +235,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path)
 */
 std::vector<std::string> MethodExecuter::splitPath(const std::string &path)
 {
+	std::cout << "MethodExecuter::splitPath()" << std::endl;
 	std::vector<std::string>	parts;
 	std::string	temp;
 	size_t	start = 0;
@@ -231,16 +243,30 @@ std::vector<std::string> MethodExecuter::splitPath(const std::string &path)
 
 	for (size_t i = 0; i < path.size(); i++)
 	{
-		if (path[i] == '/')
+		if (path[i] == '/' && i == 0)
 		{
 			end = i+1;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
+			// start = end;
+		}
+		else if (path[i] == '/' && i > 0)
+		{
+			end = i;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
 			start = end;
 		}
+		else if (i + 1 == path.size())
+		{
+			end = i+1;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			break ;
+		}
 	}
-	// for (size_t i = 0; i < parts.size(); i++) // print parts
-	// 	std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
+	for (size_t i = 0; i < parts.size(); i++) // print parts
+		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
 }
 

@@ -194,7 +194,8 @@ void handleClientWrite(int client_fd, std::vector<struct pollfd>& fds, size_t in
 
 	std::cout << "\033[35m==========\nRESPONSE sending...\n" << std::endl;
 	sent = send(client_fd, clients[client_fd].response_buffer.c_str(), clients[client_fd].response_buffer.size(), 0);
-
+	if (PRINT_RESPONSE)
+		std::cout << clients[client_fd].response_buffer << std::endl;
 	if (sent < 0)
 	{
 		// Non-blocking socket: EAGAIN/EWOULDBLOCK means can't send right now

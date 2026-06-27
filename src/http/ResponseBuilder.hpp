@@ -20,6 +20,7 @@ class ResponseBuilder
 		~ResponseBuilder();
 
 		std::string formatResponse(t_executionResult result);
+		std::string	redirectResponse(t_executionResult *result, const std::string &redirecURL);
 		std::string	buildErrorResponse(int errorCode);
 		bool		setConfig(t_Server *serverConfig);
 
