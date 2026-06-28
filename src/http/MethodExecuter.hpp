@@ -34,6 +34,8 @@ class MethodExecuter
 
 	private:
 		t_Server	*_serverConfig;
+		t_Location	_defaultLocation;
+
 		std::map<std::string, std::string>	_rootedLocations;
 
 		static AMethod	*createGet(std::string name);
@@ -41,9 +43,10 @@ class MethodExecuter
 		static AMethod	*createDelete(std::string name);
 		static AMethod	*createGet(std::string name, t_Location *locationObj);
 		
-		bool	isAllowedMethod(t_Location *location, const std::string &method);
-		std::vector<std::string> splitPath(const std::string &path);
-		std::vector<std::string> splitPathDir(const std::string &path);
+		void						setDefaultLocation();
+		bool						isAllowedMethod(t_Location *location, const std::string &method);
+		std::vector<std::string>	splitPath(const std::string &path);
+		std::vector<std::string>	splitPathDir(const std::string &path);
 };
 
 #endif

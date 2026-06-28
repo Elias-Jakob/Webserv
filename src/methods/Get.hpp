@@ -21,8 +21,10 @@ class Get : public AMethod
 		bool execute();
 	
 	private:
-		bool isFileAccessible(const std::string &path);
-		std::string directoryListing(const std::string &dirPath, const std::string &uriPath);
+		bool 		isFileAccessible(const std::string &path);
+		bool		checkCGI();
+		bool		executeCGI(const std::string &script);
+		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
 };
 
 /*

@@ -59,6 +59,7 @@ bool	MethodExecuter::setConfig(t_Server *serverConfig)
 		if (_serverConfig->locations[i].root.size() > 0)
 			_rootedLocations[_serverConfig->locations[i].path] = _serverConfig->locations[i].root;
 	}
+	setDefaultLocation();
 	std::map<std::string, std::string>::iterator it = _rootedLocations.begin();
 	std::map<std::string, std::string>::iterator ite = _rootedLocations.end();
 	std::cout << "_rootedLocations{\n";
@@ -150,6 +151,11 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 	t_Location	*location = NULL;
 
 	location = availableLocation(path);
+	if (!location)
+	{
+		location = &_defaultLocation;
+		std::cout << "\tSet _defaultLocation for resource" << std::endl;
+	}
 	if (location != NULL)
 	{
 		if (isAllowedMethod(location, methodName) && methodName == "GET") // Implement for all Methods
@@ -204,29 +210,35 @@ AMethod *MethodExecuter::createDelete(std::string name)
 t_Location	*MethodExecuter::availableLocation(const std::string &path)
 {
 	std::cout << "\nMethodExecuter::availableLocation(), path = " << path << std::endl;
-	t_Location	*loc;
-	loc = NULL;
-
+	t_Location					*loc;
+	t_Location					*defLoc;
 	std::vector<std::string>	pathParts;
+
+	loc = NULL;
+	defLoc = NULL;
 	pathParts = splitPath(path);
 	for (size_t i = 0; i < _serverConfig->locations.size(); i++)
 	{
 		for (size_t j = 0; j < pathParts.size(); j++)
 		{
+			if (!defLoc && _serverConfig->locations[i].path == "/")
+				defLoc = &_serverConfig->locations[i];
 			if (_serverConfig->locations[i].path == pathParts[j])
 			{
 				std::cout << "location: " << _serverConfig->locations[i].path 
-					<< " == " << pathParts[j] << std::endl; 
+					<< " == " << pathParts[j] << std::endl;
 				loc = &_serverConfig->locations[i];
 			}
 		}
 	}
+	if (!loc && defLoc)
+		loc = defLoc;
 	if (loc != NULL) // print result
 		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
 	else
 		std::cout << "\t ==> location NULL" << std::endl;
-	std::cout << loc->path << ", redirect = " << loc->redirect << std::endl; // tmp
-	std::cout << std::endl;
+	// std::cout << loc->path << ", redirect = " << loc->redirect << std::endl; // tmp
+	// std::cout << std::endl;
 	// why is loc->root /www if it is location oldPage -> return (redirection)???
 	return loc;
 }
@@ -301,4 +313,11 @@ std::vector<std::string> MethodExecuter::splitPathDir(const std::string &path)
 	// for (size_t i = 0; i < parts.size(); i++) // print parts
 	// 	std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
+}
+
+void	MethodExecuter::setDefaultLocation()
+{
+	_defaultLocation.autoIndex = false;
+	_defaultLocation.redirect = false;
+	_defaultLocation.allowedMethods.push_back("GET");
 }

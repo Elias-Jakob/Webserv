@@ -29,6 +29,8 @@ Get::~Get()
 // Public Methods
 // =========================================================================
 
+/**
+*/
 bool Get::execute()
 {
 	std::cout << "Get::execute() -> resource: " << _resource << std::endl;
@@ -48,7 +50,7 @@ bool Get::execute()
 	}
 	if (S_ISDIR(fileInfo.st_mode)) // resource is directory.
 	{
-		if (_location->defaultPage.size() > 0) 
+		if (_location->defaultPage.size() > 0)
 			_resource += "/" + _location->defaultPage; // check before adding
 		else
 		{
@@ -63,6 +65,11 @@ bool Get::execute()
 					HttpStatus::setStatus(200, _code, _phrase);
 					return true;
 				}
+				else
+				{
+					HttpStatus::setStatus(403, _code, _phrase);
+					return false;
+				}
 			}
 			else
 				_resource = tmpResource;
@@ -74,7 +81,10 @@ bool Get::execute()
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-
+	if (checkCGI()) // CGI extension check here
+	{
+		return true;
+	}
 	std::ifstream resourceStream(_resource.c_str(), std::ios::binary);
 	if (!resourceStream)
 	{
@@ -110,9 +120,6 @@ bool Get::isFileAccessible(const std::string &path)
 	if (realpath(path.c_str(), realPath) == NULL)
 		return false;
 
-	// if (!_location || _location->root.empty())
-	// 	return false;
-
 	char resolvedRoot[PATH_MAX];
 	std::string	tmpRoot = "." + _location->root;
 	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
@@ -131,7 +138,8 @@ bool Get::isFileAccessible(const std::string &path)
 }
 
 /**
-	* @brief creates string(html-code) of directory listing (autoIndex).
+	* @brief builds a list of the files of the dirPath and stores in string in an html
+	*	format
 */
 std::string	Get::directoryListing(const std::string &dirPath, const std::string &uriPath)
 {
@@ -155,4 +163,33 @@ std::string	Get::directoryListing(const std::string &dirPath, const std::string 
 	closedir(dir);
 	html += "</ul></body></html>";
 	return html;
+}
+
+/**
+*/
+bool	Get::checkCGI()
+{
+	std::cout << "Get::checkCGI()" << std::endl;
+	if (_location->cgiExtensions.size() < 1)
+		return false;
+	std::string fileExt;
+	
+	fileExt = _resource.substr(_resource.find_last_of('.'));
+	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
+	{
+		if (_location->cgiExtensions[i] == fileExt)
+		{
+			return executeCGI(_resource);
+		}
+	}
+	return false;
+}
+
+/**
+*/
+bool	Get::executeCGI(const std::string &script)
+{
+	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
+	HttpStatus::setStatus(501, _code, _phrase);
+	return true;
 }
