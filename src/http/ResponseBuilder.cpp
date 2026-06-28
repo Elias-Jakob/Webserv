@@ -67,21 +67,22 @@ std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 {
 	std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
 	std::string	messageHeaders;
+	std::stringstream	ss;
 
+	ss << result.body.size();
 	if (result.contentType.size() > 0)
-	{
-		std::stringstream ss;
-		ss << result.body.size();
-
 		messageHeaders = "Content-Type: " + result.contentType + "\r\n";
-		messageHeaders += "Content-Length: " + ss.str() + "\r\n";
-	}
+	messageHeaders += "Content-Length: " + ss.str() + "\r\n";
 	messageHeaders += "Date: " + getHttpDate() + "\r\n";
 	messageHeaders += "Server: webserv/1.0\r\n";
 	if (result.keep_alive)
 		messageHeaders+= "Connection: keep-alive\r\n";
 	else
 		messageHeaders += "Connection: close\r\n";
+	if (result.lastModified.size() > 0)
+		messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
+	if (result.etag.size() > 0)
+		messageHeaders += "ETag: " + result.etag + "\r\n";
 	messageHeaders += "\r\n";
 	return messageHeaders;
 }

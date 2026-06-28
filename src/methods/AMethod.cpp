@@ -101,6 +101,16 @@ std::string AMethod::getRedirectURL()
     return _location->redirectURL;
 }
 
+std::string AMethod::getLastModified()
+{
+    return _lastModified;
+}
+
+std::string AMethod::getEtag()
+{
+    return _etag;
+}
+
 bool    AMethod::isDirList()
 {
     return _isAutoIndex;

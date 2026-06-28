@@ -37,9 +37,11 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
 		result.statusPhrase = method->getPhrase();
 		result.body = method->getBody();
 		if (method->isDirList())
-			result.contentType = "text/html";	
+			result.contentType = "text/html";
 		else
 			result.contentType = method->getContentType();
+		result.lastModified = method->getLastModified();
+		result.etag = method->getEtag();
 	// }
 	return result;
 }

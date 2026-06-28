@@ -30,6 +30,8 @@ class AMethod
 		std::map<std::string, s_FormField>	_parsedBody;
 		t_Location	*_location;
 		bool		_isAutoIndex;
+		std::string	_lastModified;
+		std::string	_etag;
 
 	public:
 		AMethod();
@@ -54,6 +56,8 @@ class AMethod
 		std::string	&getCode();
 		std::string getContentType();
 		std::string getRedirectURL();
+		std::string	getLastModified();
+		std::string	getEtag();
 };
 
 #endif

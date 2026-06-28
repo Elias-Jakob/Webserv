@@ -91,10 +91,19 @@ bool Get::execute()
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
+
 	std::string buffer(fileInfo.st_size, '\0');
 	resourceStream.read(&buffer[0], fileInfo.st_size);
 	_body = buffer;
-	resourceStream.close();    
+	
+	time_t modTime = fileInfo.st_mtime; // Last-Modified header-field
+	_lastModified = convertTimeToHttpDate(modTime);
+
+	std::stringstream ss; // ETag header-field
+	ss << fileInfo.st_ino << "-" << fileInfo.st_size << "-" << fileInfo.st_mtime;
+	_etag = "\"" + ss.str() + "\"";
+
+	resourceStream.close();
 	HttpStatus::setStatus(200, _code, _phrase);
 	return true;
 }
@@ -163,6 +172,20 @@ std::string	Get::directoryListing(const std::string &dirPath, const std::string 
 	closedir(dir);
 	html += "</ul></body></html>";
 	return html;
+}
+
+/**
+	* @brief Converts time_t to a string in correct format for
+	*	the Last-Modified header-field (Response).
+*/
+std::string	Get::convertTimeToHttpDate(time_t time)
+{
+	struct tm	*tm_info;
+	char buf[100];
+
+	tm_info = gmtime(&time);
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
+	return std::string(buf);
 }
 
 /**

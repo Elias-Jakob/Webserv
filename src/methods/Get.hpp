@@ -25,6 +25,9 @@ class Get : public AMethod
 		bool		checkCGI();
 		bool		executeCGI(const std::string &script);
 		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
+
+		// HELPER
+		std::string	convertTimeToHttpDate(time_t time);
 };
 
 /*
