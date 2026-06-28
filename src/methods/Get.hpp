@@ -7,6 +7,7 @@
 # include <unistd.h>
 # include <limits.h>
 # include <stdlib.h>
+# include <dirent.h>
 # include "../config/ConfigFileParser.hpp"
 
 class Get : public AMethod
@@ -18,7 +19,10 @@ class Get : public AMethod
 		~Get();
 
 		bool execute();
+	
+	private:
 		bool isFileAccessible(const std::string &path);
+		std::string directoryListing(const std::string &dirPath, const std::string &uriPath);
 };
 
 /*

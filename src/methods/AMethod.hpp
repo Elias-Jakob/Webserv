@@ -16,6 +16,7 @@ class AMethod
 
 	protected:
 		std::string _method;
+		std::string	_reqUri;
 		std::string _resource;
 		std::string	_body;
 
@@ -28,7 +29,8 @@ class AMethod
 		s_ContentData	_contentData;
 		std::map<std::string, s_FormField>	_parsedBody;
 		t_Location	*_location;
-	
+		bool		_isAutoIndex;
+
 	public:
 		AMethod();
 		AMethod(std::string name);
@@ -41,7 +43,8 @@ class AMethod
 		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
 		void	setBody(std::map<std::string, s_FormField> &parsedBody);
 		void	setContentData(s_ContentData contentData);
-		
+		void	setReqUri(const std::string &requestURI);
+		bool	isDirList();
 		virtual bool execute() = 0;
 
 		std::string &getBody();

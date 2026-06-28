@@ -1,5 +1,9 @@
 #include "Get.hpp"
 
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
+
 Get::Get() : AMethod()
 {
 	std::cout << "GET -> " << _method << std::endl;
@@ -21,16 +25,16 @@ Get::Get(std::string name, t_Location *location) : AMethod()
 Get::~Get()
 {}
 
+// =========================================================================
+// Public Methods
+// =========================================================================
+
 bool Get::execute()
 {
 	std::cout << "Get::execute() -> resource: " << _resource << std::endl;
 	if (_location && _location->redirect) // redirect
 	{
 		HttpStatus::setStatus(_location->redirectCode, _code, _phrase);
-		std::vector<std::string>	tmp;
-		tmp.push_back(_location->redirectURL);
-		_headers["Location"] = tmp;
-		std::cout << "\t_headers.size = " << _headers.size() << std::endl;
 		std::cout << "REDIRECT -> code: " << _code << " ,phrase: " << _phrase << std::endl;
 		return false;
 	}
@@ -42,15 +46,31 @@ bool Get::execute()
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
-	if (S_ISDIR(fileInfo.st_mode))
+	if (S_ISDIR(fileInfo.st_mode)) // resource is directory.
 	{
 		if (_location->defaultPage.size() > 0) 
 			_resource += "/" + _location->defaultPage; // check before adding
 		else
-			_resource += "/index.html";
+		{
+			std::string tmpResource;
+			tmpResource = _resource + "/index.html";
+			if (stat(tmpResource.c_str(), &fileInfo) != 0) // create directory listing
+			{
+				if (_location->autoIndex)
+				{
+					_body = directoryListing(_resource, _reqUri);
+					_isAutoIndex = true;
+					HttpStatus::setStatus(200, _code, _phrase);
+					return true;
+				}
+			}
+			else
+				_resource = tmpResource;
+		}
 	}
 	if (!isFileAccessible(_resource))
 	{
+		std::cout << "\tFile not Accessible" << std::endl;
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
@@ -69,6 +89,10 @@ bool Get::execute()
 	return true;
 }
 
+// =========================================================================
+// Private Helper Methods
+// =========================================================================
+
 /**
 	* @brief Converts identified-Resource & _location->root's relative-PATH 
 	*	to the Real-PATH. (./www/file.html => /dirOne/ProjectFolder/www/file.html)
@@ -81,13 +105,13 @@ bool Get::isFileAccessible(const std::string &path)
 	std::cout << "Get::isFileAccessible()\n\tpath = " << path << std::endl;
 	if (access(path.c_str(), R_OK) != 0)
 		return false;
-
+	
 	char realPath[PATH_MAX];
 	if (realpath(path.c_str(), realPath) == NULL)
 		return false;
 
-	if (!_location || _location->root.empty())
-		return false;
+	// if (!_location || _location->root.empty())
+	// 	return false;
 
 	char resolvedRoot[PATH_MAX];
 	std::string	tmpRoot = "." + _location->root;
@@ -96,8 +120,6 @@ bool Get::isFileAccessible(const std::string &path)
 
 	std::string docRoot = std::string(resolvedRoot) + '/';
 	std::string resolved = std::string(realPath) + '/'; // trailing slash so dirs match too
-	// std::cout << "docRoot = " << docRoot << "\n"
-	// 	<< "resolved = " << resolved << std::endl;
 
 	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
 		return false;
@@ -106,4 +128,31 @@ bool Get::isFileAccessible(const std::string &path)
 		return false;
 
 	return true;
+}
+
+/**
+	* @brief creates string(html-code) of directory listing (autoIndex).
+*/
+std::string	Get::directoryListing(const std::string &dirPath, const std::string &uriPath)
+{
+	std::cout << "Get::directoryListing()" << std::endl;
+	std::cout << "\tdir: " << dirPath << "; uri: " << uriPath << std::endl;
+	DIR				*dir;
+	std::string		html;
+	struct dirent	*entry;
+
+	dir = opendir(dirPath.c_str());
+	if (!dir)
+		return "";
+	html = "<html><body><h1>Index of " + uriPath + "</h1><ul>";
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name == ".")
+			continue ;
+		html += "<li><a href=\"" + uriPath + "/" + name + "\">" + name + "</a></li>";
+	}
+	closedir(dir);
+	html += "</ul></body></html>";
+	return html;
 }

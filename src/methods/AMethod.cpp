@@ -5,7 +5,7 @@ AMethod::AMethod(): _location(NULL)
 	std::cout << "AMethod::AMethod() -> default constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _method(name), _location(NULL)
+AMethod::AMethod(std::string name): _method(name), _location(NULL), _isAutoIndex(false)
 {
 	std::cout << "AMethod::AMethod() -> parameterized constructed " << _method << std::endl;
 }
@@ -23,7 +23,7 @@ bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI
 	setBody(req->getParsedBody());
 	setContentData(req->getContentData());
 	setResource(modifiedURI);
-
+    setReqUri(req->getRequestLine().requestURI);
 	// std::cout << "\tresource = " << _resource << ", modifiedURI = " << modifiedURI << std::endl;
 
 	return true;
@@ -53,6 +53,11 @@ void    AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
 void    AMethod::setContentData(s_ContentData contentData)
 {
     _contentData = contentData;
+}
+
+void    AMethod::setReqUri(const std::string &requestURI)
+{
+    _reqUri = requestURI;
 }
 
 std::string &AMethod::getBody()
@@ -94,6 +99,11 @@ std::string AMethod::getContentType()
 std::string AMethod::getRedirectURL()
 {
     return _location->redirectURL;
+}
+
+bool    AMethod::isDirList()
+{
+    return _isAutoIndex;
 }
 // bool AMethod::execute()
 // {
