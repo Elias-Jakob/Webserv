@@ -149,8 +149,6 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 	location = availableLocation(path);
 	if (location != NULL)
 	{
-		if (location->redirect)
-			std::cout << "SHOULD REDIRECT" << std::endl;
 		if (isAllowedMethod(location, methodName) && methodName == "GET") // Implement for all Methods
 		{
 			tempMethod = createGet(methodName, location);
@@ -160,6 +158,8 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 			return NULL;
 		std::cout << "location.root = " << location->root << std::endl;
 	}
+	if (location != NULL && !isAllowedMethod(location, methodName))
+		return NULL;
 	if (methodName == "GET")
 		tempMethod = createGet(methodName);
 	else if (methodName == "POST")

@@ -54,18 +54,17 @@ bool Get::execute()
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-	std::ifstream stream(_resource.c_str());
-	std::string line;
-	if (!stream)
+
+	std::ifstream resourceStream(_resource.c_str(), std::ios::binary);
+	if (!resourceStream)
 	{
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
-
-	while (std::getline(stream, line))
-		_body += line + "\n";
-
-	stream.close();    
+	std::string buffer(fileInfo.st_size, '\0');
+	resourceStream.read(&buffer[0], fileInfo.st_size);
+	_body = buffer;
+	resourceStream.close();    
 	HttpStatus::setStatus(200, _code, _phrase);
 	return true;
 }
