@@ -6,6 +6,7 @@
 
 Get::Get() : AMethod()
 {
+	_method = "GET";
 	std::cout << "GET -> " << _method << std::endl;
 }
 
@@ -30,61 +31,97 @@ Get::~Get()
 // =========================================================================
 
 /**
+	* @brief Executes GET request: resolves resource, handles redirects/directories/files.
+	* @return true if completed successfully, false otherwise (status code set via HttpStatus).
 */
-bool Get::execute()
+bool	Get::execute()
 {
-	std::cout << "Get::execute() -> resource: " << _resource << std::endl;
-	if (_location && _location->redirect) // redirect
-	{
-		HttpStatus::setStatus(_location->redirectCode, _code, _phrase);
-		std::cout << "REDIRECT -> code: " << _code << " ,phrase: " << _phrase << std::endl;
+	if (handleRedirect())
 		return false;
-	}
-
+	
 	struct stat fileInfo;
-
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
-	if (S_ISDIR(fileInfo.st_mode)) // resource is directory.
+	if (S_ISDIR(fileInfo.st_mode))
 	{
-		if (_location->defaultPage.size() > 0)
-			_resource += "/" + _location->defaultPage; // check before adding
-		else
-		{
-			std::string tmpResource;
-			tmpResource = _resource + "/index.html";
-			if (stat(tmpResource.c_str(), &fileInfo) != 0) // create directory listing
-			{
-				if (_location->autoIndex)
-				{
-					_body = directoryListing(_resource, _reqUri);
-					_isAutoIndex = true;
-					HttpStatus::setStatus(200, _code, _phrase);
-					return true;
-				}
-				else
-				{
-					HttpStatus::setStatus(403, _code, _phrase);
-					return false;
-				}
-			}
-			else
-				_resource = tmpResource;
-		}
+		if (handleDirectory(fileInfo))
+			return true;
 	}
 	if (!isFileAccessible(_resource))
 	{
-		std::cout << "\tFile not Accessible" << std::endl;
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-	if (checkCGI()) // CGI extension check here
+	if (checkCGI())
+		return true;
+	return serveFile(fileInfo);
+}
+
+// =========================================================================
+// Private Helper Methods
+// =========================================================================
+
+/**
+ * @brief Checks if request is a redirect and sets appropriate response.
+ * @return true if redirect was handled, false otherwise.
+*/
+bool	Get::handleRedirect()
+{
+	if (_location && _location->redirect)
 	{
+		HttpStatus::setStatus(_location->redirectCode, _code, _phrase);
+		std::cout << "REDIRECT -> code: " << _code << " ,phrase: " << _phrase << std::endl;
 		return true;
 	}
+	return false;
+}
+
+/**
+	* @brief Handles directory requests: checks for default page, index.html, or generates autoindex.
+	* @param fileInfo stat structure of the directory
+	* @return true if successfully handled, false otherwise.
+*/
+bool	Get::handleDirectory(struct stat &fileInfo)
+{
+	if (_location->defaultPage.size() > 0)
+	{
+		if (_resource.at(_resource.size()-1) != '/')
+			_resource += "/";
+		_resource += _location->defaultPage;
+		return true;
+	}
+
+	std::string tmpResource = _resource + "/index.html";
+	if (stat(tmpResource.c_str(), &fileInfo) == 0)
+	{
+		_resource = tmpResource;
+		return true;
+	}
+
+    // index.html doesn't exist
+	if (_location->autoIndex)
+	{
+		std::cout << "write to body" << std::endl;
+		_body = directoryListing(_resource, _reqUri);
+		_isAutoIndex = true;
+		HttpStatus::setStatus(200, _code, _phrase);
+		return true;
+	}
+
+	HttpStatus::setStatus(403, _code, _phrase);
+	return false;
+}
+
+/**
+	* @brief Reads file from disk and sets Last-Modified and ETag headers.
+	* @param fileInfo stat structure of the file
+	* @return true if successful, false otherwise.
+*/
+bool	Get::serveFile(struct stat &fileInfo)
+{
 	std::ifstream resourceStream(_resource.c_str(), std::ios::binary);
 	if (!resourceStream)
 	{
@@ -94,12 +131,12 @@ bool Get::execute()
 
 	std::string buffer(fileInfo.st_size, '\0');
 	resourceStream.read(&buffer[0], fileInfo.st_size);
+	std::cout << "write to body" << std::endl;
 	_body = buffer;
-	
-	time_t modTime = fileInfo.st_mtime; // Last-Modified header-field
-	_lastModified = convertTimeToHttpDate(modTime);
 
-	std::stringstream ss; // ETag header-field
+	_lastModified = convertTimeToHttpDate(fileInfo.st_mtime);
+
+	std::stringstream ss;
 	ss << fileInfo.st_ino << "-" << fileInfo.st_size << "-" << fileInfo.st_mtime;
 	_etag = "\"" + ss.str() + "\"";
 
@@ -107,10 +144,6 @@ bool Get::execute()
 	HttpStatus::setStatus(200, _code, _phrase);
 	return true;
 }
-
-// =========================================================================
-// Private Helper Methods
-// =========================================================================
 
 /**
 	* @brief Converts identified-Resource & _location->root's relative-PATH 
@@ -124,7 +157,7 @@ bool Get::isFileAccessible(const std::string &path)
 	std::cout << "Get::isFileAccessible()\n\tpath = " << path << std::endl;
 	if (access(path.c_str(), R_OK) != 0)
 		return false;
-	
+
 	char realPath[PATH_MAX];
 	if (realpath(path.c_str(), realPath) == NULL)
 		return false;
@@ -171,6 +204,7 @@ std::string	Get::directoryListing(const std::string &dirPath, const std::string 
 	}
 	closedir(dir);
 	html += "</ul></body></html>";
+	std::cout << "html: " << html << std::endl;
 	return html;
 }
 

@@ -21,12 +21,13 @@ class Get : public AMethod
 		bool execute();
 	
 	private:
+		bool		handleRedirect();
+		bool		handleDirectory(struct stat &fileInfo);
+		bool		serveFile(struct stat &fileInfo);
 		bool 		isFileAccessible(const std::string &path);
 		bool		checkCGI();
 		bool		executeCGI(const std::string &script);
 		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
-
-		// HELPER
 		std::string	convertTimeToHttpDate(time_t time);
 };
 

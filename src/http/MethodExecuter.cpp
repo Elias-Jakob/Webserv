@@ -35,7 +35,9 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
 	// {
 		result.statusCode = method->getCode();
 		result.statusPhrase = method->getPhrase();
+		
 		result.body = method->getBody();
+
 		if (method->isDirList())
 			result.contentType = "text/html";
 		else

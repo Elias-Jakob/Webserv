@@ -31,7 +31,7 @@ std::string ResponseBuilder::formatResponse(t_executionResult result)
 	statusLine = buildStatusLine(&result);
 	// std::string statusLine = "HTTP/1.1 " + result.statusCode + " " + result.statusPhrase + "\r\n";
 	messageHeaders = buildResponseHeaders(result);
-
+	std::cout << result.body << std::endl;
 	response = buildFullResponse(statusLine, messageHeaders, result.body);
 	// resp = statusLine + messageHeaders + result.body + "\r\n";
 	return response;
