@@ -31,6 +31,7 @@ std::map<int, std::string> HttpStatus::initStatusMap()
 	phrases[501] = "Not Implemented";
 	phrases[505] = "HTTP Version Not Supported";
 
+	phrases[601] = "none";
 	return phrases;
 }
 

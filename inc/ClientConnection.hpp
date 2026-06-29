@@ -9,7 +9,8 @@ enum ConnectionState
 {
 	READING_REQUEST,
 	PROCESSING,
-	SENDING_RESPONSE
+	SENDING_RESPONSE,
+	CGI_PROCESSING
 };
 
 /**
@@ -30,6 +31,7 @@ class ClientConnection
 
 		int				fd;
 		ConnectionState	state;
+		std::string		cgi_path;
 		std::string		request_buffer;
 		std::string		response_buffer;
 		size_t			bytesSent;

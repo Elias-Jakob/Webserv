@@ -31,7 +31,7 @@ extern sig_atomic_t	sigFlag;
 class Server
 {
 	public:
-		Server(const t_Configs &configs);
+		Server(t_Configs &configs);
 		~Server();
 
 		void	serverStartup();
@@ -40,9 +40,12 @@ class Server
 		Server(const Server &other);
 		Server	&operator=(const Server &other);
 
-		const t_Configs	&configs;
+		t_Configs	&configs;
+		MethodExecuter	methodExecuter;
+		ResponseBuilder	responseBuilder;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
+		std::map<int, CGIProcess>	cgis;
 		int	epollFd;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
@@ -52,6 +55,7 @@ class Server
 		void	handleClientRead(int);
 		void	handleClientWrite(int);
 		void	removeInactiveClients();
+		void	launchCGIProcess(ClientConnection &client);
 };
 
 // DEBUG HELPERS

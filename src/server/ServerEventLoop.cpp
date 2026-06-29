@@ -73,7 +73,10 @@ void	Server::handleClientRead(int clientFd)
 	{
 		clients[clientFd].state = PROCESSING;
 		clients[clientFd].processRequest();
+		// if (clients[clientFd].state != CGI_PROCESSING)
 		clients[clientFd].state = SENDING_RESPONSE;
+		std::cout << "hello " << clients[clientFd].cgi_path << std::endl;
+		this->launchCGI(clients[clientFd]);
 
 		epEvent.events = EPOLLIN | EPOLLOUT;
 		epEvent.data.fd = clientFd;
@@ -132,8 +135,6 @@ void	Server::eventLoop()
 {
 	int	nFds;
 	struct epoll_event	events[EPOLL_MAX_EVENTS];
-	MethodExecuter	methodExecuter;
-	ResponseBuilder	responseBuilder;
 
 	while (sigFlag != SIGINT)
 	{
@@ -145,6 +146,7 @@ void	Server::eventLoop()
 				this->handleNewClient(events[i].data.fd, methodExecuter, responseBuilder);
 				continue;
 			}
+			
 			if (events[i].events & (EPOLLHUP | EPOLLERR)) { // client was disconnected
 				close(events[i].data.fd);
 				this->clients.erase(events[i].data.fd);

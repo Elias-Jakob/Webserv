@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(const t_Configs &configs) : configs(configs)
+Server::Server(t_Configs &configs) : configs(configs)
 {}
 
 Server::~Server()
@@ -94,6 +94,8 @@ bool	Server::initListenSockets()
 
 void	Server::serverStartup()
 {
+	this->methodExecuter.setConfig(&this->configs);
+	this->responseBuilder.setConfig(&this->configs);
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1)
 		throw std::runtime_error(std::strerror(errno));

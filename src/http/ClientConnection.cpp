@@ -72,6 +72,10 @@ void ClientConnection::processRequest()
 			{
 				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
 			}
+			else if (result.statusCode == "601") {
+				state = CGI_PROCESSING;
+				cgi_path = result.statusPhrase;
+			}
 			else
 			{
 				response_buffer = responseBuilder->formatResponse(result);

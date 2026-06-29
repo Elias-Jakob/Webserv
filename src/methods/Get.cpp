@@ -39,6 +39,8 @@ bool	Get::execute()
 	if (handleRedirect())
 		return false;
 	
+	if (checkCGI())
+		return true;
 	struct stat fileInfo;
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
@@ -55,8 +57,6 @@ bool	Get::execute()
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-	if (checkCGI())
-		return true;
 	return serveFile(fileInfo);
 }
 
@@ -247,6 +247,7 @@ bool	Get::checkCGI()
 bool	Get::executeCGI(const std::string &script)
 {
 	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
-	HttpStatus::setStatus(501, _code, _phrase);
+	HttpStatus::setStatus(601, _code, _phrase);
+	_phrase = _resource;
 	return true;
 }
