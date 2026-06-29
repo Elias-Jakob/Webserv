@@ -43,12 +43,13 @@ typedef struct	s_token
 typedef struct s_executionResult
 {
     bool        success;        // Did execution succeed?
-    // int         statusCode;     // HTTP status code (200, 404, 500, etc.)
 	std::string	statusCode;
     std::string statusPhrase;   // "OK", "Not Found", etc.
     std::string body;           // Response body content
     std::string contentType;    // "text/html", "application/json", etc.
 	bool		keep_alive;
+	std::string	lastModified;
+	std::string	etag;
 }				t_executionResult;
 
 #endif

@@ -10,7 +10,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/ABodyParser.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
-		src/parsers/config/ConfigFileParser.cpp \
+		src/config/ConfigFileParser.cpp \
 		src/server/Server.cpp \
 		src/server/ServerEventLoop.cpp \
 		src/main.cpp

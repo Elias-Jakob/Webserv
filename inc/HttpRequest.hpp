@@ -13,6 +13,7 @@
 # include "FormParser.hpp"
 # include "MultipartParser.hpp"
 # include "structs.h"
+# include "print_controls.hpp"
 
 typedef struct s_RequestLine
 {
@@ -55,9 +56,11 @@ class HttpRequest
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		bool	setErrorCode(int code);
-		bool	isValidMethod();
+		bool	isImplementedMethod();
 		bool	isHttpVersionSupported();
 		bool	foundEndOfRequest();
+		std::string	toLowerCase(std::string &str);
+		void	addHeader(const std::string &key, const std::string &value);
 
 	protected:
 		// HELPERS
@@ -82,15 +85,17 @@ class HttpRequest
 		bool 	validRequest();
 
 		// GETTERS
-		s_RequestLine	&getRequestLine();
+		s_RequestLine						&getRequestLine();
 		std::map<
 			std::string,
-			std::vector<std::string> >	&getRequestHeaders();
-		std::string		&getRequestBody();
+			std::vector<std::string> >		&getRequestHeaders();
+		std::string							&getRequestBody();
 		std::map<std::string, s_FormField>	&getParsedBody();
-		t_ContentData	&getContentData();
-		std::string		&getMethod();
-		int	getErrorCode();
+		t_ContentData						&getContentData();
+		std::string							&getMethod();
+		int									getErrorCode();
+		std::string							&getURI();
+		std::string							getRedirectLocation();
 
 		// OUTPUT
 		void	printRequest(void);

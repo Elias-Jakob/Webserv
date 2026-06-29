@@ -6,6 +6,7 @@
 # include "structs.h"
 # include "HttpStatus.hpp"
 # include "HttpRequest.hpp"
+# include "ConfigFileParser.hpp"
 
 class AMethod
 {
@@ -15,6 +16,7 @@ class AMethod
 
 	protected:
 		std::string _method;
+		std::string	_reqUri;
 		std::string _resource;
 		std::string	_body;
 
@@ -26,24 +28,25 @@ class AMethod
 		std::string	_contentType;
 		s_ContentData	_contentData;
 		std::map<std::string, s_FormField>	_parsedBody;
+		t_Location	*_location;
+		bool		_isAutoIndex;
+		std::string	_lastModified;
+		std::string	_etag;
 
 	public:
 		AMethod();
 		AMethod(std::string name);
+		AMethod(std::string name, t_Location *location);
+
 		virtual ~AMethod();
 
-		bool	setRequiredData(
-						s_RequestLine &reqLine,
-                        std::map<std::string,
-                        std::vector<std::string> > &reqHeads,
-                        std::map<std::string, s_FormField> &parsedResult,
-                        s_ContentData &contentData);
-
-		void	setResource(std::string &reqURI, std::string &host);
+		bool    setRequiredData(HttpRequest *req, const std::string modifiedURI);
+		void	setResource(const std::string &modifiedURI);
 		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
 		void	setBody(std::map<std::string, s_FormField> &parsedBody);
 		void	setContentData(s_ContentData contentData);
-		
+		void	setReqUri(const std::string &requestURI);
+		bool	isDirList();
 		virtual bool execute() = 0;
 
 		std::string &getBody();
@@ -52,6 +55,9 @@ class AMethod
 		std::string &getPhrase();
 		std::string	&getCode();
 		std::string getContentType();
+		std::string getRedirectURL();
+		std::string	getLastModified();
+		std::string	getEtag();
 };
 
 #endif

@@ -16,24 +16,37 @@
 # include "ABodyParser.hpp"
 # include "FormParser.hpp"
 # include "MultipartParser.hpp"
+# include "ConfigFileParser.hpp"
 # include "structs.h"
 
 class MethodExecuter
 {
-	private:
-		// create AMethod
-		static AMethod	*createGet(std::string name);
-		static AMethod	*createPost(std::string name);
-		static AMethod	*createDelete(std::string name);
-
 	public:
-		// construction & deconstruction
 		MethodExecuter();
 		~MethodExecuter();
 
-		bool				isValidMethod(const std::string &methodName);
-		AMethod				*createMethod(const std::string &methodName);
+		bool				isImplementedMethod(const std::string &methodName);
+		AMethod				*createMethod(const std::string &methodName, const std::string &path);
 		t_executionResult	execute(AMethod *method, HttpRequest *request);
+		bool				setConfig(t_Configs *serverConfig);
+		t_Location			*availableLocation(const std::string &path);
+		std::string			modifyRequestURI(HttpRequest *req);
+
+	private:
+		t_Configs	*_serverConfig;
+		t_Location	_defaultLocation;
+
+		std::map<std::string, std::string>	_rootedLocations;
+
+		static AMethod	*createGet(std::string name);
+		static AMethod	*createPost(std::string name);
+		static AMethod	*createDelete(std::string name);
+		static AMethod	*createGet(std::string name, t_Location *locationObj);
+		
+		void						setDefaultLocation();
+		bool						isAllowedMethod(t_Location *location, const std::string &method);
+		std::vector<std::string>	splitPath(const std::string &path);
+		std::vector<std::string>	splitPathDir(const std::string &path);
 };
 
 #endif

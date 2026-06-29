@@ -1,8 +1,8 @@
 #include "ConfigFileParser.hpp"
 
-ConfigFileParser::ConfigFileParser() {}
+ConfigFileParser::ConfigFileParser(){}
 
-ConfigFileParser::~ConfigFileParser() {}
+ConfigFileParser::~ConfigFileParser(){}
 
 t_Configs	&ConfigFileParser::parseFile(const std::string &filePath)
 {
@@ -12,28 +12,24 @@ t_Configs	&ConfigFileParser::parseFile(const std::string &filePath)
 	std::string		buffer;
 	if (!fs.is_open())
 		throw std::runtime_error(std::strerror(errno));
-	// {
-	// 	std::cerr << "Error: File could not be opened!" << std::endl;
-	// 	return ;
-	// }
 	while (std::getline(fs, buffer))
 		str += buffer + '\n';
 
-	std::cout << str << std::endl;
-	// tokenize
+	// std::cout << str << std::endl;
 	tokenize(str);
 	adjustTokens();
-	printTokens();
-	// validate_tokens()
+	// printTokens();
+	// validate_tokens();
 	parseToDataStructure();
 	parseEndpoints();
-	// printServer();
+	if (PRINT_SERVER_CONFIG)
+		printServer();
 	return (this->_configs);
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
 {
-	std::cout << "Tokenization" << std::endl;
+	std::cout << "TOKENIZATION" << std::endl;
 	size_t start = 0;
 	size_t end = 0;
 	bool	inToken = false;
@@ -109,32 +105,7 @@ e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
 	return STR;
 }
 
-std::string ConfigFileParser::printTokenType(e_TokenType type)
-{
-	if (type == SERVER)
-		return "SERVER";
-	if (type == LOCATION)
-		return "LOCATION";
-	if (type == BRACE_OPEN)
-		return "BRACE_OPEN";
-	if (type == BRACE_CLOSE)
-		return "BRACE_CLOSE";
-	if (type == IDENTIFIER)
-		return "IDENTIFIER";
-	if (type == ASSIGN)
-		return "ASSIGN";
-	if (type == VALUE)
-		return "VALUE";
-	if (type == STR)
-		return "STR";
-	if (type == COMMA)
-		return "COMMA";
-	if (type == PATH_LOCATION)
-		return "PATH_LOCATION)";
-	if (type == NUMBER)
-		return "NUMBER";
-	return "UNKNOWN";
-}
+
 
 void ConfigFileParser::adjustTokens()
 {
@@ -162,14 +133,6 @@ bool ConfigFileParser::isNbr(const std::string &s)
 			return false;
 	}
 	return true;
-}
-
-void ConfigFileParser::printTokens()
-{
-	for (size_t i = 0; i < _tokens.size(); i++)
-	{
-		std::cout << printTokenType(_tokens[i].type) << " => " << _tokens[i].val << std::endl;
-	}
 }
 
 
@@ -212,7 +175,7 @@ size_t ConfigFileParser::createServer(size_t *i)
 		}
 		else if (_tokens[j].type == LOCATION)
 		{
-			std::cout << _tokens[j+1].val << std::endl;
+			// std::cout << _tokens[j+1].val << std::endl;
 			j += createLocation(j);
 		}
 	}
@@ -307,7 +270,7 @@ void	ConfigFileParser::parseEndpoints()
 			interface = s.substr(0, seperator);
 			port = s.substr(seperator + 1, s.size() - seperator -1);
 
-			t_Endpoints::iterator it = _configs.endpoints.find(interface);
+			std::map<std::string, std::vector<std::string> >::iterator it = _configs.endpoints.find(interface);
 			if (it != _configs.endpoints.end())
 			{
 				it->second.push_back(port);
@@ -336,8 +299,6 @@ void ConfigFileParser::setValue(const std::string id, size_t j)
 		_configs.serverName = _tokens[j+1].val;
 	else if (id == "client_max_body_size")
 		_configs.maxBodySize = convertStrToSize(_tokens[j + 1].val);
-	// else if (id == "error_page")
-		// _configs.errorPages.push_back(_tokens[j
 }
 
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
@@ -359,8 +320,8 @@ void ConfigFileParser::printServer()
 	std::cout << "\n\nSERVER DATA{" << std::endl;
 	std::cout << "name: "<< _configs.serverName << std::endl;
 	std::cout << "max_body_size: " << _configs.maxBodySize << std::endl;
-	t_Endpoints::iterator itIP = _configs.endpoints.begin();
-	t_Endpoints::iterator itIPe = _configs.endpoints.end();
+	std::map<std::string, std::vector<std::string> >::iterator itIP = _configs.endpoints.begin();
+	std::map<std::string, std::vector<std::string> >::iterator itIPe = _configs.endpoints.end();
 	std::cout << "Endpoints {\n";
 	while (itIP != itIPe)
 	{
@@ -424,4 +385,39 @@ void ConfigFileParser::printServer()
 		std::cout<< "}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;
+}
+
+std::string ConfigFileParser::printTokenType(e_TokenType type)
+{
+	if (type == SERVER)
+		return "SERVER";
+	if (type == LOCATION)
+		return "LOCATION";
+	if (type == BRACE_OPEN)
+		return "BRACE_OPEN";
+	if (type == BRACE_CLOSE)
+		return "BRACE_CLOSE";
+	if (type == IDENTIFIER)
+		return "IDENTIFIER";
+	if (type == ASSIGN)
+		return "ASSIGN";
+	if (type == VALUE)
+		return "VALUE";
+	if (type == STR)
+		return "STR";
+	if (type == COMMA)
+		return "COMMA";
+	if (type == PATH_LOCATION)
+		return "PATH_LOCATION)";
+	if (type == NUMBER)
+		return "NUMBER";
+	return "UNKNOWN";
+}
+
+void ConfigFileParser::printTokens()
+{
+	for (size_t i = 0; i < _tokens.size(); i++)
+	{
+		std::cout << printTokenType(_tokens[i].type) << " => " << _tokens[i].val << std::endl;
+	}
 }

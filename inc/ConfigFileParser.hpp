@@ -10,6 +10,7 @@
 # include <stdexcept>
 # include <cerrno>
 # include <cstring>
+# include "print_controls.hpp"
 
 enum e_TokenType
 {
