@@ -1,7 +1,13 @@
 #include "Delete.hpp"
 
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
+
 Delete::Delete() : AMethod()
-{}
+{
+	_method = "DELETE";
+}
 
 Delete::Delete(std::string name) : AMethod()
 {
@@ -9,27 +15,50 @@ Delete::Delete(std::string name) : AMethod()
 	std::cout << "DELETE method constructed" << std::endl;
 }
 
+Delete::Delete(std::string name, t_Location *location) : AMethod()
+{
+	_method = name;
+	_location = location;
+	std::cout << "DELETE method constructed with location" << std::endl;
+}
+
 Delete::~Delete(){}
 
+// =========================================================================
+// Public Methods
+// =========================================================================
+
 /**
-	* Executes the DELETE-Method.
-	* checks if the resource is deleteable and deletes is
-		if possible.
-**/
+  * @brief	Main function of GET-Method, checks if file is deletable
+  *			and deletes it.
+  * @return	TRUE on success
+  *			FALSE on error
+*/
 bool	Delete::execute()
 {
+	if (DELETE_PRINT)
+	{
+		std::cout << "Delete::execute()" << std::endl;
+		std::cout << "location = [" << _location->path << "]" <<std::endl;
+	}
 	if (!resourceExistsAndIsFile())
-		return false;   
-    if (!isDeletable(_resource))
+		return false;
+	if (!isDeletable(_resource))
 	{
 		HttpStatus::setStatus(403, _code, _phrase);
-        return false;
-    }
+		return false;
+	}
 	if (!deleteResource())
+		return false;
+	if (!isUploadLocation())
 		return false;
 	setSuccess();
 	return true;
 }
+
+// =========================================================================
+// Private Helper Methods
+// =========================================================================
 
 /**
 	* checks if resource exist and is not a directory
@@ -55,6 +84,8 @@ bool Delete::resourceExistsAndIsFile(void)
 		HttpStatus::setStatus(403, _code, _phrase);
     	return false;
 	}
+	if (DELETE_PRINT)
+		std::cout << "Deleted -> " << _resource << std::endl;
 	return true;
 }
 
@@ -66,15 +97,26 @@ bool Delete::resourceExistsAndIsFile(void)
 **/
 bool Delete::isDeletable(const std::string &path)
 {
+
+	if (access(path.c_str(), W_OK) != 0)
+		return false;
+
     char realPath[PATH_MAX];
+	if (realpath(path.c_str(), realPath) == NULL)
+		return false;
+	
+	char	resolvedRoot[PATH_MAX];
+	std::string	tmpRoot = "." + _location->root;
+	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
+		return false;
 
-    if (access(path.c_str(), W_OK) != 0)
-        return false;
-    if (realpath(path.c_str(), realPath) == NULL)
-        return false;    
+	std::string docRoot = std::string(resolvedRoot) + '/';
+	std::string resolved = std::string(realPath) + '/';
+    // std::string resolved(realPath);
 
-    std::string resolved(realPath);
-    if (resolved.find("/uploads/") == std::string::npos)
+	if (resolved.compare(0, docRoot.size(), docRoot))
+		return false;
+    if (resolved.find("/.") != std::string::npos)
         return false;
     return true;
 }
@@ -102,3 +144,7 @@ void	Delete::setSuccess()
 	HttpStatus::setStatus(204, _code, _phrase);
     _body = "";
 }
+
+// =========================================================================
+// Getters & Setters
+// =========================================================================

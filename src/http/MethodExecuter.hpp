@@ -42,6 +42,7 @@ class MethodExecuter
 		static AMethod	*createPost(std::string name);
 		static AMethod	*createDelete(std::string name);
 		static AMethod	*createGet(std::string name, t_Location *locationObj);
+		static AMethod	*createDelete(std::string name, t_Location *location);
 		
 		void						setDefaultLocation();
 		bool						isAllowedMethod(t_Location *location, const std::string &method);

@@ -1,8 +1,10 @@
 #ifndef AMethod_HPP
 # define AMethod_HPP
+
 # include <iostream>
 # include <map>
 # include <vector>
+
 # include "../../structs.h"
 # include "../http/HttpStatus.hpp"
 # include "../http/HttpRequest.hpp"
@@ -48,6 +50,7 @@ class AMethod
 		void	setReqUri(const std::string &requestURI);
 		bool	isDirList();
 		virtual bool execute() = 0;
+		bool	isUploadLocation();
 
 		std::string &getBody();
 
@@ -60,4 +63,4 @@ class AMethod
 		std::string	getEtag();
 };
 
-#endif
+#endif // AMETHOD_HPP

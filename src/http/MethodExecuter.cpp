@@ -162,9 +162,12 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 	}
 	if (location != NULL)
 	{
-		if (isAllowedMethod(location, methodName) && methodName == "GET") // Implement for all Methods
+		if (isAllowedMethod(location, methodName)) // Implement for all Methods
 		{
-			tempMethod = createGet(methodName, location);
+			if (methodName == "GET")
+				tempMethod = createGet(methodName, location);
+			if (methodName == "DELETE")	
+				tempMethod = createDelete(methodName, location);
 			return tempMethod;
 		}
 		else
@@ -204,6 +207,11 @@ AMethod *MethodExecuter::createPost(std::string name)
 AMethod *MethodExecuter::createDelete(std::string name)
 {
 	return new Delete(name);
+}
+
+AMethod *MethodExecuter::createDelete(std::string name, t_Location *location)
+{
+	return new Delete(name, location);
 }
 
 /**

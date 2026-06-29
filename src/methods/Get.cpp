@@ -84,6 +84,7 @@ bool	Get::handleRedirect()
 	* @param fileInfo stat structure of the directory
 	* @return true if successfully handled, false otherwise.
 */
+// TODO	
 bool	Get::handleDirectory(struct stat &fileInfo)
 {
 	if (_location->defaultPage.size() > 0)
@@ -101,7 +102,6 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 		return true;
 	}
 
-    // index.html doesn't exist
 	if (_location->autoIndex)
 	{
 		std::cout << "write to body" << std::endl;
@@ -195,7 +195,7 @@ std::string	Get::directoryListing(const std::string &dirPath, const std::string 
 	if (!dir)
 		return "";
 	html = "<html><body><h1>Index of " + uriPath + "</h1><ul>";
-	while ((entry = readdir(dir)) != NULL)
+	while ((entry = readdir(dir)) != NULL) // Q: Directory or file entry
 	{
 		std::string name = entry->d_name;
 		if (name == ".")

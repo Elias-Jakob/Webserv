@@ -29,6 +29,11 @@ bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI
 	return true;
 }
 
+bool    AMethod::isUploadLocation()
+{
+    return _location->upload;
+}
+
 /**
 	* @brief Sets the Identified Resource
 */
