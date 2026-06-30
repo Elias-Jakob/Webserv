@@ -168,6 +168,8 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 				tempMethod = createGet(methodName, location);
 			if (methodName == "DELETE")	
 				tempMethod = createDelete(methodName, location);
+			if (methodName == "POST")
+				tempMethod = createPost(methodName, location);
 			return tempMethod;
 		}
 		else
@@ -212,6 +214,11 @@ AMethod *MethodExecuter::createDelete(std::string name)
 AMethod *MethodExecuter::createDelete(std::string name, t_Location *location)
 {
 	return new Delete(name, location);
+}
+
+AMethod *MethodExecuter::createPost(std::string name, t_Location *location)
+{
+	return new Post(name, location);
 }
 
 /**

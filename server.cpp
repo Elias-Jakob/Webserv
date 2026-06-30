@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 	responseBuilder.setConfig(&serverConfig);
 	std::cout << "ConfigFile server_name = " << serverConfig.serverName << std::endl;
 
-	srand(rand());
+	srand(0);
 // getaddr()
 	struct addrinfo	*res;
 	int				ret;

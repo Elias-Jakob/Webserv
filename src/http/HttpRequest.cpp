@@ -378,7 +378,7 @@ std::string HttpRequest::parseContentType(std::vector<std::string> value)
 bool HttpRequest::createBodyParser()
 {
 	std::cout << "HttpRequest::createBodyParser()" << std::endl;
-	parseContentType(_headers["Content-Type"]);
+	parseContentType(_headers["content-type"]);
 	if (_contentData.type == "multipart")
 	{
 		std::cout << "Want to create MultipartParser" << std::endl;
