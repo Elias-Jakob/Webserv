@@ -72,15 +72,15 @@ void ClientConnection::processRequest()
 			{
 				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
 			}
-			else if (result.statusCode == "601") {
-				state = CGI_PROCESSING;
-				cgi_path = result.statusPhrase;
-			}
-			else
-			{
-				response_buffer = responseBuilder->formatResponse(result);
+			else {
 				keep_alive = request->keepConnectionAlive();
 				result.keep_alive = keep_alive;
+				response_buffer = responseBuilder->formatResponse(result);
+				if (result.statusCode == "601") {
+					std::cout << "hello: -----------" << std::endl;
+					state = CGI_PROCESSING;
+					cgi_path = result.statusPhrase;
+				}
 			}
 		}
 		else
@@ -89,7 +89,8 @@ void ClientConnection::processRequest()
 		}
 	}
 	std::cout << "==========* BUILT RESPONSE *==========" << std::endl;
-	state = SENDING_RESPONSE;
+	if (state != CGI_PROCESSING)
+		state = SENDING_RESPONSE;
 	
 	if (_currentMethod)
 	{
@@ -104,7 +105,7 @@ void ClientConnection::processRequest()
 void ClientConnection::cleanUpClient()
 {
 	state = READING_REQUEST;
-	delete request;
+		// delete request;
 	request = new HttpRequest();
 	response_buffer = "";
 	bytesSent = 0;

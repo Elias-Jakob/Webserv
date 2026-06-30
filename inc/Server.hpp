@@ -5,6 +5,7 @@
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
 # include "SyscallError.hpp"
+# include "CGIProcess.hpp"
 // CPP
 # include <iostream>
 # include <string>
@@ -45,7 +46,7 @@ class Server
 		ResponseBuilder	responseBuilder;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		std::map<int, CGIProcess>	cgis;
+		std::map<int, t_CGIProcess>	cgis;
 		int	epollFd;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
@@ -56,6 +57,7 @@ class Server
 		void	handleClientWrite(int);
 		void	removeInactiveClients();
 		void	launchCGIProcess(ClientConnection &client);
+		void	readFromCGI(int fd);
 };
 
 // DEBUG HELPERS

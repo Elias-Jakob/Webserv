@@ -44,6 +44,10 @@ class ClientConnection
 
 		void	processRequest();
 		void	cleanUpClient();
+
+		// CGI
+		pid_t	cgiPid;
+		
 };
 
 #endif

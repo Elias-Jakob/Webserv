@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import time
 
-time.sleep(60)
+time.sleep(2)
 
 for i in range(10):
     print(
