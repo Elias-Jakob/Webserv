@@ -42,6 +42,7 @@ void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, Respo
 
 void	Server::handleClientRead(int clientFd)
 {
+	ClientConnection	&client = this->clients.at(clientFd);
 	ssize_t	bytesRecv;
 	char buffer[4096];
 	struct epoll_event	epEvent;
@@ -54,35 +55,33 @@ void	Server::handleClientRead(int clientFd)
 	{
 		// Client closed connection
 		std::cout << "Client closed connection" << std::endl;
-		close(clientFd);
-		this->clients.erase(clientFd);
+		this->removeClient(client);
 		return;
 	}
 	std::cout << "Received " << bytesRecv << " bytes from " << clientFd << std::endl;
-	if (clients[clientFd].request == NULL)// Check if request pointer is valid
+	if (client.request == NULL)// Check if request pointer is valid
 	{
 		std::cerr << "ERROR: request pointer is NULL!" << std::endl;
-		close(clientFd);
-		clients.erase(clientFd);
+		this->removeClient(client);
 		return;
 	}
 	// Parse request - use string constructor with length to avoid buffer overflow
 	std::string request_data(buffer, bytesRecv);
-	clients[clientFd].request->parseRequest(request_data);
-	if (clients[clientFd].request->parsingComplete())
+	client.request->parseRequest(request_data);
+	if (client.request->parsingComplete())
 	{
-		clients[clientFd].state = PROCESSING;
-		clients[clientFd].processRequest();
-		if (clients[clientFd].state == CGI_PROCESSING) {
+		client.state = PROCESSING;
+		client.processRequest();
+		if (client.state == CGI_PROCESSING) {
 			try {
-				this->launchCGIProcess(clients[clientFd]);
+				this->cgiLauncher.newProcess(client, this->cgiProcesses);
 			}
 			catch (const CGIError &e) {
 				std::cerr << "CGI Process failed: " << e.what() << std::endl;
 			}
 		}
 		else {
-			clients[clientFd].state = SENDING_RESPONSE;
+			client.state = SENDING_RESPONSE;
 			epEvent.events = EPOLLIN | EPOLLOUT;
 			epEvent.data.fd = clientFd;
 			if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
@@ -114,8 +113,7 @@ void	Server::handleClientWrite(int clientFd)
 	if (client.keep_alive == false)
 	{
 		std::cout << "Client connection is not set to keep-alive, closing socket..." << std::endl;
-		close(clientFd);
-		this->clients.erase(clientFd);  // This will call destructor and free request/response
+		this->removeClient(client);
 		return;
 	}
 	epEvent.events = EPOLLIN;
@@ -125,15 +123,39 @@ void	Server::handleClientWrite(int clientFd)
 	client.cleanUpClient();
 }
 
-void	Server::removeInactiveClients()
+void	Server::killCGIProcesses(ClientConnection &client)
+{
+	struct epoll_event	epEvent;
+	
+	for (std::map<int, t_CGIProcess>::iterator	it = this->cgiProcesses.begin();
+			it != this->cgiProcesses.end(); ) {
+		if (it->second.client == &client) {
+			kill(it->second.pid, SIGKILL);
+			epEvent.data.fd = it->first;
+			if (epoll_ctl(epollFd, EPOLL_CTL_DEL, it->first, NULL) == -1)
+				throw std::runtime_error(std::strerror(errno));
+			close(it->first);
+			this->cgiProcesses.erase(it++);
+		} else
+			++it;
+	}
+}
+
+void	Server::removeClient(ClientConnection &client)
+{
+	this->killCGIProcesses(client);
+	close(client.fd);
+	this->clients.erase(client.fd);
+}
+
+void	Server::timeoutInactiveClients()
 {
 	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 			it != this->clients.end(); ) {
 		it->second.inactiveTime++;
 		if (it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
 			std::cout << "Removed inactive client after timeout... fd = " << it->first << std::endl;
-			close(it->first);
-			this->clients.erase(it++);
+			this->removeClient((it++)->second);
 		}
 		else ++it;
 	}
@@ -142,23 +164,26 @@ void	Server::removeInactiveClients()
 void	Server::readFromCGI(int fd)
 {
 	struct epoll_event	epEvent;
-	char buf[1024];
+	char buf[1024] = { 0 };
 	int	readBytes;
+	ClientConnection	&client = *this->cgiProcesses.at(fd).client;
 
-	readBytes = read(fd, buf, sizeof(buf));
+	readBytes = read(fd, buf, sizeof(buf) - 1);
 	std::string	strBuf(buf);
 	if (readBytes == -1) // handle
 		throw std::runtime_error(std::strerror(errno));
 	if (readBytes == 0) { // pipe was closed
-		std::cout << "client response_buffer: " << cgis.at(fd).client.response_buffer << std::endl;
+		
+		client.response_buffer = this->responseBuilder.cgiFormation(client.response_buffer);
+		client.state = SENDING_RESPONSE;
 		epEvent.events = EPOLLOUT;
-		epEvent.data.fd = cgis.at(fd).client.fd;
+		epEvent.data.fd = client.fd;
 		if (epoll_ctl(epollFd, EPOLL_CTL_MOD, epEvent.data.fd, &epEvent) == -1)
 			throw std::runtime_error(std::strerror(errno));
-		cgis.erase(fd);
+		cgiProcesses.erase(fd);
 		close(fd);
 	} else {
-		cgis.at(fd).client.response_buffer.append(buf);
+		client.response_buffer.append(buf);
 	}
 }
 
@@ -179,8 +204,7 @@ void	Server::eventLoop()
 			}
 			if (this->clients.find(events[i].data.fd) != this->clients.end()) {
 				if (events[i].events & (EPOLLHUP | EPOLLERR)) { // client was disconnected
-					close(events[i].data.fd);
-					this->clients.erase(events[i].data.fd);
+					this->removeClient(this->clients.at(events[i].data.fd));
 					continue;
 				}
 				this->clients.at(events[i].data.fd).inactiveTime = 0;
@@ -188,10 +212,10 @@ void	Server::eventLoop()
 					this->handleClientRead(events[i].data.fd);
 				if (events[i].events & EPOLLOUT) // the client is available for write
 					this->handleClientWrite(events[i].data.fd);
-			} else if (this->cgis.find(events[i].data.fd) != this->cgis.end()) {
+			} else if (this->cgiProcesses.find(events[i].data.fd) != this->cgiProcesses.end()) {
 				readFromCGI(events[i].data.fd);
 			}
 		}
-		this->removeInactiveClients();
+		this->timeoutInactiveClients();
 	}
 }

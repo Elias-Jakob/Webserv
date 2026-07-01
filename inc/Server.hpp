@@ -4,6 +4,7 @@
 # include "ConfigFileParser.hpp"
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
+# include "CGIProcessLauncher.hpp"
 # include "CGIError.hpp"
 
 // CPP
@@ -28,8 +29,6 @@
 
 extern sig_atomic_t	sigFlag;
 
-typedef std::pair<t_pid, &ClientConnection>	t_CGIProcess;
-
 class Server
 {
 	public:
@@ -45,9 +44,10 @@ class Server
 		t_Configs	&configs;
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
+		CGIProcessLauncher	cgiLauncher;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		std::map<int, t_CGIProcess>	cgis;
+		std::map<int, t_CGIProcess>	cgiProcesses;
 		int	epollFd;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
@@ -56,9 +56,10 @@ class Server
 		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
 		void	handleClientRead(int);
 		void	handleClientWrite(int);
-		void	removeInactiveClients();
-		void	launchCGIProcess(ClientConnection &client);
+		void	removeClient(ClientConnection &client);
+		void	timeoutInactiveClients();
 		void	readFromCGI(int fd);
+		void	killCGIProcesses(ClientConnection &client);
 };
 
 // DEBUG HELPERS

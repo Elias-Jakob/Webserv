@@ -99,6 +99,7 @@ void	Server::serverStartup()
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1)
 		throw std::runtime_error(std::strerror(errno));
+	this->cgiLauncher = CGIProcessLauncher(this->epollFd);
 	if (!this->initListenSockets())
 		throw std::runtime_error("Failed to set up any listening sockets");
 	this->eventLoop();
