@@ -31,6 +31,7 @@ class ResponseBuilder
 		std::string	redirectResponse(t_executionResult *result, const std::string &redirecURL);
 		std::string	buildErrorResponse(int errorCode);
 		bool		setConfig(t_Configs *serverConfig);
+		std::string cgiFormation(const std::string &cgiBody);
 
 	private:
 		t_Configs	*_serverConfig;

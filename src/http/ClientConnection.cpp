@@ -75,12 +75,13 @@ void ClientConnection::processRequest()
 			else {
 				keep_alive = request->keepConnectionAlive();
 				result.keep_alive = keep_alive;
-				response_buffer = responseBuilder->formatResponse(result);
 				if (result.statusCode == "601") {
-					std::cout << "hello: -----------" << std::endl;
+					result.statusCode = "200";
 					state = CGI_PROCESSING;
 					cgi_path = result.statusPhrase;
-				}
+					result.statusPhrase = "OK";
+				} else
+					response_buffer = responseBuilder->formatResponse(result);
 			}
 		}
 		else
@@ -105,7 +106,7 @@ void ClientConnection::processRequest()
 void ClientConnection::cleanUpClient()
 {
 	state = READING_REQUEST;
-		// delete request;
+	delete request;
 	request = new HttpRequest();
 	response_buffer = "";
 	bytesSent = 0;
