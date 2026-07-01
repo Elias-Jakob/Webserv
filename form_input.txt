@@ -1,1 +1,2 @@
-Copy me to the uploads right now!!!
+last_name = aasdf
+user_name = asdf

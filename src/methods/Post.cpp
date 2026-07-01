@@ -41,11 +41,12 @@ bool Post::execute()
 		std::cout << "POST->execute()" << std::endl;
 		printParsedResult();
 	}
-	if (!isUploadLocation())
+	if (!isUploadLocation() && !isSubmitLocation())
 		return false;
 	if (_contentData.type == "application") // submit
 	{
-		return (appendToFile("form_input.txt"));
+		return submitForm();
+		// return (appendToFile("form_input.txt"));
 	}
 	else if (_contentData.type == "multipart") // upload
 	{
@@ -61,11 +62,20 @@ bool Post::execute()
 // Private Helper Methods
 // =========================================================================
 
+bool	Post::submitForm()
+{
+	std::string	formPath;
+	formPath = "." + _location->root + "/" + _location->formUploadFile;
+	return appendToFile(formPath);
+}
+
 /**
 	* @brief handles content-type -> application From a /submit request.
 **/
 bool Post::appendToFile(std::string filename)
 {
+	if (POST_PRINT)
+		std::cout << "Post::appendToFile()" << std::endl;
 	std::ofstream	output(filename.c_str());
 	if(!output.is_open())
 	{

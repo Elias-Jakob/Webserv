@@ -244,6 +244,11 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 	}
 	if (_tokens[i - 1].val == "autoindex" && _tokens[i + 1].val == "on")
 		loc->autoIndex = true;
+	if (_tokens[i - 1].val == "form_output_file")
+	{
+		loc->formSubmit = true;
+		loc->formUploadFile = _tokens[i + 1].val;
+	}
 	return i + 1;
 }
 
@@ -413,6 +418,8 @@ void ConfigFileParser::printServer()
 		}
 		if (_server.locations[i].autoIndex)
 			std::cout << "\tautoindex: " << "on" << std::endl;
+		if (_server.locations[i].formSubmit)
+			std::cout << "\tform_output_file: " << _server.locations[i].formUploadFile << std::endl;
 		std::cout<< "}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;

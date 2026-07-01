@@ -41,6 +41,8 @@ typedef struct s_Location
 	std::string		uploadStore;
 	bool			autoIndex; // directory listing
 	std::string		defaultPage;
+	bool			formSubmit;
+	std::string		formUploadFile;
 	std::vector<std::string>	allowedMethods;
 	std::vector<std::string>	cgiExtensions;
 	std::vector<std::string>	uploadExtensions; // .txt, .pdf, .jpg, ...

@@ -31,7 +31,16 @@ bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI
 
 bool    AMethod::isUploadLocation()
 {
+    if (POST_PRINT)
+        std::cout << "AMethod::isUploadLocation() => " << _location->upload << std::endl;
     return _location->upload;
+}
+
+bool    AMethod::isSubmitLocation()
+{
+    if (POST_PRINT)
+        std::cout << "AMethod::isSubmitLocation() => " << _location->formSubmit << std::endl;
+    return _location->formSubmit;
 }
 
 /**

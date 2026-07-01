@@ -51,6 +51,7 @@ class AMethod
 		bool	isDirList();
 		virtual bool execute() = 0;
 		bool	isUploadLocation();
+		bool	isSubmitLocation();
 
 		std::string &getBody();
 

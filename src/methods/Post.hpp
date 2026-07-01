@@ -25,6 +25,7 @@ class Post : public AMethod
 		bool	execute();
 
 	private:
+		bool	submitForm();
 		bool	appendToFile(std::string filename); // form POST (./submit)
 		bool	uploadFile(); // multipart POST (./upload)
 		void	printParsedResult();
