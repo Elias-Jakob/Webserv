@@ -40,4 +40,9 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+run:
+	./webserv confFiles/webserv.conf
+
+runre: re run
+
+.PHONY: all clean fclean re run

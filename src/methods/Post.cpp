@@ -133,6 +133,8 @@ bool	Post::uploadFile()
 		std::cout << "Post::uploadFile()" << std::endl;
 	if (_parsedBody.empty())
 	{
+		if(POST_PRINT)
+			std::cout << "\t empty body!" << std::endl;
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
@@ -140,6 +142,8 @@ bool	Post::uploadFile()
 	std::string	recvFilename = it->second.filename;
 	if (!isFileNameValid(recvFilename))
 	{
+		if (POST_PRINT)
+			std::cout << "\t invalid File" << std::endl;
 		return false;
 	}
 	std::string filename = generateRandomFilename(recvFilename);

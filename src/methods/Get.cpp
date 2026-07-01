@@ -36,6 +36,8 @@ Get::~Get()
 */
 bool	Get::execute()
 {
+	if (GET_PRINT)
+		std::cout << "Get::execute()" << std::endl;
 	if (handleRedirect())
 		return false;
 	
@@ -70,6 +72,8 @@ bool	Get::execute()
 */
 bool	Get::handleRedirect()
 {
+	if (GET_PRINT)
+		std::cout << "Get::handleRedirect()" << std::endl;
 	if (_location && _location->redirect)
 	{
 		HttpStatus::setStatus(_location->redirectCode, _code, _phrase);
@@ -86,18 +90,38 @@ bool	Get::handleRedirect()
 */
 bool	Get::handleDirectory(struct stat &fileInfo)
 {
+	if (GET_PRINT)
+		std::cout << "Get::handleDirectory()" << std::endl;
 	if (_location->defaultPage.size() > 0)
 	{
+		if (GET_PRINT)
+			std::cout << "\tDefault page to serve" << _location->defaultPage << std::endl;
 		if (_resource.at(_resource.size()-1) != '/')
 			_resource += "/";
-		_resource += _location->defaultPage;
-		return true;
+		_resource = "." + _location->root + "/" + _location->defaultPage;
+		std::cout << _resource << std::endl;
+		struct stat resourceInfo;
+		if (stat(_resource.c_str(), &resourceInfo) != 0)
+		{
+			HttpStatus::setStatus(404, _code, _phrase);
+			return false;
+		}
+		return serveFile(resourceInfo);
 	}
 
+	std::cout << "\ttmpResource building..." << std::endl;
 	std::string tmpResource = _resource + "/index.html";
 	if (stat(tmpResource.c_str(), &fileInfo) == 0)
 	{
 		_resource = tmpResource;
+		std::cout << "_resource set to tmpResource" << std::endl;
+		struct stat resourceInfo;
+		if (stat(tmpResource.c_str(), &resourceInfo) != 0)
+		{
+			HttpStatus::setStatus(404, _code, _phrase);
+			return false;
+		}
+		return serveFile(resourceInfo);
 		return true;
 	}
 
@@ -121,6 +145,8 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 */
 bool	Get::serveFile(struct stat &fileInfo)
 {
+	if (GET_PRINT)
+		std::cout << "Get::serveFile()" << std::endl;
 	std::ifstream resourceStream(_resource.c_str(), std::ios::binary);
 	if (!resourceStream)
 	{
@@ -153,7 +179,8 @@ bool	Get::serveFile(struct stat &fileInfo)
 */
 bool Get::isFileAccessible(const std::string &path)
 {
-	std::cout << "Get::isFileAccessible()\n\tpath = " << path << std::endl;
+	if (GET_PRINT)
+		std::cout << "Get::isFileAccessible()\n\tpath = " << path << std::endl;
 	if (access(path.c_str(), R_OK) != 0)
 		return false;
 
@@ -184,8 +211,11 @@ bool Get::isFileAccessible(const std::string &path)
 */
 std::string	Get::directoryListing(const std::string &dirPath, const std::string &uriPath)
 {
-	std::cout << "Get::directoryListing()" << std::endl;
-	std::cout << "\tdir: " << dirPath << "; uri: " << uriPath << std::endl;
+	if (GET_PRINT)
+	{	
+		std::cout << "Get::directoryListing()" << std::endl;
+		std::cout << "\tdir: " << dirPath << "; uri: " << uriPath << std::endl;
+	}
 	DIR				*dir;
 	std::string		html;
 	struct dirent	*entry;

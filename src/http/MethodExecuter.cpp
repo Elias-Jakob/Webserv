@@ -35,7 +35,7 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
 	// {
 		result.statusCode = method->getCode();
 		result.statusPhrase = method->getPhrase();
-		
+
 		result.body = method->getBody();
 
 		if (method->isDirList())
@@ -62,6 +62,8 @@ bool	MethodExecuter::setConfig(t_Server *serverConfig)
 	{
 		if (_serverConfig->locations[i].root.size() > 0)
 			_rootedLocations[_serverConfig->locations[i].path] = _serverConfig->locations[i].root;
+		if (_serverConfig->locations[i].uploadStore.size() > 0)
+			_rootedLocations[_serverConfig->locations[i].path] = _serverConfig->locations[i].uploadStore;
 	}
 	setDefaultLocation();
 	std::map<std::string, std::string>::iterator it = _rootedLocations.begin();
@@ -87,8 +89,20 @@ std::string	MethodExecuter::modifyRequestURI(HttpRequest *req)
 	std::vector<std::string>	uriParts;
 
 	uriParts = splitPathDir(req->getRequestLine().requestURI);
+	for(size_t i = 0; i < uriParts.size(); i++)
+		std::cout << "\t" << i << ": ("<< uriParts[i] << ")" << std::endl;
+	
+	std::map<std::string, std::string>::iterator it = _rootedLocations.begin();
+	std::map<std::string, std::string>::iterator ite = _rootedLocations.end();
+	std::cout << "ROOTED_LOCATIONS: " << std::endl;
+	while (it != ite) {
+		std::cout << it->first << " -> " << it->second << std::endl;
+		it++;
+	}
+
 	for (size_t i = 0; i < uriParts.size(); i++) // lookup rooted Locations & replace if found
 	{
+		std::cout << "loop to replace.." << i << std::endl;
 		std::map<std::string, std::string>::iterator it;
 		it = _rootedLocations.find(uriParts[i]);
 		if (it != _rootedLocations.end())

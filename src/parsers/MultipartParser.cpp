@@ -193,14 +193,16 @@ static std::map<std::string, std::map<std::string, std::string> > parseHeaders(c
 **/
 bool MultipartParser::parse(std::string &body)
 {
-	std::cout << "parsing MultipartParser..." << std::endl;
+	if (MULTIPART_PRINT)
+		std::cout << "MultipartParser::parse()" << std::endl;
 	std::string fullBoundary = "--" + _contentData.boundary;
 	size_t partStart = body.find(fullBoundary);
 	if (!findFirstBoundary(body, &partStart, fullBoundary))
 		return false;
-
+	
 	while (partStart < body.length()) // Process each part
 	{
+		std::cout <<"ppp" << std::endl;
 		s_extractedData	data;
 		size_t			nextBoundary;
 		if (!extractHeadersAndContent(data, body, partStart, fullBoundary, &nextBoundary))
@@ -223,6 +225,8 @@ bool MultipartParser::parse(std::string &body)
 **/
 bool	MultipartParser::findFirstBoundary(std::string &body, size_t *partStart, std::string &fullBoundary)
 {
+	if (MULTIPART_PRINT)
+		std::cout << "MultipartParser::findFirstBoundary()" << std::endl;
 	if (*partStart == std::string::npos)
 		return false;
 	*partStart += fullBoundary.length();
@@ -243,13 +247,19 @@ bool	MultipartParser::extractHeadersAndContent(
 							std::string &fullBoundary,
 							size_t *nextBoundary)
 {
+	if (MULTIPART_PRINT)
+		std::cout << "MultipartParser::extractHeadersAndContent()" << std::endl;
 	std::string	rawHeaders;
 	size_t		headersEnd;
 	size_t		contentStart;
 
 	headersEnd = body.find("\r\n\r\n", partStart); // Find headers end
 	if (headersEnd == std::string::npos)
+	{
+		std::cout << "\t No header end: partStart = " << partStart << std::endl;
+		std::cout << "Body: \n" << body << std::endl;
 		return false;
+	}
 
 	rawHeaders = body.substr(partStart, headersEnd - partStart);
 	data.headers = parseHeaders(rawHeaders);
@@ -267,6 +277,8 @@ bool	MultipartParser::extractHeadersAndContent(
 **/
 bool	MultipartParser::createFormField(t_extractedData &data)
 {
+	if (MULTIPART_PRINT)
+		std::cout << "MultipartParser::createFormField()" << std::endl;
 	std::map<std::string, std::string> disposition;
 	t_FormField	field;
 	std::string	fieldName;

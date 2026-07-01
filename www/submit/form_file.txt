@@ -1,2 +1,2 @@
-last_name = There
-user_name = Hello
+age = 25
+name = 

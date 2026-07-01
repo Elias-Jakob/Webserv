@@ -39,7 +39,7 @@ bool	Delete::execute()
 	if (DELETE_PRINT)
 	{
 		std::cout << "Delete::execute()" << std::endl;
-		std::cout << "location = [" << _location->path << "]" <<std::endl;
+		std::cout << "\tlocation = [" << _location->path << "]" <<std::endl;
 	}
 	if (!resourceExistsAndIsFile())
 		return false;
@@ -48,9 +48,9 @@ bool	Delete::execute()
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-	if (!deleteResource())
-		return false;
 	if (!isUploadLocation())
+		return false;
+	if (!deleteResource())
 		return false;
 	setSuccess();
 	return true;
@@ -66,11 +66,13 @@ bool	Delete::execute()
 **/
 bool Delete::resourceExistsAndIsFile(void)
 {
+	if (DELETE_PRINT)
+		std::cout << "Delete::resourceExistsAndIsFile(), " << _resource << std::endl;
 	struct stat fileInfo;
-	std::cout << "==RESOURCE TO DELETE = " << _resource << std::endl;
-	if (stat(_resource.c_str(), &fileInfo) == -1)
+	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
 		HttpStatus::setStatus(404, _code, _phrase);
+		std::cout << "IS not file or not found" << std::endl;
 		return false;
 	}
 	if (S_ISDIR(fileInfo.st_mode))
@@ -126,12 +128,13 @@ bool Delete::isDeletable(const std::string &path)
 **/
 bool	Delete::deleteResource()
 {
-	if (unlink(_resource.c_str()) != 0)
-	{
-		HttpStatus::setStatus(500, _code, _phrase);
-		perror("unlink");
-		return false;
-	}
+	std::cout << "would delete Resource" << std::endl;
+	// if (unlink(_resource.c_str()) != 0)
+	// {
+		// HttpStatus::setStatus(500, _code, _phrase);
+		// perror("unlink");
+		// return false;
+	// }
 	return true;
 }
 

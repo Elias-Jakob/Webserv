@@ -3,6 +3,7 @@
 # include <iostream>
 # include <map>
 # include "../../structs.h"
+# include "../../print_controls.hpp"
 
 class ABodyParser
 {

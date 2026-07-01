@@ -108,7 +108,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	// std::cout << partialMessage << std::endl;
+	std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
 	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
@@ -137,6 +137,11 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 						_parsedMessageBody = _bodyParser->getResult();
 						if (_parsedMessageBody.size() > 0)
 							std::cout << "_parsedBody returned something..." << std::endl;
+					}
+					else
+					{
+						std::cout << "Error: BodyParsing" << std::endl;
+						_state = PARSING_ERROR;
 					}
 				}
 				if (PRINT_REQUEST)
@@ -185,6 +190,8 @@ bool	HttpRequest::keepConnectionAlive()
 **/
 bool	HttpRequest::parseRequestLine()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseRequestLine()" << std::endl;
     while (_current_pos + 1 < _messageBuffer.size() &&
            _messageBuffer[_current_pos] == '\r' && 
            _messageBuffer[_current_pos + 1] == '\n')
@@ -239,6 +246,8 @@ bool	HttpRequest::parseRequestLine()
 **/
 bool HttpRequest::parseHeaderLine()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseHeaderLine()" << std::endl;
     size_t endOfHeaders = _messageBuffer.find("\r\n\r\n", _current_pos);
     if (endOfHeaders == std::string::npos)
         return false;
@@ -291,6 +300,14 @@ bool HttpRequest::parseHeaderLine()
 **/
 bool	HttpRequest::extractBody()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::extractBody()" << std::endl;
+	std::cout << "_messageBuffer.size() = " << _messageBuffer.size() << std::endl;
+	std::cout << "_current_pos = " << _current_pos << std::endl;
+	std::cout << "First bytes at _current_pos:";
+	for (size_t i = _current_pos; i < _current_pos + 10 && i < _messageBuffer.size(); i++)
+	    std::cout << _messageBuffer[i];
+	std::cout << std::endl;
     size_t contentLength = 0;
     std::map<std::string, std::vector<std::string> >::iterator it;
 
@@ -313,9 +330,21 @@ bool	HttpRequest::extractBody()
 		_state = PARSING_ERROR;
 		return setErrorCode(411);
 	}
+	std::cout << "content-length = " << contentLength << std::endl;
 	size_t availableBytes = _messageBuffer.size() - _current_pos;
-    if (availableBytes < contentLength)// full body received?
-    {
+	std::cout << "availableBytes = " << availableBytes << std::endl;
+    
+	
+// std::cout << "Body content: [";
+// for (size_t i = 0; i < contentLength; i++)
+//     std::cout << _messageBuffer[_current_pos + i];
+// std::cout << "]" << std::endl;
+// std::cout << "Expected bytes: " << contentLength << ", Got: " << availableBytes << std::endl;
+	
+	if (availableBytes < contentLength)// _availableBytes off by one
+	{
+		std::cout << availableBytes << " < " << contentLength << std::endl;
+		std::cout << "FALSE" << std::endl;
         return false;
     }
     if (contentLength > 0)
@@ -340,14 +369,18 @@ bool	HttpRequest::extractBody()
 */
 std::string HttpRequest::parseContentType(std::vector<std::string> value)
 {
-	std::cout << "parsing contentType..." << std::endl;
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseContentType" << std::endl;
 	std::string	temp;
 	std::string	parameter;
 	std::string type;
 	size_t 		posSemiColon = 0;
 	size_t 		posSlash = 0;
 
+	if (value.empty())
+		return type;
 	temp = value.at(0);
+	std::cout << "temp" << std::endl;
 	if ((posSlash = temp.find('/', 0)) < temp.size())
 	{
 		_contentData.type = temp.substr(0, posSlash);
@@ -377,7 +410,12 @@ std::string HttpRequest::parseContentType(std::vector<std::string> value)
 **/
 bool HttpRequest::createBodyParser()
 {
-	std::cout << "HttpRequest::createBodyParser()" << std::endl;
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::createBodyParser()" << std::endl;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	it = _headers.find("content-type");
+	if (it == _headers.end())
+		return false;
 	parseContentType(_headers["content-type"]);
 	if (_contentData.type == "multipart")
 	{
@@ -390,7 +428,7 @@ bool HttpRequest::createBodyParser()
 		_bodyParser = createFormParser();
 	}
 	else if (_contentData.type.size() > 0)
-		return setErrorCode(415);
+		return setErrorCode(400);
 	return true;
 }
 

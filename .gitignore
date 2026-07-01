@@ -3,3 +3,7 @@ test_delete.sh
 docs/
 obj/
 webserv
+tester
+cgi_tester
+YoupiBanane
+www/uploads
