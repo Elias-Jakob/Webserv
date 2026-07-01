@@ -84,7 +84,6 @@ bool	Get::handleRedirect()
 	* @param fileInfo stat structure of the directory
 	* @return true if successfully handled, false otherwise.
 */
-// TODO	
 bool	Get::handleDirectory(struct stat &fileInfo)
 {
 	if (_location->defaultPage.size() > 0)

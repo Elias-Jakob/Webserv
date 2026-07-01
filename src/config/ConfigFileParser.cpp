@@ -219,6 +219,19 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 		loc->upload = true;
 	if (_tokens[i - 1].val == "upload_store")
 		loc->uploadStore = _tokens[i + 1].val;
+	if (_tokens[i -1].val == "upload_extensions")
+	{
+		size_t	j = i + 1;
+		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
+		{
+			loc->uploadExtensions.push_back(_tokens[j].val);
+			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
+				j += 2;
+			else
+				break;
+		}
+		return j;
+	}
 	if (_tokens[i -1].val == "index")
 		loc->defaultPage = _tokens[i+1].val;
 	if (_tokens[i -1].val == "return")
@@ -376,6 +389,17 @@ void ConfigFileParser::printServer()
 		}
 		if (_server.locations[i].upload)
 			std::cout << "\tuploadStorage: " << _server.locations[i].uploadStore << std::endl;
+		if (_server.locations[i].upload)
+		{
+			std::cout << "\textensions = ";
+			for (size_t j = 0; j < _server.locations[i].uploadExtensions.size(); j++)
+			{
+				if (j + 1 == _server.locations[i].uploadExtensions.size())
+					std::cout << _server.locations[i].uploadExtensions[j] << std::endl;
+				else
+					std::cout << _server.locations[i].uploadExtensions[j] << ", ";
+			}
+		}
 		if (_server.locations[i].cgiExtensions.size() > 0)
 		{
 			std::cout << "\tcgiExtensions: ";

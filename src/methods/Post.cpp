@@ -101,7 +101,6 @@ bool	Post::uploadFile()
 	std::string	recvFilename = it->second.filename;
 	if (!isFileNameValid(recvFilename))
 	{
-		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
 	std::string filename = generateRandomFilename(recvFilename);
@@ -113,7 +112,7 @@ bool	Post::uploadFile()
 	std::string uploadPath = "." + _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
 	if (POST_PRINT)
-	{	
+	{
 		std::cout << "uploadPath: " << uploadPath 
 			<< "; fullPath: " << fullPath << std::endl;
 	}
@@ -137,6 +136,33 @@ bool	Post::uploadFile()
 	outFile.close();
 	HttpStatus::setStatus(201, _code, _phrase);
 	return true;
+}
+
+/**
+	* @brief checks filesize and the extension
+// Q: If no uploadExtension set in ConfigFile, allow all or none?
+*/
+bool	Post::isFileNameValid(const std::string &filename)
+{
+	if (filename.size() < 1)
+		return false;
+	
+	size_t	start;
+	start = filename.find_first_of('.', 0);
+	if (start == std::string::npos) // no file extension
+	{
+		HttpStatus::setStatus(400, _code, _phrase);
+		return false;
+	}
+	std::string	extension;
+	extension = filename.substr(start, filename.size() - start);
+	for (size_t i = 0; i < _location->uploadExtensions.size(); i++)
+	{
+		if (extension == _location->uploadExtensions[i])
+			return true;
+	}
+	HttpStatus::setStatus(415, _code, _phrase);
+	return false;
 }
 
 /**
@@ -212,22 +238,6 @@ std::string	Post::generateRandomNumber()
 	ss << randNum;
 	numStr = ss.str();
 	return numStr;
-}
-
-/**
-	* @brief checks filesize and the extension
-*/
-bool	Post::isFileNameValid(const std::string &filename)
-{
-	if (filename.size() < 1)
-		return false;
-	size_t	start;
-	start = filename.find_first_of('.', 0);
-	if (start == std::string::npos)
-		return false;
-	// if (start + 1 == filename.size())
-		// return false;
-	return true;
 }
 
 /**
