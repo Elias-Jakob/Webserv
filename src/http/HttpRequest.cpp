@@ -354,7 +354,7 @@ std::string HttpRequest::parseContentType(std::vector<std::string> value)
 		if ((posSemiColon = temp.find(';', posSlash)) < temp.size())
 		{
 			parameter = temp.substr(posSemiColon, temp.size() - posSemiColon);
-			_contentData.subtype = temp.substr(posSlash + 1, posSemiColon - posSlash);
+			_contentData.subtype = temp.substr(posSlash + 1, posSemiColon - posSlash - 1);
 			size_t	posEqual = 0;
 			if ((posEqual = parameter.find("=", 0)) < parameter.size())
 			{

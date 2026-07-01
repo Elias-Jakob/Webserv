@@ -35,6 +35,7 @@ class Post : public AMethod
 		std::string	getCurrentTime();
 		std::string	generateRandomNumber();
 		bool		isFileNameValid(const std::string &filename);
+		bool		isValidContentType();
 
 };
 

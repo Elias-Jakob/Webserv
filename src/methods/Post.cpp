@@ -39,14 +39,15 @@ bool Post::execute()
 	if (POST_PRINT)
 	{
 		std::cout << "POST->execute()" << std::endl;
-		printParsedResult();
+		// printParsedResult();
 	}
+	if (!isValidContentType())
+		return false;
 	if (!isUploadLocation() && !isSubmitLocation())
 		return false;
 	if (_contentData.type == "application") // submit
 	{
 		return submitForm();
-		// return (appendToFile("form_input.txt"));
 	}
 	else if (_contentData.type == "multipart") // upload
 	{
@@ -62,8 +63,36 @@ bool Post::execute()
 // Private Helper Methods
 // =========================================================================
 
+bool	Post::isValidContentType()
+{
+	if (POST_PRINT)
+		std::cout << "Post::isValidContentType() = " << "[" << _contentData.type 
+			<< "] [" << _contentData.subtype << "]" << std::endl;
+	if (_contentData.type.empty())
+	{
+		HttpStatus::setStatus(400, _code, _phrase);
+		return false;
+	}
+	if (_contentData.type == "application")
+	{
+		if (_contentData.subtype == "x-www-form-urlencoded")
+		return true;
+	}
+	if (_contentData.type == "multipart")
+	{
+		if( _contentData.subtype == "form-data")
+		return true;
+	}
+	std::cout << "NOT VALID" << std::endl;
+
+	HttpStatus::setStatus(400, _code, _phrase);
+	return false;
+}
+
 bool	Post::submitForm()
 {
+	if (POST_PRINT)
+		std::cout << "Post::submitForm()" << std::endl;
 	std::string	formPath;
 	formPath = "." + _location->root + "/" + _location->formUploadFile;
 	return appendToFile(formPath);
