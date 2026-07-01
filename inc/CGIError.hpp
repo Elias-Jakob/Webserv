@@ -3,11 +3,11 @@
 
 # include <exception>
 
-class SyscallError : public std::exception
+class CGIError : public std::exception
 {
 	public:
-		SyscallError(const char *msg);
-		~SyscallError() throw();
+		CGIError(const char *msg);
+		~CGIError() throw();
 		const char	*what() const throw();
 	private:
 		const char	*_msg;

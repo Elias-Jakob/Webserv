@@ -73,8 +73,14 @@ void	Server::handleClientRead(int clientFd)
 	{
 		clients[clientFd].state = PROCESSING;
 		clients[clientFd].processRequest();
-		if (clients[clientFd].state == CGI_PROCESSING)
-			this->launchCGIProcess(clients[clientFd]);
+		if (clients[clientFd].state == CGI_PROCESSING) {
+			try {
+				this->launchCGIProcess(clients[clientFd]);
+			}
+			catch (const CGIError &e) {
+				std::cerr << "CGI Process failed: " << e.what() << std::endl;
+			}
+		}
 		else {
 			clients[clientFd].state = SENDING_RESPONSE;
 			epEvent.events = EPOLLIN | EPOLLOUT;

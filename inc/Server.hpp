@@ -4,8 +4,8 @@
 # include "ConfigFileParser.hpp"
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
-# include "SyscallError.hpp"
-# include "CGIProcess.hpp"
+# include "CGIError.hpp"
+
 // CPP
 # include <iostream>
 # include <string>
@@ -14,9 +14,8 @@
 # include <stdexcept>
 # include <cerrno>
 # include <cstring>
-// for std::find
-# include <algorithm>
-//
+# include <cstdlib> // std::exit
+# include <algorithm> // for std::find
 
 // POSIX
 # include <sys/socket.h>
@@ -28,6 +27,8 @@
 # include <fcntl.h>
 
 extern sig_atomic_t	sigFlag;
+
+typedef std::pair<t_pid, &ClientConnection>	t_CGIProcess;
 
 class Server
 {
