@@ -119,7 +119,7 @@ bool Delete::isDeletable(const std::string &path)
 	std::string docRoot = std::string(resolvedRoot) + '/';
 	std::string resolved = std::string(realPath) + '/';
 
-	if (resolved.compare(0, docRoot.size(), docRoot))
+	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
 		return false;
     if (resolved.find("/.") != std::string::npos)
         return false;

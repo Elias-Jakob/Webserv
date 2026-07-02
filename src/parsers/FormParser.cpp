@@ -37,7 +37,6 @@ bool FormParser::parse(std::string &str)
 			value = splittedStrings[i].substr(end + 1, splittedStrings[i].size());
 			urlDecode(key);
 			urlDecode(value);
-			// std::cout << "key: " << key << " = " << "value: " << value << std::endl;
 			s_FormField	field;
 			field.value = value;
 			_result[key] = field;

@@ -19,7 +19,6 @@ AMethod::AMethod(std::string name): _method(name), _location(NULL), _isAutoIndex
 AMethod::~AMethod()
 {}
 
-
 // =========================================================================
 // Public Methods
 // =========================================================================

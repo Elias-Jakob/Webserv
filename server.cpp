@@ -9,7 +9,10 @@ int main(int argc, char *argv[])
 {
 // ConfigFileParser
 	if (argc != 2)
-		std::cout << "No configuration file provided" << std::endl;
+	{
+		std::cerr << "No configuration file provided" << std::endl;
+		return 1;
+	}
 	ConfigFileParser configFile;
 	configFile.parseFile(argv[1]);
 	t_Server	serverConfig;
@@ -20,7 +23,8 @@ int main(int argc, char *argv[])
 	responseBuilder.setConfig(&serverConfig);
 	std::cout << "ConfigFile server_name = " << serverConfig.serverName << std::endl;
 
-	srand(0);
+	// srand(0);
+	srand(time(NULL));
 // getaddr()
 	struct addrinfo	*res;
 	int				ret;
@@ -99,6 +103,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	close(sfd);
 	return (0);
 }
 

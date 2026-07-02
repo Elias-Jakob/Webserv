@@ -185,8 +185,11 @@ size_t ConfigFileParser::createServer(size_t *i)
 	return j;
 }
 
+
 size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 {
+	if (i + 1 >= _tokens.size())
+		return i;
 	if (_tokens[i - 1].val == "root")
 		loc->root = _tokens[i + 1].val;
 	if (_tokens[i - 1].val == "accepted_methods")
@@ -261,6 +264,7 @@ size_t ConfigFileParser::createLocation(size_t i)
 	tempLoc.redirect = false;
 	tempLoc.upload = false;
 	tempLoc.autoIndex = false;
+	tempLoc.formSubmit = false;
 	while (_tokens.size() > j && _tokens[j].type != BRACE_CLOSE && _tokens[j].type != END_OF_FILE)
 	{
 		if (_tokens[j].type == ASSIGN)
@@ -313,6 +317,8 @@ bool	ConfigFileParser::checkIdentifier(const std::string identifier)
 
 void ConfigFileParser::setValue(const std::string id, size_t j)
 {
+	if (j + 1 >= _tokens.size())
+		return ;
 	if (id == "listen")
 		_server.listenInterfaces.push_back(_tokens[j + 1].val);
 	else if (id == "server_name")

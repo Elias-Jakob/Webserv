@@ -229,7 +229,8 @@ std::string	Post::extractFileExtension(std::string &recvFilename)
 	size_t	len = 0;
 
 	start = recvFilename.find_first_of('.', 0);
-	// validation checks?
+	if (start == std::string::npos)
+		return "";
 	if (start < recvFilename.size())
 	{
 		len = recvFilename.size() - start;
@@ -245,11 +246,11 @@ std::string	Post::getCurrentTime()
 {
 	std::string		timestamp;
 	struct timeval	tp;
-	long int		usec;
+	long long		usec;
 	std::stringstream	ss;
 
 	gettimeofday(&tp, NULL);
-	usec = tp.tv_sec * 1000 + tp.tv_usec /1000;
+	usec = tp.tv_sec * 1000 + tp.tv_usec / 1000;
 	if (POST_PRINT)
 		std::cout << "usec: " << usec << std::endl;
 	ss << usec;

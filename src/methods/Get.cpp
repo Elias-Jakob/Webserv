@@ -284,8 +284,12 @@ bool	Get::checkCGI()
 	if (_location->cgiExtensions.size() < 1)
 		return false;
 	std::string fileExt;
+	size_t		pos;
 	
-	fileExt = _resource.substr(_resource.find_last_of('.'));
+	pos = _resource.find_last_of('.');
+	if (pos == std::string::npos)
+		return false;
+	fileExt = _resource.substr(pos);
 	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
 	{
 		if (_location->cgiExtensions[i] == fileExt)

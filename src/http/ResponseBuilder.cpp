@@ -74,7 +74,9 @@ std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 		messageHeaders = "Content-Type: " + result.contentType + "\r\n";
 	messageHeaders += "Content-Length: " + ss.str() + "\r\n";
 	messageHeaders += "Cache-Control: no-cache, no-store, must-revalidate\r\n";
-	messageHeaders += "Date: " + getHttpDate() + "\r\n";
+	std::string	date = getHttpDate();
+	if (!date.empty())
+		messageHeaders += "Date: " + getHttpDate() + "\r\n";
 	messageHeaders += "Server: webserv/1.0\r\n";
 	if (result.keep_alive)
 		messageHeaders+= "Connection: keep-alive\r\n";
@@ -163,9 +165,15 @@ std::string ResponseBuilder::generateErrorPage(const std::string &code, const st
 std::string getHttpDate()
 {
 	time_t now = time(0);
-	struct tm tm = *gmtime(&now);
+	struct tm *tm; 
+	tm = gmtime(&now);
+	if (tm == NULL)
+	{
+		perror("gmtime:");
+		return "";
+	}
 	char buf[100];
 
-	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", &tm);
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
 	return std::string(buf);
 }
