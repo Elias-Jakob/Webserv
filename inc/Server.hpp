@@ -35,7 +35,11 @@ class Server
 		Server(t_Configs &configs);
 		~Server();
 
+		std::map<int, t_CGIProcess>	cgiProcesses;
+
 		void	serverStartup();
+		const t_Configs	&getConfigs();
+		const int	&getEpollFd();
 	private:
 		Server();
 		Server(const Server &other);
@@ -47,7 +51,6 @@ class Server
 		CGIProcessLauncher	cgiLauncher;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		std::map<int, t_CGIProcess>	cgiProcesses;
 		int	epollFd;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);

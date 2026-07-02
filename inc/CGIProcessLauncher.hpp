@@ -5,6 +5,8 @@
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
 
+class Server;
+
 typedef struct	s_CGIProcess
 {
 	ClientConnection	*client;
@@ -15,14 +17,14 @@ class CGIProcessLauncher
 {
 	public:
 		CGIProcessLauncher();
-		CGIProcessLauncher(int epollFd);
+		CGIProcessLauncher(Server *server);
 		CGIProcessLauncher(const CGIProcessLauncher &other);
 		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
 		~CGIProcessLauncher();
-		void	newProcess(ClientConnection &client, std::map<int, t_CGIProcess> &cgiProcesses);
+		void	newProcess(ClientConnection &client);
 	private:
 		struct epoll_event	epEvent;
-		int	epollFd;
+		Server	*server;
 		std::string	*path;
 		pid_t	pid;
 		// char	**argv;
@@ -30,7 +32,8 @@ class CGIProcessLauncher
 		int	stdinPipe[2];
 		int	stdoutPipe[2];
 
-		void	createArgs(char **argv, char **envp, ClientConnection &client);
+		void	createArgs(char *const argv[3], char **envp,
+			std::map<std::string, std::string>	&envpMap, std::string file);
 		void	cleanUp(bool closeAll);
 };
 

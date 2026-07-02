@@ -74,7 +74,7 @@ void	Server::handleClientRead(int clientFd)
 		client.processRequest();
 		if (client.state == CGI_PROCESSING) {
 			try {
-				this->cgiLauncher.newProcess(client, this->cgiProcesses);
+				this->cgiLauncher.newProcess(client);
 			}
 			catch (const CGIError &e) {
 				std::cerr << "CGI Process failed: " << e.what() << std::endl;
