@@ -9,23 +9,51 @@
 # include "../http/HttpStatus.hpp"
 # include "../http/HttpRequest.hpp"
 # include "../config/ConfigFileParser.hpp"
+# include "../../print_controls.hpp"
 
+/** 
+	* @class AMethod
+	* @brief Concrete-Class to build the Methods on.
+*/
 class AMethod
 {
-	private:
-		AMethod(const AMethod& other);
-		AMethod &operator=(const AMethod &other);
+	public:
+		AMethod();
+		AMethod(std::string name);
+		AMethod(std::string name, t_Location *location);
+
+		virtual ~AMethod();
+		virtual bool execute() = 0;
+
+		bool	isDirList();
+		bool	isUploadLocation();
+		bool	isSubmitLocation();
+
+		bool    setRequiredData(HttpRequest *req, const std::string modifiedURI);
+		void	setResource(const std::string &modifiedURI);
+		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
+		void	setBody(std::map<std::string, s_FormField> &parsedBody);
+		void	setContentData(s_ContentData contentData);
+		void	setReqUri(const std::string &requestURI);
+
+		std::string &getBody();
+		std::string &getPhrase();
+		std::string	&getCode();
+		std::string getContentType();
+		std::string getRedirectURL();
+		std::string	getLastModified();
+		std::string	getEtag();
 
 	protected:
 		std::string _method;
 		std::string	_reqUri;
-		std::string _resource;
 		std::string	_body;
-
-		std::string	_phrase;
-		std::string	_code;
 		std::map<std::string,
 				std::vector<std::string> >	_headers;
+
+		std::string _resource;
+		std::string	_phrase;
+		std::string	_code;
 
 		std::string	_contentType;
 		s_ContentData	_contentData;
@@ -35,33 +63,9 @@ class AMethod
 		std::string	_lastModified;
 		std::string	_etag;
 
-	public:
-		AMethod();
-		AMethod(std::string name);
-		AMethod(std::string name, t_Location *location);
-
-		virtual ~AMethod();
-
-		bool    setRequiredData(HttpRequest *req, const std::string modifiedURI);
-		void	setResource(const std::string &modifiedURI);
-		void	setHeaders(std::map<std::string, std::vector<std::string> > &heads);
-		void	setBody(std::map<std::string, s_FormField> &parsedBody);
-		void	setContentData(s_ContentData contentData);
-		void	setReqUri(const std::string &requestURI);
-		bool	isDirList();
-		virtual bool execute() = 0;
-		bool	isUploadLocation();
-		bool	isSubmitLocation();
-
-		std::string &getBody();
-
-		// status infos
-		std::string &getPhrase();
-		std::string	&getCode();
-		std::string getContentType();
-		std::string getRedirectURL();
-		std::string	getLastModified();
-		std::string	getEtag();
+	private:
+		AMethod(const AMethod& other);
+		AMethod &operator=(const AMethod &other);
 };
 
 #endif // AMETHOD_HPP

@@ -11,6 +11,11 @@
 # include <errno.h>
 # include <stdio.h>
 
+/** 
+	* @class Delete
+	* @brief Inherites from @class AMethod. Deletes the requested file,
+	*	if allowed and possible.
+*/
 class Delete : public AMethod
 {
 	public:

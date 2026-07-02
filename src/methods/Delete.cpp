@@ -29,10 +29,11 @@ Delete::~Delete(){}
 // =========================================================================
 
 /**
-  * @brief	Main function of GET-Method, checks if file is deletable
-  *			and deletes it.
-  * @return	TRUE on success
-  *			FALSE on error
+	* @brief	Main function of DELETE Method. Does checks to verify the file is 
+	*		deletable. Deltes requested file and sets _code(status-code) to the
+	*		appropiate value.
+	* @return	TRUE on success
+	*			FALSE on error
 */
 bool	Delete::execute()
 {
@@ -61,13 +62,15 @@ bool	Delete::execute()
 // =========================================================================
 
 /**
-	* checks if resource exist and is not a directory
-	* RETURN false if not found || resource is directory
-**/
+	* @brief Gets file-info with stat() and checks the infos to verify it is a
+	*	file. Sets _code to appropiate value if fail.
+	* @return FALSE	-> a) file does not exist, is directory, is link
+*/
 bool Delete::resourceExistsAndIsFile(void)
 {
 	if (DELETE_PRINT)
 		std::cout << "Delete::resourceExistsAndIsFile(), " << _resource << std::endl;
+
 	struct stat fileInfo;
 	if (stat(_resource.c_str(), &fileInfo) != 0)
 	{
@@ -92,11 +95,12 @@ bool Delete::resourceExistsAndIsFile(void)
 }
 
 /**
-	* Checks if resource is deletable by:
-	* 1. checking writeable
-	* 2. verify path is within allowed directory
-	* 3. if file is in uploads folder
-**/
+	* @brief Builds the realpath of _resource with the realpath of the
+	*	root-directory of this->_location to compare them.
+	* @param path the location of resource to be deleted.
+	* @return false: path's dont match up.
+				true: success.
+*/
 bool Delete::isDeletable(const std::string &path)
 {
 
@@ -114,7 +118,6 @@ bool Delete::isDeletable(const std::string &path)
 
 	std::string docRoot = std::string(resolvedRoot) + '/';
 	std::string resolved = std::string(realPath) + '/';
-    // std::string resolved(realPath);
 
 	if (resolved.compare(0, docRoot.size(), docRoot))
 		return false;
@@ -124,8 +127,10 @@ bool Delete::isDeletable(const std::string &path)
 }
 
 /**
-	* Deletes resource by using unlink().
-**/
+	* @brief Deltes requested _resource with unlink().
+	* @return true, success.
+	*		false, if unlink() failed.
+*/
 bool	Delete::deleteResource()
 {
 	std::cout << "would delete Resource" << std::endl;
@@ -139,15 +144,10 @@ bool	Delete::deleteResource()
 }
 
 /**
-	* Sets the standard code and phrase for a 
-		successfull DELETE-request.
-**/
+	* @brief sets status to 204 No Content & _body for response to empty.
+*/
 void	Delete::setSuccess()
 {
 	HttpStatus::setStatus(204, _code, _phrase);
     _body = "";
 }
-
-// =========================================================================
-// Getters & Setters
-// =========================================================================

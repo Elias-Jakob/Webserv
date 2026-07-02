@@ -33,7 +33,7 @@ Post::~Post()
 
 /**
 	* @brief executes Post-Method based on content-type
-**/
+*/
 bool Post::execute()
 {
 	if (POST_PRINT)
@@ -76,12 +76,12 @@ bool	Post::isValidContentType()
 	if (_contentData.type == "application")
 	{
 		if (_contentData.subtype == "x-www-form-urlencoded")
-		return true;
+			return true;
 	}
 	if (_contentData.type == "multipart")
 	{
 		if( _contentData.subtype == "form-data")
-		return true;
+			return true;
 	}
 	std::cout << "NOT VALID" << std::endl;
 
@@ -154,12 +154,6 @@ bool	Post::uploadFile()
 	}
 	std::string uploadPath = "." + _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
-	if (POST_PRINT)
-	{
-		std::cout << "uploadPath: " << uploadPath 
-			<< "; fullPath: " << fullPath << std::endl;
-	}
-
 	if (it->second.value.size() > MAX_BODY_SIZE)
 	{
 		HttpStatus::setStatus(413, _code, _phrase);
@@ -219,11 +213,8 @@ std::string	Post::generateRandomFilename(std::string &recvFilename)
 	std::string	randNum;
 
 	fileExtension = extractFileExtension(recvFilename);
-	// std::cout << "File-Extension: " << fileExtension << std::endl;
 	timestamp = getCurrentTime();
-	// std::cout << "timestamp: " << timestamp << std::endl;
 	randNum = generateRandomNumber();
-	// std::cout << "randomNumber: " << randNum << std::endl;
 	filename = timestamp + "_" + randNum + fileExtension;
 	return filename;
 }

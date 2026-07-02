@@ -36,10 +36,6 @@ class Post : public AMethod
 		std::string	generateRandomNumber();
 		bool		isFileNameValid(const std::string &filename);
 		bool		isValidContentType();
-
 };
 
-/*
-	Implement file upload
-*/
 #endif

@@ -10,6 +10,11 @@
 # include <dirent.h>
 # include "../config/ConfigFileParser.hpp"
 
+/**
+	* @class Get
+	* @brief Inherites from AMethod. Reads the Requested file and puts its
+	*	content into body for the response.
+*/
 class Get : public AMethod
 {
 	public:
@@ -22,18 +27,20 @@ class Get : public AMethod
 	
 	private:
 		bool		handleRedirect();
+
 		bool		handleDirectory(struct stat &fileInfo);
+		bool		serveDefaultPage();
+		bool		serveIndexPage();
+		bool		serveDirectoryList();
+		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
+
 		bool		serveFile(struct stat &fileInfo);
+		
 		bool 		isFileAccessible(const std::string &path);
 		bool		checkCGI();
 		bool		executeCGI(const std::string &script);
-		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
+		
 		std::string	convertTimeToHttpDate(time_t time);
 };
 
-/*
-[] implement safety checks
-[] check headers of request
-
-*/
 #endif

@@ -26,6 +26,7 @@ Get::Get(std::string name, t_Location *location) : AMethod()
 Get::~Get()
 {}
 
+
 // =========================================================================
 // Public Methods
 // =========================================================================
@@ -67,8 +68,8 @@ bool	Get::execute()
 // =========================================================================
 
 /**
- * @brief Checks if request is a redirect and sets appropriate response.
- * @return true if redirect was handled, false otherwise.
+ 	* @brief Checks if request is a redirect and sets appropriate response.
+ 	* @return true if redirect was handled, false otherwise.
 */
 bool	Get::handleRedirect()
 {
@@ -84,7 +85,10 @@ bool	Get::handleRedirect()
 }
 
 /**
-	* @brief Handles directory requests: checks for default page, index.html, or generates autoindex.
+	* @brief Handles directory requests: checks for: 
+	*	1. default page, 
+		2. index.html, 
+		3. generates directory-listing.
 	* @param fileInfo stat structure of the directory
 	* @return true if successfully handled, false otherwise.
 */
@@ -92,50 +96,72 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 {
 	if (GET_PRINT)
 		std::cout << "Get::handleDirectory()" << std::endl;
-	if (_location->defaultPage.size() > 0)
+	if (_location->defaultPage.size() > 0) // index = yyy.html
 	{
 		if (GET_PRINT)
-			std::cout << "\tDefault page to serve" << _location->defaultPage << std::endl;
-		if (_resource.at(_resource.size()-1) != '/')
-			_resource += "/";
-		_resource = "." + _location->root + "/" + _location->defaultPage;
-		std::cout << _resource << std::endl;
-		struct stat resourceInfo;
-		if (stat(_resource.c_str(), &resourceInfo) != 0)
-		{
-			HttpStatus::setStatus(404, _code, _phrase);
-			return false;
-		}
-		return serveFile(resourceInfo);
+			std::cout << "\tServe default-page" << _location->defaultPage << std::endl;
+		return serveDefaultPage();
 	}
 
-	std::cout << "\ttmpResource building..." << std::endl;
-	std::string tmpResource = _resource + "/index.html";
+	std::string tmpResource = _resource + "/index.html"; // check if dir has index.html
 	if (stat(tmpResource.c_str(), &fileInfo) == 0)
 	{
+		if (GET_PRINT)
+			std::cout << "\tserve dir/index.html" << std::endl;
 		_resource = tmpResource;
-		std::cout << "_resource set to tmpResource" << std::endl;
-		struct stat resourceInfo;
-		if (stat(tmpResource.c_str(), &resourceInfo) != 0)
-		{
-			HttpStatus::setStatus(404, _code, _phrase);
-			return false;
-		}
-		return serveFile(resourceInfo);
-		return true;
+		return serveIndexPage();
 	}
 
-	if (_location->autoIndex)
+	if (_location->autoIndex) // directory listing
 	{
-		std::cout << "write to body" << std::endl;
-		_body = directoryListing(_resource, _reqUri);
-		_isAutoIndex = true;
-		HttpStatus::setStatus(200, _code, _phrase);
-		return true;
+		if (GET_PRINT)
+			std::cout << "\tcreate directory-list" << std::endl;
+		return serveDirectoryList();
 	}
 
 	HttpStatus::setStatus(403, _code, _phrase);
 	return false;
+}
+
+/**
+	* @brief
+*/
+bool	Get::serveDefaultPage()
+{
+	if (_resource.at(_resource.size()-1) != '/')
+		_resource += "/";
+	_resource = "." + _location->root + "/" + _location->defaultPage;
+
+	struct stat resourceInfo;
+	if (stat(_resource.c_str(), &resourceInfo) != 0)
+	{
+		HttpStatus::setStatus(404, _code, _phrase);
+		return false;
+	}
+	return serveFile(resourceInfo);
+}
+
+/** 
+*/
+bool	Get::serveIndexPage()
+{
+	struct stat resourceInfo;
+	if (stat(_resource.c_str(), &resourceInfo) != 0)
+	{
+		HttpStatus::setStatus(404, _code, _phrase);
+		return false;
+	}
+	return serveFile(resourceInfo);
+}
+
+/**
+*/
+bool	Get::serveDirectoryList()
+{
+	_body = directoryListing(_resource, _reqUri);
+	_isAutoIndex = true;
+	HttpStatus::setStatus(200, _code, _phrase);
+	return true;
 }
 
 /**
@@ -156,7 +182,6 @@ bool	Get::serveFile(struct stat &fileInfo)
 
 	std::string buffer(fileInfo.st_size, '\0');
 	resourceStream.read(&buffer[0], fileInfo.st_size);
-	std::cout << "write to body" << std::endl;
 	_body = buffer;
 
 	_lastModified = convertTimeToHttpDate(fileInfo.st_mtime);
