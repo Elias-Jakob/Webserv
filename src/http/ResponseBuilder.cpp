@@ -95,9 +95,10 @@ std::string ResponseBuilder::buildFullResponse(const std::string &statusLine,
 	std::cout << "ResponseBuilder::buildFullResponse()" << std::endl;
 	std::string	response;
 
-	response = statusLine + messageHeaders + resultBody + "\r\n";
+	response = statusLine + messageHeaders + resultBody;
 	return response;
 }
+
 /**
 	* @brief builds an error message-response based on the happend error.
 */

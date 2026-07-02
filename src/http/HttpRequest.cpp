@@ -464,19 +464,35 @@ bool HttpRequest::validRequest()
 	if (_errorCode != 0)
 		return false;
 	if (!isImplementedMethod())
+	{
 		_errorCode = 501;
+		return false;
+	}
 	if (!isHttpVersionSupported())
+	{
 		_errorCode = 505;
-
+		return false;
+	}
+	if (!isValidURI(_requestLine.requestURI))
+	{
+		_errorCode = 403;
+		return false;
+	}
     std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("host");
 	if (it == _headers.end() || it->second.size() == 0)
+	{
 		_errorCode = 400;
+		return false;
+	}
 	if (_requestLine.method == "POST")
 	{
 		it = _headers.find("content-length");
 		if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
+		{
 			_errorCode = 411;
+			return false;
+		}
 	}
 	if (_errorCode != 0)
 	{
@@ -487,6 +503,18 @@ bool HttpRequest::validRequest()
 	std::cout << "\t==> TRUE" << std::endl;
 	return true;
 }
+
+/**
+	* @brief checks for path traversal (../../etc/passwd)
+*/
+bool	HttpRequest::isValidURI(const std::string &uri)
+{
+	if (uri.find("..") != std::string::npos
+		|| uri.find("//") != std::string::npos)
+		return false;
+	return true;
+}
+
 
 size_t skipLWS(std::string val, size_t start, size_t end)
 {

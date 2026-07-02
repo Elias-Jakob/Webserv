@@ -55,12 +55,14 @@ class HttpRequest
 
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
+		
 		bool	setErrorCode(int code);
 		bool	isImplementedMethod();
 		bool	isHttpVersionSupported();
 		bool	foundEndOfRequest();
-		std::string	toLowerCase(std::string &str);
 		void	addHeader(const std::string &key, const std::string &value);
+		bool	isValidURI(const std::string &uri);
+		std::string	toLowerCase(std::string &str);
 
 	protected:
 		// HELPERS

@@ -168,7 +168,7 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 	AMethod		*tempMethod = NULL;
 	t_Location	*location = NULL;
 
-	location = availableLocation(path);
+	location = availableLocation(path); // 
 	if (!location)
 	{
 		location = &_defaultLocation;

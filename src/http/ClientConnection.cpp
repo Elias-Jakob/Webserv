@@ -59,8 +59,8 @@ void ClientConnection::processRequest()
 	}
 	else
 	{
-			std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
-			std::cout << "==========* EXECUTING METHOD *==========" << std::endl;
+		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
+		std::cout << "==========* EXECUTING METHOD *==========" << std::endl;
 		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
 		if (_currentMethod != NULL)
 		{
@@ -73,9 +73,9 @@ void ClientConnection::processRequest()
 			}
 			else
 			{
-				response_buffer = responseBuilder->formatResponse(result);
 				keep_alive = request->keepConnectionAlive();
 				result.keep_alive = keep_alive;
+				response_buffer = responseBuilder->formatResponse(result);
 			}
 		}
 		else
@@ -104,15 +104,3 @@ void ClientConnection::cleanUpClient()
 	response_buffer = "";
 	bytes_sent = 0;
 }
-
-// =========================================================================
-// Getters & Setters
-// =========================================================================
-
-// =========================================================================
-// Public Methods
-// =========================================================================
-
-// =========================================================================
-// Private Helper Methods
-// =========================================================================

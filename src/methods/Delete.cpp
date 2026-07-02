@@ -129,12 +129,12 @@ bool Delete::isDeletable(const std::string &path)
 bool	Delete::deleteResource()
 {
 	std::cout << "would delete Resource" << std::endl;
-	// if (unlink(_resource.c_str()) != 0)
-	// {
-		// HttpStatus::setStatus(500, _code, _phrase);
-		// perror("unlink");
-		// return false;
-	// }
+	if (unlink(_resource.c_str()) != 0)
+	{
+		HttpStatus::setStatus(500, _code, _phrase);
+		perror("unlink");
+		return false;
+	}
 	return true;
 }
 

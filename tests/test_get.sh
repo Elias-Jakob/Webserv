@@ -81,7 +81,7 @@ sleep 0.5
 # Test 6: GET with path traversal attempt
 print_test "GET /../etc/passwd (path traversal attempt)"
 STATUS=$(send_get_request "/../etc/passwd")
-check_status "Should block path traversal" "404" "$STATUS"
+check_status "Should block path traversal" "403" "$STATUS"
 sleep 0.5
 
 # Test 7: GET with disallowed method
