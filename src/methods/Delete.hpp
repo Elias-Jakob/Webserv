@@ -11,17 +11,22 @@
 # include <errno.h>
 # include <stdio.h>
 
+/** 
+	* @class Delete
+	* @brief Inherites from @class AMethod. Deletes the requested file,
+	*	if allowed and possible.
+*/
 class Delete : public AMethod
 {
-	private:
-
 	public:
 		Delete();
 		Delete(std::string name);
+		Delete(std::string name, t_Location *location);
 		~Delete();
 
 		bool	execute(void);
-
+	
+	private:
 		bool	resourceExistsAndIsFile();
 		bool	isDeletable(const std::string &path);
 		bool	deleteResource(void);

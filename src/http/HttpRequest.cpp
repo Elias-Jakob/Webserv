@@ -68,8 +68,26 @@ std::string &HttpRequest::getMethod()
 
 int HttpRequest::getErrorCode()
 {
-	std::cout << "errorCode: " << _errorCode << std::endl;
+	std::cout << "HttpRequest::getErrorCode() => " << _errorCode << std::endl;
 	return _errorCode;
+}
+
+std::string &HttpRequest::getURI()
+{
+	return _requestLine.requestURI;
+}
+
+std::string	HttpRequest::getRedirectLocation()
+{
+	std::cout << "HttpRequest::getRedirectLocatio()" << std::endl;
+	std::string	location;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+
+	std::cout << "\t_headers.size = " << _headers.size() << std::endl;
+	it = _headers.find("Location");
+	if (it != _headers.end())
+		location = it->second[0];
+	return location;
 }
 
 // =========================================================================
@@ -87,11 +105,12 @@ int HttpRequest::getErrorCode()
 bool	HttpRequest::parseRequest(const std::string &partialMessage)
 {
 	std::cout << "\33[33m==========\n" 
-		<< "HTTP_REQUEST received..." << std::endl;
-	std::cout << "parsing request..." << std::endl;
+		<< "HTTP_REQUEST received...\n" << std::endl;
+	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
+	std::cout << "HttpRequest::parseRequest()" << std::endl;
 	std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
-	std::cout << _state << std::endl;
+	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -111,7 +130,6 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
-					std::cout << "SHOULD PARSE BODY HERE" << std::endl;
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -120,10 +138,14 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 						if (_parsedMessageBody.size() > 0)
 							std::cout << "_parsedBody returned something..." << std::endl;
 					}
+					else
+					{
+						std::cout << "Error: BodyParsing" << std::endl;
+						_state = PARSING_ERROR;
+					}
 				}
-				else
-					std::cout << "NO BODY PARSING NEEDED" << std::endl; //
-				printRequest();
+				if (PRINT_REQUEST)
+					printRequest();
 				_state = PARSING_COMPLETE;
 				break;
 			case PARSING_ERROR:
@@ -145,7 +167,7 @@ bool HttpRequest::parsingComplete()
 bool	HttpRequest::keepConnectionAlive()
 {
 	std::map<std::string, std::vector<std::string> >::iterator it;
-	it = _headers.find("Connection");
+	it = _headers.find("connection");
 	if (it != _headers.end() && !it->second.empty())
 	{
 		if (it->second[0] == "keep-alive")
@@ -168,6 +190,8 @@ bool	HttpRequest::keepConnectionAlive()
 **/
 bool	HttpRequest::parseRequestLine()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseRequestLine()" << std::endl;
     while (_current_pos + 1 < _messageBuffer.size() &&
            _messageBuffer[_current_pos] == '\r' && 
            _messageBuffer[_current_pos + 1] == '\n')
@@ -184,7 +208,7 @@ bool	HttpRequest::parseRequestLine()
 		return setErrorCode(414);
     }
     size_t posSP1 = reqLine.find(' '); // Find first space (after METHOD)
-	std::cout << "SP1: " << posSP1 << std::endl;
+	// std::cout << "SP1: " << posSP1 << std::endl;
     if (posSP1 == std::string::npos)
     {
         _state = PARSING_ERROR;
@@ -201,7 +225,7 @@ bool	HttpRequest::parseRequestLine()
 	_requestLine.version = reqLine.substr(posSP2 + 1);
 
 	_current_pos = posCRLF + 2;  // Skip \r\n
-	std::cout << "current_pos " << _current_pos << std::endl; 
+	// std::cout << "current_pos " << _current_pos << std::endl; 
 	if (foundEndOfRequest())
 	{
 		std::cout << "request ends after request-line" << std::endl;
@@ -222,6 +246,8 @@ bool	HttpRequest::parseRequestLine()
 **/
 bool HttpRequest::parseHeaderLine()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseHeaderLine()" << std::endl;
     size_t endOfHeaders = _messageBuffer.find("\r\n\r\n", _current_pos);
     if (endOfHeaders == std::string::npos)
         return false;
@@ -247,12 +273,14 @@ bool HttpRequest::parseHeaderLine()
         if (colonPos != std::string::npos)
         {
             std::string key = line.substr(0, colonPos);
+			toLowerCase(key); // header-field to lowercase
 			size_t valueStart = colonPos + 1;// Skip ": " and any leading spaces
             while (valueStart < line.size() && line[valueStart] == ' ')
                 valueStart++;
             std::string value = line.substr(valueStart);
-            _headers[key] = splitHeaderValByComma(value);
-        }
+			// (key = host || content-length) only one value allowed -> bad request(400).
+			addHeader(key, value);
+		}
 		else
 		{
 			_state = PARSING_ERROR;
@@ -272,10 +300,18 @@ bool HttpRequest::parseHeaderLine()
 **/
 bool	HttpRequest::extractBody()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::extractBody()" << std::endl;
+	std::cout << "_messageBuffer.size() = " << _messageBuffer.size() << std::endl;
+	std::cout << "_current_pos = " << _current_pos << std::endl;
+	std::cout << "First bytes at _current_pos:";
+	for (size_t i = _current_pos; i < _current_pos + 10 && i < _messageBuffer.size(); i++)
+	    std::cout << _messageBuffer[i];
+	std::cout << std::endl;
     size_t contentLength = 0;
     std::map<std::string, std::vector<std::string> >::iterator it;
 
-    it = _headers.find("Content-Length"); // Get Content-Length from headers
+    it = _headers.find("content-length"); // Get Content-Length from headers
     if (it != _headers.end() && !it->second.empty())
     {
         contentLength = atoi(it->second[0].c_str());
@@ -294,9 +330,21 @@ bool	HttpRequest::extractBody()
 		_state = PARSING_ERROR;
 		return setErrorCode(411);
 	}
+	std::cout << "content-length = " << contentLength << std::endl;
 	size_t availableBytes = _messageBuffer.size() - _current_pos;
-    if (availableBytes < contentLength)// full body received?
-    {
+	std::cout << "availableBytes = " << availableBytes << std::endl;
+    
+	
+// std::cout << "Body content: [";
+// for (size_t i = 0; i < contentLength; i++)
+//     std::cout << _messageBuffer[_current_pos + i];
+// std::cout << "]" << std::endl;
+// std::cout << "Expected bytes: " << contentLength << ", Got: " << availableBytes << std::endl;
+	
+	if (availableBytes < contentLength)// _availableBytes off by one
+	{
+		std::cout << availableBytes << " < " << contentLength << std::endl;
+		std::cout << "FALSE" << std::endl;
         return false;
     }
     if (contentLength > 0)
@@ -321,21 +369,25 @@ bool	HttpRequest::extractBody()
 */
 std::string HttpRequest::parseContentType(std::vector<std::string> value)
 {
-	std::cout << "parsing contentType..." << std::endl;
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::parseContentType" << std::endl;
 	std::string	temp;
 	std::string	parameter;
 	std::string type;
 	size_t 		posSemiColon = 0;
 	size_t 		posSlash = 0;
 
+	if (value.empty())
+		return type;
 	temp = value.at(0);
+	std::cout << "temp" << std::endl;
 	if ((posSlash = temp.find('/', 0)) < temp.size())
 	{
 		_contentData.type = temp.substr(0, posSlash);
 		if ((posSemiColon = temp.find(';', posSlash)) < temp.size())
 		{
 			parameter = temp.substr(posSemiColon, temp.size() - posSemiColon);
-			_contentData.subtype = temp.substr(posSlash + 1, posSemiColon - posSlash);
+			_contentData.subtype = temp.substr(posSlash + 1, posSemiColon - posSlash - 1);
 			size_t	posEqual = 0;
 			if ((posEqual = parameter.find("=", 0)) < parameter.size())
 			{
@@ -358,7 +410,13 @@ std::string HttpRequest::parseContentType(std::vector<std::string> value)
 **/
 bool HttpRequest::createBodyParser()
 {
-	parseContentType(_headers["Content-Type"]);
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::createBodyParser()" << std::endl;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	it = _headers.find("content-type");
+	if (it == _headers.end())
+		return false;
+	parseContentType(_headers["content-type"]);
 	if (_contentData.type == "multipart")
 	{
 		std::cout << "Want to create MultipartParser" << std::endl;
@@ -370,7 +428,7 @@ bool HttpRequest::createBodyParser()
 		_bodyParser = createFormParser();
 	}
 	else if (_contentData.type.size() > 0)
-		return setErrorCode(415);
+		return setErrorCode(400);
 	return true;
 }
 
@@ -384,7 +442,7 @@ ABodyParser *HttpRequest::createFormParser()
 	return new FormParser();
 }
 
-bool HttpRequest::isValidMethod() // 501
+bool HttpRequest::isImplementedMethod() // 501
 {
 	if (_requestLine.method == "GET"
 		|| _requestLine.method == "POST"
@@ -402,30 +460,61 @@ bool HttpRequest::isHttpVersionSupported() // 505
 
 bool HttpRequest::validRequest()
 {
-	std::cout << "validRequest()" << std::endl;
+	std::cout << "HttpRequest::validRequest()" << std::endl;
 	if (_errorCode != 0)
 		return false;
-	if (!isValidMethod())
+	if (!isImplementedMethod())
+	{
 		_errorCode = 501;
+		return false;
+	}
 	if (!isHttpVersionSupported())
+	{
 		_errorCode = 505;
+		return false;
+	}
+	if (!isValidURI(_requestLine.requestURI))
+	{
+		_errorCode = 403;
+		return false;
+	}
     std::map<std::string, std::vector<std::string> >::iterator it;
-    it = _headers.find("Host");
+    it = _headers.find("host");
 	if (it == _headers.end() || it->second.size() == 0)
+	{
 		_errorCode = 400;
+		return false;
+	}
 	if (_requestLine.method == "POST")
 	{
-		it = _headers.find("Content-Length");
+		it = _headers.find("content-length");
 		if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
+		{
 			_errorCode = 411;
+			return false;
+		}
 	}
 	if (_errorCode != 0)
 	{
+		std::cout << "\t==> FALSE" << std::endl;
 		printRequest();
 		return false;
 	}
+	std::cout << "\t==> TRUE" << std::endl;
 	return true;
 }
+
+/**
+	* @brief checks for path traversal (../../etc/passwd)
+*/
+bool	HttpRequest::isValidURI(const std::string &uri)
+{
+	if (uri.find("..") != std::string::npos
+		|| uri.find("//") != std::string::npos)
+		return false;
+	return true;
+}
+
 
 size_t skipLWS(std::string val, size_t start, size_t end)
 {
@@ -509,8 +598,35 @@ bool HttpRequest::foundEndOfRequest()
 	if (end != std::string::npos)
 	{
 		if (end == _current_pos - 2)
+		{
+			std::cout << "HttpRequest::foundEndOfRequest() => TRUE" << std::endl;
 			return true;
+		}
 	}
-	std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
+	// std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
+	std::cout << "HttpRequest::foundEndOfRequest() => FALSE" << std::endl;
 	return false;
+}
+
+std::string	HttpRequest::toLowerCase(std::string &str)
+{
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+}
+
+void	HttpRequest::addHeader(const std::string &key, const std::string &value)
+{
+	std::map<std::string, std::vector<std::string> >::iterator it;
+	it = _headers.find(key);
+	if (it == _headers.end()) // new header-field
+           _headers[key] = splitHeaderValByComma(value);
+	else // header-field already exists
+	{
+		if (key == "host" || key == "content-length")
+			setErrorCode(400);
+		std::vector<std::string>	temp;
+		temp = splitHeaderValByComma(value);
+		for (size_t i = 0; i < temp.size(); i++)
+			it->second.push_back(temp[i]);
+	}
 }

@@ -1,76 +1,83 @@
 #include "AMethod.hpp"
 
-AMethod::AMethod()
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
+
+AMethod::AMethod(): _method("unset"), _location(NULL), _isAutoIndex(false)
 {
-	std::cout << "AMethod constructed" << std::endl;
+    if (METHOD_PRINT)
+    	std::cout << "AMethod::AMethod() -> default constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _method(name)
+AMethod::AMethod(std::string name): _method(name), _location(NULL), _isAutoIndex(false)
 {
-	std::cout << "AMethod constructed " << _method << std::endl;
+    if (METHOD_PRINT)
+    	std::cout << "AMethod::AMethod() -> parameterized constructed " << _method << std::endl;
 }
 
-AMethod::~AMethod(){}
+AMethod::~AMethod()
+{}
+
+// =========================================================================
+// Public Methods
+// =========================================================================
 
 /**
-    * sets the needed data for methods
-**/
-bool    AMethod::setRequiredData(
-                        s_RequestLine &reqLine,
-                        std::map<std::string,
-                        std::vector<std::string> > &reqHeads,
-                        std::map<std::string, s_FormField> &parsedResult,
-                        s_ContentData &contentData)
+    * @brief Copies all the needed Data frome parsed request to the Method to
+    *   be executed.
+    * @param req -> Data structure of parsed request.
+    * @param modifiedURI -> the already modified request-URI.
+*/
+bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI)
 {
-    std::cout << "setting data for Method..." << std::endl;
-    setResource(reqLine.requestURI, reqHeads["Host"][0]);
-    setHeaders(reqHeads);
-    setBody(parsedResult);
-    setContentData(contentData);
-    return true;
+    if (METHOD_PRINT)
+        std::cout << "AMethod::setRequiredData()" << std::endl;
+	
+    setHeaders(req->getRequestHeaders());
+	setBody(req->getParsedBody());
+	setContentData(req->getContentData());
+	setResource(modifiedURI);
+    setReqUri(req->getRequestLine().requestURI);
+	return true;
 }
 
-void AMethod::setResource(std::string &reqURI, std::string &host)
+/**
+    * @brief returns if this->_location can be used for uploads.
+*/
+bool    AMethod::isUploadLocation()
 {
-    if (_method == "DELETE")
-        _resource = "./www" + reqURI;
-	else if (host != ".")
-		_resource = "." + reqURI;
-	// std::cout << "setResource -> " << _resource << std::endl;
+    if (POST_PRINT)
+        std::cout << "AMethod::isUploadLocation() => " << _location->upload << std::endl;
+    return _location->upload;
 }
 
-void AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads)
+/**
+    * @brief returns if this->_location is for /submit
+*/
+bool    AMethod::isSubmitLocation()
 {
-	_headers = heads;
-    // std::cout << "setHeaders..." << std::endl;
+    if (POST_PRINT)
+        std::cout << "AMethod::isSubmitLocation() => " << _location->formSubmit << std::endl;
+    return _location->formSubmit;
 }
 
-void AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
+/**
+    * @brief returns true, if this->_location allowes directory listing.
+*/
+bool    AMethod::isDirList()
 {
-    _parsedBody = parsedBody;
-    // std::cout << "setBody..." << std::endl;
+    return _isAutoIndex;
 }
 
-void AMethod::setContentData(s_ContentData contentData)
-{
-    _contentData = contentData;
-}
 
-std::string &AMethod::getBody()
-{
-	return _body;
-}
+// =========================================================================
+// Getters & Setters
+// =========================================================================
 
-std::string &AMethod::getPhrase()
-{
-	return _phrase;
-}
-
-std::string &AMethod::getCode()
-{
-	return _code;
-}
-
+/**
+    * @brief Checks the file-extensions and returns it.
+*/
 std::string AMethod::getContentType()
 {
 	size_t pos = _resource.find_last_of('.');
@@ -91,7 +98,61 @@ std::string AMethod::getContentType()
     
     return "application/octet-stream";
 }
-// bool AMethod::execute()
-// {
-// 	std::cout << "AMethod::execute() called... " << std::endl;
-// }
+
+/**
+	* @brief Appends '.' before the already modified request-URI.
+*/
+void	AMethod::setResource(const std::string &modifiedURI)
+{
+	_resource = "." + modifiedURI;
+}
+
+void    AMethod::setHeaders(std::map<std::string, std::vector<std::string> > &heads)
+{
+	_headers = heads;
+}
+
+void    AMethod::setBody(std::map<std::string, s_FormField> &parsedBody)
+{
+    _parsedBody = parsedBody;
+}
+
+void    AMethod::setContentData(s_ContentData contentData)
+{
+    _contentData = contentData;
+}
+
+void    AMethod::setReqUri(const std::string &requestURI)
+{
+    _reqUri = requestURI;
+}
+
+std::string &AMethod::getBody()
+{
+	return _body;
+}
+
+std::string &AMethod::getPhrase()
+{
+	return _phrase;
+}
+
+std::string &AMethod::getCode()
+{
+	return _code;
+}
+
+std::string AMethod::getRedirectURL()
+{
+    return _location->redirectURL;
+}
+
+std::string AMethod::getLastModified()
+{
+    return _lastModified;
+}
+
+std::string AMethod::getEtag()
+{
+    return _etag;
+}

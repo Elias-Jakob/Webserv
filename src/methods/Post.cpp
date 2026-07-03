@@ -1,101 +1,209 @@
 #include "Post.hpp"
 
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
+
 Post::Post() : AMethod()
 {
+	_method = "POST";
 }
 
 Post::Post(std::string name) : AMethod()
 {
 	_method = name;
-	std::cout << "POST" << std::endl;
+	if (POST_PRINT)
+		std::cout << "POST" << std::endl;
+}
+
+Post::Post(std::string name, t_Location *location)
+{
+	_method = name;
+	_location = location;
+	if (POST_PRINT)
+		std::cout << "POST with _location constructed" << std::endl;
 }
 
 Post::~Post()
 {}
 
+// =========================================================================
+// Public Methods
+// =========================================================================
+
 /**
-	* check the content type and parse the body appropialtly
-**/
+	* @brief executes Post-Method based on content-type
+*/
 bool Post::execute()
 {
-	std::cout << "POST->execute()" << std::endl;
-	printParsedResult();
+	if (POST_PRINT)
+	{
+		std::cout << "POST->execute()" << std::endl;
+		// printParsedResult();
+	}
+	if (!isValidContentType())
+		return false;
+	if (!isUploadLocation() && !isSubmitLocation())
+		return false;
+	if (_contentData.type == "application") // submit
+	{
+		return submitForm();
+	}
+	else if (_contentData.type == "multipart") // upload
+	{
+		return (uploadFile());
+	}
+	if (POST_PRINT)
+		std::cout << _contentData.type << std::endl;
+	HttpStatus::setStatus(501, _code, _phrase);
+	return false;
+}
+
+// =========================================================================
+// Private Helper Methods
+// =========================================================================
+
+bool	Post::isValidContentType()
+{
+	if (POST_PRINT)
+		std::cout << "Post::isValidContentType() = " << "[" << _contentData.type 
+			<< "] [" << _contentData.subtype << "]" << std::endl;
+	if (_contentData.type.empty())
+	{
+		HttpStatus::setStatus(400, _code, _phrase);
+		return false;
+	}
 	if (_contentData.type == "application")
 	{
-		appendToFile("form_input.txt");
+		if (_contentData.subtype == "x-www-form-urlencoded")
+			return true;
 	}
-	else if (_contentData.type == "multipart")
+	if (_contentData.type == "multipart")
 	{
-		std::cout << "UPLOAD FILE EXECUTION HERE!" << std::endl;
-		uploadFile();
+		if( _contentData.subtype == "form-data")
+			return true;
 	}
-	else
-	{
-		std::cout << _contentData.type << std::endl;
-		std::cout << "No Post execution implemented!" << std::endl;
-	}
-	HttpStatus::setStatus(200, _code, _phrase);
-	std::cout << "POST->execute() end\n" << std::endl;
-	return true;
+	std::cout << "NOT VALID" << std::endl;
+
+	HttpStatus::setStatus(400, _code, _phrase);
+	return false;
+}
+
+bool	Post::submitForm()
+{
+	if (POST_PRINT)
+		std::cout << "Post::submitForm()" << std::endl;
+	std::string	formPath;
+	formPath = "." + _location->root + "/" + _location->formUploadFile;
+	return appendToFile(formPath);
 }
 
 /**
-	* puts the POST-request of type form (./submit) to a file
+	* @brief handles content-type -> application From a /submit request.
 **/
-void Post::appendToFile(std::string filename)
+bool Post::appendToFile(std::string filename)
 {
+	if (POST_PRINT)
+		std::cout << "Post::appendToFile()" << std::endl;
 	std::ofstream	output(filename.c_str());
+	if(!output.is_open())
+	{
+		HttpStatus::setStatus(500, _code, _phrase);
+		return false;
+	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
 	std::map<std::string, s_FormField>::iterator ite = _parsedBody.end();
-
 	while (it != ite)
 	{
 		output << it->first << " = " << it->second.value << std::endl;
 		it++;
 	}
 	output.close();
+	HttpStatus::setStatus(201, _code, _phrase);
+	return true;
 }
 
 /**
-	* POST type of multipart.
-	* Creates a file and writes the content received by request inside newfile.
-	* 1. Path safety: To avoid Directory Traversal, generate a filename
-	* 2. opens file in binary-mode, so file wont be corrupted
-	* 3. 
+	* @brief handles file uploads. generates a filename and creates a file in 
+		* upload folder.
 **/
-void	Post::uploadFile()
+bool	Post::uploadFile()
 {
-	// 1. safety check for filepath
-	// 2. create & open file in binary-mode
+	if (POST_PRINT)
+		std::cout << "Post::uploadFile()" << std::endl;
+	if (_parsedBody.empty())
+	{
+		if(POST_PRINT)
+			std::cout << "\t empty body!" << std::endl;
+		HttpStatus::setStatus(400, _code, _phrase);
+		return false;
+	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
-	// std::map<std::string, s_FormField>::iterator ite = _parsedBody.end(); // for iterating through received files
-
 	std::string	recvFilename = it->second.filename;
+	if (!isFileNameValid(recvFilename))
+	{
+		if (POST_PRINT)
+			std::cout << "\t invalid File" << std::endl;
+		return false;
+	}
 	std::string filename = generateRandomFilename(recvFilename);
-
-	std::string	uploadPath = "www/uploads/";
+	if (_location->uploadStore.size() == 0)
+	{
+		HttpStatus::setStatus(404, _code, _phrase);
+		return false;
+	}
+	std::string uploadPath = "." + _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
+	if (it->second.value.size() > MAX_BODY_SIZE)
+	{
+		HttpStatus::setStatus(413, _code, _phrase);
+		return false;
+	}
 
 	std::ofstream	outFile(fullPath.c_str(), std::ios::out | std::ios::binary);
-
 	if (!outFile.is_open())
 	{
 		perror("ofstream.open:");
-		return ;
+		HttpStatus::setStatus(500, _code, _phrase);
+		return false;
 	}
+
 	outFile.write(it->second.value.c_str(), it->second.value.size());
 
-	std::cout << "== UPLOADED FILE ==" << std::endl;
-
 	outFile.close();
+	HttpStatus::setStatus(201, _code, _phrase);
+	return true;
 }
 
 /**
-	* generates a random Filename by:
-	* 1. extract fileextension(".jpeg", ".txt", ...).
-	* 2. getting time now in microseconds.
-	* 3. creates a random number.
-	RETURN generated string (Timestamp_randomNumber.fileextension)
+	* @brief checks filesize and the extension
+// Q: If no uploadExtension set in ConfigFile, allow all or none?
+*/
+bool	Post::isFileNameValid(const std::string &filename)
+{
+	if (filename.size() < 1)
+		return false;
+	
+	size_t	start;
+	start = filename.find_first_of('.', 0);
+	if (start == std::string::npos) // no file extension
+	{
+		HttpStatus::setStatus(400, _code, _phrase);
+		return false;
+	}
+	std::string	extension;
+	extension = filename.substr(start, filename.size() - start);
+	for (size_t i = 0; i < _location->uploadExtensions.size(); i++)
+	{
+		if (extension == _location->uploadExtensions[i])
+			return true;
+	}
+	HttpStatus::setStatus(415, _code, _phrase);
+	return false;
+}
+
+/**
+	* @brief uses the current time and a random number to create a filename.
 **/
 std::string	Post::generateRandomFilename(std::string &recvFilename)
 {
@@ -105,17 +213,14 @@ std::string	Post::generateRandomFilename(std::string &recvFilename)
 	std::string	randNum;
 
 	fileExtension = extractFileExtension(recvFilename);
-	std::cout << "File-Extension: " << fileExtension << std::endl;
 	timestamp = getCurrentTime();
-	std::cout << "timestamp: " << timestamp << std::endl;
 	randNum = generateRandomNumber();
-	std::cout << "randomNumber: " << randNum << std::endl;
 	filename = timestamp + "_" + randNum + fileExtension;
 	return filename;
 }
 
 /**
-	* checks and return the received filename for its extension.
+	* @brief extracts and returns the file-extension (.html, .txt, ..)
 **/
 std::string	Post::extractFileExtension(std::string &recvFilename)
 {
@@ -124,7 +229,8 @@ std::string	Post::extractFileExtension(std::string &recvFilename)
 	size_t	len = 0;
 
 	start = recvFilename.find_first_of('.', 0);
-	// validation checks?
+	if (start == std::string::npos)
+		return "";
 	if (start < recvFilename.size())
 	{
 		len = recvFilename.size() - start;
@@ -134,26 +240,26 @@ std::string	Post::extractFileExtension(std::string &recvFilename)
 }
 
 /**
-	* finds out current time microseconds and converts it to string
-	* RETURN string of time
+	* @brief calls gettimeofday and converts time to ms.
 **/
 std::string	Post::getCurrentTime()
 {
 	std::string		timestamp;
 	struct timeval	tp;
-	long int		usec;
+	long long		usec;
 	std::stringstream	ss;
 
 	gettimeofday(&tp, NULL);
-	usec = tp.tv_sec * 1000 + tp.tv_usec;
-	std::cout << "usec: " << usec << std::endl;
+	usec = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+	if (POST_PRINT)
+		std::cout << "usec: " << usec << std::endl;
 	ss << usec;
 	timestamp = ss.str();
 	return timestamp;
 }
 
 /**
-	* Generates a random number and converts it to a string
+	* @brief generates random number with rand().
 **/
 std::string	Post::generateRandomNumber()
 {
@@ -162,7 +268,8 @@ std::string	Post::generateRandomNumber()
 	std::stringstream	ss;
 
 	randNum = rand();
-	std::cout << "Random number of rand()" << randNum << std::endl;
+	if (POST_PRINT)
+		std::cout << "Random number of rand()" << randNum << std::endl;
 	ss << randNum;
 	numStr = ss.str();
 	return numStr;

@@ -3,39 +3,39 @@
 # include "AMethod.hpp"
 # include <fstream>
 # include <sys/stat.h>
+
+# include <iostream>
+# include <vector>
+# include <filesystem>
+# include <sys/time.h> // gettimeofday
+# include <sstream> // int to string
+# include <cstdlib> // srand()
+
 # include "../parsers/FormParser.hpp"
 # include "../parsers/MultipartParser.hpp"
 
-#include <iostream>
-// #include <fstream>
-#include <vector>
-#include <filesystem>
-#include <sys/time.h> // gettimeofday
-#include <sstream> // int to string
-#include <cstdlib> // srand()
-
 class Post : public AMethod
 {
-	private:
-		void	appendToFile(std::string filename); // form POST (./submit)
-		void	uploadFile(); // multipart POST (./upload)
-
 	public:
 		Post();
 		Post(std::string name);
+		Post(std::string name, t_Location *location);
 		~Post();
 
 		bool	execute();
+
+	private:
+		bool	submitForm();
+		bool	appendToFile(std::string filename); // form POST (./submit)
+		bool	uploadFile(); // multipart POST (./upload)
 		void	printParsedResult();
 
 		std::string	generateRandomFilename(std::string	&recvFilename);
 		std::string	extractFileExtension(std::string &recvFilename);
 		std::string	getCurrentTime();
 		std::string	generateRandomNumber();
-		// void	setParsedResult(std::map<std::string, s_FormField> res);
+		bool		isFileNameValid(const std::string &filename);
+		bool		isValidContentType();
 };
 
-/*
-	Implement file upload
-*/
 #endif

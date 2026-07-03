@@ -10,6 +10,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/ABodyParser.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
+		src/config/ConfigFileParser.cpp \
 		server.cpp
 
 OBJDIR = obj
@@ -39,4 +40,9 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+run:
+	./webserv confFiles/webserv.conf
+
+runre: re run
+
+.PHONY: all clean fclean re run

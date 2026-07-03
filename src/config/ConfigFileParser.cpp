@@ -1,4 +1,4 @@
-#include "configFileParser.hpp"
+#include "ConfigFileParser.hpp"
 
 ConfigFileParser::ConfigFileParser(){}
 
@@ -18,20 +18,20 @@ void	ConfigFileParser::parseFile(const std::string &filePath)
 	while (std::getline(fs, buffer))
 		str += buffer + '\n';
 
-	std::cout << str << std::endl;
-	// tokenize
+	// std::cout << str << std::endl;
 	tokenize(str);
 	adjustTokens();
-	printTokens();
-	// validate_tokens()
+	// printTokens();
+	// validate_tokens();
 	parseToDataStructure();
 	parseEndpoints();
-	printServer();
+	if (PRINT_SERVER_CONFIG)
+		printServer();
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
 {
-	std::cout << "Tokenization" << std::endl;
+	std::cout << "TOKENIZATION" << std::endl;
 	size_t start = 0;
 	size_t end = 0;
 	bool	inToken = false;
@@ -107,32 +107,7 @@ e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
 	return STR;
 }
 
-std::string ConfigFileParser::printTokenType(e_TokenType type)
-{
-	if (type == SERVER)
-		return "SERVER";
-	if (type == LOCATION)
-		return "LOCATION";
-	if (type == BRACE_OPEN)
-		return "BRACE_OPEN";
-	if (type == BRACE_CLOSE)
-		return "BRACE_CLOSE";
-	if (type == IDENTIFIER)
-		return "IDENTIFIER";
-	if (type == ASSIGN)
-		return "ASSIGN";
-	if (type == VALUE)
-		return "VALUE";
-	if (type == STR)
-		return "STR";
-	if (type == COMMA)
-		return "COMMA";
-	if (type == PATH_LOCATION)
-		return "PATH_LOCATION)";
-	if (type == NUMBER)
-		return "NUMBER";
-	return "UNKNOWN";
-}
+
 
 void ConfigFileParser::adjustTokens()
 {
@@ -160,14 +135,6 @@ bool ConfigFileParser::isNbr(const std::string &s)
 			return false;
 	}
 	return true;
-}
-
-void ConfigFileParser::printTokens()
-{
-	for (size_t i = 0; i < _tokens.size(); i++)
-	{
-		std::cout << printTokenType(_tokens[i].type) << " => " << _tokens[i].val << std::endl;
-	}
 }
 
 
@@ -210,7 +177,7 @@ size_t ConfigFileParser::createServer(size_t *i)
 		}
 		else if (_tokens[j].type == LOCATION)
 		{
-			std::cout << _tokens[j+1].val << std::endl;
+			// std::cout << _tokens[j+1].val << std::endl;
 			j += createLocation(j);
 		}
 	}
@@ -218,8 +185,11 @@ size_t ConfigFileParser::createServer(size_t *i)
 	return j;
 }
 
+
 size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 {
+	if (i + 1 >= _tokens.size())
+		return i;
 	if (_tokens[i - 1].val == "root")
 		loc->root = _tokens[i + 1].val;
 	if (_tokens[i - 1].val == "accepted_methods")
@@ -252,6 +222,19 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 		loc->upload = true;
 	if (_tokens[i - 1].val == "upload_store")
 		loc->uploadStore = _tokens[i + 1].val;
+	if (_tokens[i -1].val == "upload_extensions")
+	{
+		size_t	j = i + 1;
+		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
+		{
+			loc->uploadExtensions.push_back(_tokens[j].val);
+			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
+				j += 2;
+			else
+				break;
+		}
+		return j;
+	}
 	if (_tokens[i -1].val == "index")
 		loc->defaultPage = _tokens[i+1].val;
 	if (_tokens[i -1].val == "return")
@@ -264,6 +247,11 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 	}
 	if (_tokens[i - 1].val == "autoindex" && _tokens[i + 1].val == "on")
 		loc->autoIndex = true;
+	if (_tokens[i - 1].val == "form_output_file")
+	{
+		loc->formSubmit = true;
+		loc->formUploadFile = _tokens[i + 1].val;
+	}
 	return i + 1;
 }
 
@@ -276,6 +264,7 @@ size_t ConfigFileParser::createLocation(size_t i)
 	tempLoc.redirect = false;
 	tempLoc.upload = false;
 	tempLoc.autoIndex = false;
+	tempLoc.formSubmit = false;
 	while (_tokens.size() > j && _tokens[j].type != BRACE_CLOSE && _tokens[j].type != END_OF_FILE)
 	{
 		if (_tokens[j].type == ASSIGN)
@@ -328,14 +317,14 @@ bool	ConfigFileParser::checkIdentifier(const std::string identifier)
 
 void ConfigFileParser::setValue(const std::string id, size_t j)
 {
+	if (j + 1 >= _tokens.size())
+		return ;
 	if (id == "listen")
 		_server.listenInterfaces.push_back(_tokens[j + 1].val);
 	else if (id == "server_name")
 		_server.serverName = _tokens[j+1].val;
 	else if (id == "client_max_body_size")
 		_server.maxBodySize = convertStrToSize(_tokens[j + 1].val);
-	// else if (id == "error_page")
-		// _server.errorPages.push_back(_tokens[j
 }
 
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
@@ -350,6 +339,11 @@ size_t	ConfigFileParser::convertStrToSize(const std::string value)
 	else if (suffix == 'K' || suffix == 'k')
 		size *= 1024;
 	return size;
+}
+
+t_Server	ConfigFileParser::getServerConfigData()
+{
+	return _server;
 }
 
 void ConfigFileParser::printServer()
@@ -406,6 +400,17 @@ void ConfigFileParser::printServer()
 		}
 		if (_server.locations[i].upload)
 			std::cout << "\tuploadStorage: " << _server.locations[i].uploadStore << std::endl;
+		if (_server.locations[i].upload)
+		{
+			std::cout << "\textensions = ";
+			for (size_t j = 0; j < _server.locations[i].uploadExtensions.size(); j++)
+			{
+				if (j + 1 == _server.locations[i].uploadExtensions.size())
+					std::cout << _server.locations[i].uploadExtensions[j] << std::endl;
+				else
+					std::cout << _server.locations[i].uploadExtensions[j] << ", ";
+			}
+		}
 		if (_server.locations[i].cgiExtensions.size() > 0)
 		{
 			std::cout << "\tcgiExtensions: ";
@@ -419,7 +424,44 @@ void ConfigFileParser::printServer()
 		}
 		if (_server.locations[i].autoIndex)
 			std::cout << "\tautoindex: " << "on" << std::endl;
+		if (_server.locations[i].formSubmit)
+			std::cout << "\tform_output_file: " << _server.locations[i].formUploadFile << std::endl;
 		std::cout<< "}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;
+}
+
+std::string ConfigFileParser::printTokenType(e_TokenType type)
+{
+	if (type == SERVER)
+		return "SERVER";
+	if (type == LOCATION)
+		return "LOCATION";
+	if (type == BRACE_OPEN)
+		return "BRACE_OPEN";
+	if (type == BRACE_CLOSE)
+		return "BRACE_CLOSE";
+	if (type == IDENTIFIER)
+		return "IDENTIFIER";
+	if (type == ASSIGN)
+		return "ASSIGN";
+	if (type == VALUE)
+		return "VALUE";
+	if (type == STR)
+		return "STR";
+	if (type == COMMA)
+		return "COMMA";
+	if (type == PATH_LOCATION)
+		return "PATH_LOCATION)";
+	if (type == NUMBER)
+		return "NUMBER";
+	return "UNKNOWN";
+}
+
+void ConfigFileParser::printTokens()
+{
+	for (size_t i = 0; i < _tokens.size(); i++)
+	{
+		std::cout << printTokenType(_tokens[i].type) << " => " << _tokens[i].val << std::endl;
+	}
 }

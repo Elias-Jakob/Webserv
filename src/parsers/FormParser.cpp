@@ -37,7 +37,6 @@ bool FormParser::parse(std::string &str)
 			value = splittedStrings[i].substr(end + 1, splittedStrings[i].size());
 			urlDecode(key);
 			urlDecode(value);
-			// std::cout << "key: " << key << " = " << "value: " << value << std::endl;
 			s_FormField	field;
 			field.value = value;
 			_result[key] = field;
@@ -73,10 +72,12 @@ void FormParser::urlDecode(std::string &data)
         }
 		else if (data[i] == '%' && i + 2 < data.length())
 		{
-			std::string hex = data.substr(data[i+1], data[i+2]);
-			std::cout << "hex" << hex << std::endl;
-			char *end;
-			result += std::strtod(hex.c_str(), &end);
+			std::string hex = data.substr(i + 1, 2);
+			result += (char)std::strtol(hex.c_str(), NULL, 16);
+			// std::string hex = data.substr(data[i+1], data[i+2]);
+			// std::cout << "hex" << hex << std::endl;
+			// char *end;
+			// result += std::strtod(hex.c_str(), &end);
             i += 2;
         }
 		else

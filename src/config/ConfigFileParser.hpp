@@ -1,9 +1,12 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <sstream>
+#ifndef CONFIG_FILE_PARSER_HPP
+# define CONFIG_FILE_PARSER_HPP
+# include <iostream>
+# include <fstream>
+# include <vector>
+# include <map>
+# include <algorithm>
+# include <sstream>
+# include "../../print_controls.hpp"
 
 enum e_TokenType
 {
@@ -38,9 +41,12 @@ typedef struct s_Location
 	std::string		uploadStore;
 	bool			autoIndex; // directory listing
 	std::string		defaultPage;
+	bool			formSubmit;
+	std::string		formUploadFile;
 	std::vector<std::string>	allowedMethods;
 	std::vector<std::string>	cgiExtensions;
-}	t_Location;
+	std::vector<std::string>	uploadExtensions; // .txt, .pdf, .jpg, ...
+}				t_Location;
 
 typedef struct s_Server
 {
@@ -51,7 +57,7 @@ typedef struct s_Server
 	std::vector<t_Location>		locations;
 
 	std::map<std::string, std::vector<std::string> >	endpoints;
-}	t_Server;
+}				t_Server;
 
 class ConfigFileParser
 {
@@ -60,6 +66,7 @@ class ConfigFileParser
 		~ConfigFileParser();
 
 		void parseFile(const std::string &filePath);
+		t_Server	getServerConfigData();
 
 	private:
 		// TOKENIZATION
@@ -90,6 +97,7 @@ class ConfigFileParser
 		void	parseEndpoints();
 };
 
+#endif
 /*
 	TOKENS:
 		KEYWORD("server"),

@@ -5,9 +5,26 @@ void handleNewConnection(int listen_fd, std::vector<struct pollfd> &fds, std::ma
 void handleClientRead(int client_fd, std::vector<struct pollfd> &fds, size_t index, std::map<int, ClientConnection> &clients);
 void handleClientWrite(int client_fd, std::vector<struct pollfd> &fds, size_t index, std::map<int, ClientConnection> &clients);
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	srand(rand());
+// ConfigFileParser
+	if (argc != 2)
+	{
+		std::cerr << "No configuration file provided" << std::endl;
+		return 1;
+	}
+	ConfigFileParser configFile;
+	configFile.parseFile(argv[1]);
+	t_Server	serverConfig;
+	serverConfig = configFile.getServerConfigData();
+	MethodExecuter	methodExecuter;
+	ResponseBuilder	responseBuilder;
+	methodExecuter.setConfig(&serverConfig);
+	responseBuilder.setConfig(&serverConfig);
+	std::cout << "ConfigFile server_name = " << serverConfig.serverName << std::endl;
+
+	// srand(0);
+	srand(time(NULL));
 // getaddr()
 	struct addrinfo	*res;
 	int				ret;
@@ -60,8 +77,6 @@ int main(void)
 	pfd.revents = 0;
 	fds.push_back(pfd);
 	std::map<int, ClientConnection> clients;
-	MethodExecuter	methodExecuter;
-	ResponseBuilder	responseBuilder;
 	while (1)
 	{
 		int	ready = poll(&fds[0], fds.size(), -1); // wait for activity on any socket
@@ -88,6 +103,7 @@ int main(void)
 			}
 		}
 	}
+	close(sfd);
 	return (0);
 }
 
@@ -183,7 +199,8 @@ void handleClientWrite(int client_fd, std::vector<struct pollfd>& fds, size_t in
 
 	std::cout << "\033[35m==========\nRESPONSE sending...\n" << std::endl;
 	sent = send(client_fd, clients[client_fd].response_buffer.c_str(), clients[client_fd].response_buffer.size(), 0);
-	
+	if (PRINT_RESPONSE)
+		std::cout << clients[client_fd].response_buffer << std::endl;
 	if (sent < 0)
 	{
 		// Non-blocking socket: EAGAIN/EWOULDBLOCK means can't send right now
