@@ -27,6 +27,7 @@ CGIProcessLauncher	&CGIProcessLauncher::operator=(const CGIProcessLauncher &othe
 
 CGIProcessLauncher::~CGIProcessLauncher() {}
 
+/*
 void	CGIProcessLauncher::createArgs(char *argv[3], char **envp,
 	std::map<std::string, std::string>	&envpMap, std::string file)
 {
@@ -39,6 +40,15 @@ void	CGIProcessLauncher::createArgs(char *argv[3], char **envp,
 	argv[0] = interpreter.c_str;
 	argv[1] = file.c_str();
 	argv[2] = NULL;
+}
+*/
+
+char	**CGIProcessLauncher::getArray(std::vector<std::string> lst)
+{
+	char	**arr = new char*[lst.size() + 1]();
+	for (size_t	i = 0; i < lst.size(); ++i)
+		arr[i] = (char *)lst[i].c_str();
+	return (arr);
 }
 
 void	CGIProcessLauncher::cleanUp(bool closeAll = false)
@@ -88,10 +98,25 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		}
 	}
 	else {
-		// just to make it work for now
-		std::map<std::string, std::string>	envpMap;
-		char	*argv[3];
-		char	**envp = NULL;
+		std::string	file, root;
+		size_t	last_slash;
+		std::vector<std::string>	args, env;
+		char	**argv, **envp = NULL;
+
+
+		// WARNING: this could be dangerous
+		root = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
+		file = client.cgi_path;
+		last_slash = file.find_last_of("/");
+		if (last_slash != std::string::npos)
+			file = file.substr(last_slash + 1);
+
+		args.push_back("/usr/bin/python3");
+		args.push_back(file);
+		
+		// env.push_back();
+		argv = this->getArray(args);
+		envp = this->getArray(env);
 
 		if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 				|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
@@ -102,18 +127,12 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		close(this->stdinPipe[1]);
 		close(this->stdoutPipe[0]);
 
-		// WARNING: this could be dangerous
-		std::string	root = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
-		std::string	file = client.cgi_path;
-		size_t	last_slash = file.find_last_of("/");
-		if (last_slash != std::string::npos)
-			file = file.substr(last_slash + 1);
-
-		createArgs(argv, envp, envpMap, file);
 		if (chdir(root.c_str()) != -1)
 			execve(file.c_str(), argv, envp);
 		std::cerr << "CGI process failed hello: " << std::strerror(errno) << std::endl;
 
+		delete[] argv;
+		delete[] envp;
 		/*
 		for (char *i = *argv; i != NULL; ++i)
 			delete[] i;

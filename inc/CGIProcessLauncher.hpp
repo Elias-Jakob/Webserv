@@ -32,8 +32,9 @@ class CGIProcessLauncher
 		int	stdinPipe[2];
 		int	stdoutPipe[2];
 
-		void	createArgs(char *const argv[3], char **envp,
-			std::map<std::string, std::string>	&envpMap, std::string file);
+		// void	createArgs(char *const argv[3], char **envp,
+			// std::map<std::string, std::string>	&envpMap, std::string file);
+		char	**getArray(std::vector<std::string> lst);
 		void	cleanUp(bool closeAll);
 };
 
