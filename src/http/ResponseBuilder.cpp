@@ -1,7 +1,8 @@
 #include "ResponseBuilder.hpp"
 
-// HELPERS
-std::string getHttpDate();
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
 
 ResponseBuilder::ResponseBuilder()
 {}
@@ -9,10 +10,18 @@ ResponseBuilder::ResponseBuilder()
 ResponseBuilder::~ResponseBuilder()
 {}
 
+// =========================================================================
+// Public Methods
+// =========================================================================
+
+/**
+	* @brief Stores the server-configurations
+*/
 bool ResponseBuilder::setConfig(t_Configs *serverConfig)
 {
 	_serverConfig = serverConfig;
-	std::cout << "ResponseBuilder::setConfig() : server_name = " << _serverConfig->serverName << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::setConfig() : server_name = " << _serverConfig->serverName << std::endl;
 	return true;
 }
 
@@ -23,26 +32,23 @@ bool ResponseBuilder::setConfig(t_Configs *serverConfig)
 */
 std::string ResponseBuilder::formatResponse(t_executionResult result)
 {
-	std::cout << "ResponseBuilder::formatResponse()" << std::endl;
-	std::string	response;
-	std::string statusLine;
-	std::string	messageHeaders;
-
-	statusLine = buildStatusLine(&result);
-	// std::string statusLine = "HTTP/1.1 " + result.statusCode + " " + result.statusPhrase + "\r\n";
-	messageHeaders = buildResponseHeaders(result);
-	std::cout << result.body << std::endl;
-	response = buildFullResponse(statusLine, messageHeaders, result.body);
-	// resp = statusLine + messageHeaders + result.body + "\r\n";
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::formatResponse()" << std::endl;
+	std::string statusLine = buildStatusLine(&result);
+	std::string messageHeaders = buildResponseHeaders(result);
+	std::string response = buildFullResponse(statusLine, messageHeaders, result.body);
 	return response;
 }
 
 /**
-	* @brief 
+	* @brief Builds the response if a Redirect is needed.
 */
-std::string	ResponseBuilder::redirectResponse(t_executionResult *result, const std::string &redirectURL)
+std::string	ResponseBuilder::redirectResponse(
+	t_executionResult *result, 
+	const std::string &redirectURL)
 {
-	std::cout << "ResponseBuilder::redirectResponse()" << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::redirectResponse()" << std::endl;
 	std::string response;
 
 	response = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
@@ -52,17 +58,9 @@ std::string	ResponseBuilder::redirectResponse(t_executionResult *result, const s
 	return response;
 }
 
-
-/**/
-std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
-{
-	std::cout << "ResponseBuilder::buildStatusLine()" << std::endl;
-	std::string statusLine;
-
-	statusLine = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
-	return statusLine;
-}
-
+/**
+	* @brief Builds the Response after a cgi-execution.
+*/
 std::string ResponseBuilder::cgiFormation(const std::string &cgiBody)
 {
 	std::string resp;
@@ -82,9 +80,48 @@ std::string ResponseBuilder::cgiFormation(const std::string &cgiBody)
 	return resp;
 }
 
+/**
+	* @brief builds an error message-response based on the happend error.
+*/
+std::string	ResponseBuilder::buildErrorResponse(int errorCode)
+{
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::buildErrorResponse()" << std::endl;
+	std::string	statusCode;
+	std::string	statusPhrase;
+	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
+
+	std::string	body = generateErrorPage(statusCode, statusPhrase);
+	std::string	response = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
+	response += setErrorResponseHeaders(body.size());
+	response += body;
+	return response;
+}
+
+// =========================================================================
+// Private Helper Methods
+// =========================================================================
+
+/**
+	* @brief
+*/
+std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
+{
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::buildStatusLine()" << std::endl;
+	std::string statusLine;
+
+	statusLine = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
+	return statusLine;
+}
+
+/**
+	* @brief 
+*/
 std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 {
-	std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
 	std::string	messageHeaders;
 	std::stringstream	ss;
 
@@ -109,11 +146,16 @@ std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 	return messageHeaders;
 }
 
-std::string ResponseBuilder::buildFullResponse(const std::string &statusLine,
-										const std::string &messageHeaders,
-										const std::string &resultBody)
+/**
+	* @brief 
+*/
+std::string ResponseBuilder::buildFullResponse(
+	const std::string &statusLine,
+	const std::string &messageHeaders,
+	const std::string &resultBody)
 {
-	std::cout << "ResponseBuilder::buildFullResponse()" << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::buildFullResponse()" << std::endl;
 	std::string	response;
 
 	response = statusLine + messageHeaders + resultBody;
@@ -121,27 +163,12 @@ std::string ResponseBuilder::buildFullResponse(const std::string &statusLine,
 }
 
 /**
-	* @brief builds an error message-response based on the happend error.
+	* @brief 
 */
-std::string	ResponseBuilder::buildErrorResponse(int errorCode)
-{
-	std::cout << "ResponseBuilder::buildErrorResponse()" << std::endl;
-	std::string response;
-	std::string	statusCode;
-	std::string	statusPhrase;
-	std::string body;
-
-	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
-	response = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
-	body = generateErrorPage(statusCode, statusPhrase);
-	response += setErrorResponseHeaders(body.size());
-	response += body;
-	return response;
-}
-
 std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 {
-	std::cout << "ResponseBuilder::setErrorResponseHeaders()" << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::setErrorResponseHeaders()" << std::endl;
 	std::string headers;
 	std::stringstream ss;
 	ss << contentLength;
@@ -156,9 +183,13 @@ std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 	return headers;
 }
 
+/**
+	* @brief 
+*/
 std::string ResponseBuilder::generateErrorPage(const std::string &code, const std::string &phrase)
 {
-	std::cout << "ResponseBuilder::generateErrorPage()" << std::endl;
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::generateErrorPage()" << std::endl;
 	std::string body;
 
 	body = "<!DOCTYPE html>\n";
@@ -179,7 +210,7 @@ std::string ResponseBuilder::generateErrorPage(const std::string &code, const st
 	* @brief extracts the current date-time in the format.
 	* @return string representation of the current date and time.
 */
-std::string getHttpDate()
+std::string ResponseBuilder::getHttpDate()
 {
 	time_t now = time(0);
 	struct tm *tm; 

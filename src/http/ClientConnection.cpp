@@ -61,26 +61,27 @@ void ClientConnection::processRequest()
 	else
 	{
 		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
-		std::cout << "==========* EXECUTING METHOD *==========" << std::endl;
 		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
 		if (_currentMethod != NULL)
 		{
 			t_executionResult result = executor->execute(_currentMethod, request);
 			std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
-			std::cout << "==========* BUILDING RESPONSE * ==========" << std::endl;
 			if (result.statusCode == "301") // REDIRECTION
 			{
 				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
 			}
-			else {
+			else
+			{
 				keep_alive = request->keepConnectionAlive();
 				result.keep_alive = keep_alive;
-				if (result.statusCode == "601") {
+				if (result.statusCode == "601") 
+				{
 					result.statusCode = "200";
 					state = CGI_PROCESSING;
 					cgi_path = result.statusPhrase;
 					result.statusPhrase = "OK";
-				} else
+				}
+				else
 					response_buffer = responseBuilder->formatResponse(result);
 			}
 		}

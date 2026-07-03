@@ -1,9 +1,10 @@
 TODO.md
 test_delete.sh
-<<<<<<< HEAD
-.devcontainer
-=======
 docs/
 obj/
 webserv
->>>>>>> origin/configFileParser
+TODO_c.md
+YoupiBanane/
+cgi_tester
+tester
+www/uploads/
