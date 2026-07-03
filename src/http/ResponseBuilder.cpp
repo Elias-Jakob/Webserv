@@ -120,8 +120,6 @@ std::string	ResponseBuilder::buildErrorResponse(int errorCode)
 	return response;
 }
 
-
-
 std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 {
 	std::cout << "ResponseBuilder::setErrorResponseHeaders()" << std::endl;
