@@ -5,11 +5,10 @@
 # include <map>
 # include <vector>
 
-# include "../../structs.h"
-# include "../http/HttpStatus.hpp"
-# include "../http/HttpRequest.hpp"
-# include "../config/ConfigFileParser.hpp"
-# include "../../print_controls.hpp"
+# include "structs.h"
+# include "HttpStatus.hpp"
+# include "HttpRequest.hpp"
+# include "ConfigFileParser.hpp"
 
 /** 
 	* @class AMethod

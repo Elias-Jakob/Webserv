@@ -14,12 +14,13 @@
 ClientConnection::ClientConnection() : 
 	fd(-1),
 	state(READING_REQUEST),
-	bytes_sent(0),
+	bytesSent(0),
 	request(NULL),
 	_currentMethod(NULL),
 	executor(NULL),
 	responseBuilder(NULL),
-	keep_alive(false)
+	keep_alive(false),
+	inactiveTime(0)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }
@@ -71,11 +72,16 @@ void ClientConnection::processRequest()
 			{
 				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
 			}
-			else
-			{
+			else {
 				keep_alive = request->keepConnectionAlive();
 				result.keep_alive = keep_alive;
-				response_buffer = responseBuilder->formatResponse(result);
+				if (result.statusCode == "601") {
+					result.statusCode = "200";
+					state = CGI_PROCESSING;
+					cgi_path = result.statusPhrase;
+					result.statusPhrase = "OK";
+				} else
+					response_buffer = responseBuilder->formatResponse(result);
 			}
 		}
 		else
@@ -84,7 +90,8 @@ void ClientConnection::processRequest()
 		}
 	}
 	std::cout << "==========* BUILT RESPONSE *==========" << std::endl;
-	state = SENDING_RESPONSE;
+	if (state != CGI_PROCESSING)
+		state = SENDING_RESPONSE;
 	
 	if (_currentMethod)
 	{
@@ -102,5 +109,5 @@ void ClientConnection::cleanUpClient()
 	delete request;
 	request = new HttpRequest();
 	response_buffer = "";
-	bytes_sent = 0;
+	bytesSent = 0;
 }

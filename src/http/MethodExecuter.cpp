@@ -54,7 +54,7 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
 	* @param serverConfig data structure of parsed config-file.
 	* @return true.
  */
-bool	MethodExecuter::setConfig(t_Server *serverConfig)
+bool	MethodExecuter::setConfig(t_Configs *serverConfig)
 {
 	std::cout << "\nMethodExecuter::setConfig()" << std::endl;
 	_serverConfig = serverConfig;

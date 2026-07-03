@@ -11,8 +11,8 @@
 # include <sstream> // int to string
 # include <cstdlib> // srand()
 
-# include "../parsers/FormParser.hpp"
-# include "../parsers/MultipartParser.hpp"
+# include "FormParser.hpp"
+# include "MultipartParser.hpp"
 
 class Post : public AMethod
 {

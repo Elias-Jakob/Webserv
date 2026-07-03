@@ -8,7 +8,7 @@
 # include <limits.h>
 # include <stdlib.h>
 # include <dirent.h>
-# include "../config/ConfigFileParser.hpp"
+# include "ConfigFileParser.hpp"
 
 /**
 	* @class Get

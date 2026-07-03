@@ -11,14 +11,20 @@ SRC = src/http/ClientConnection.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \
 		src/config/ConfigFileParser.cpp \
-		server.cpp
+		src/server/Server.cpp \
+		src/server/ServerEventLoop.cpp \
+		src/cgi/CGIProcessLauncher.cpp \
+		src/cgi/CGIError.cpp \
+		src/main.cpp
 
 OBJDIR = obj
+INCDIR = ./inc
 OBJ = $(SRC:%.cpp=$(OBJDIR)/%.o)
 DEPS = $(OBJ:.o=:.d)
 
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -g
+INCFLAGS = -I$(INCDIR)
 NAME = webserv
 
 all: $(NAME)
@@ -28,7 +34,7 @@ $(NAME): $(OBJ)
 
 $(OBJDIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCFLAGS) -MMD -MP -c $< -o $@
 
 -include $(DEPS)
 

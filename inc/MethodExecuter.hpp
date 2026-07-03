@@ -9,15 +9,15 @@
 # include <sstream>
 # include <vector>
 # include "HttpRequest.hpp"
-# include "../methods/AMethod.hpp"
-# include "../methods/Get.hpp"
-# include "../methods/Post.hpp"
-# include "../methods/Delete.hpp"
-# include "../parsers/ABodyParser.hpp"
-# include "../parsers/FormParser.hpp"
-# include "../parsers/MultipartParser.hpp"
-# include "../config/ConfigFileParser.hpp"
-# include "../../structs.h"
+# include "AMethod.hpp"
+# include "Get.hpp"
+# include "Post.hpp"
+# include "Delete.hpp"
+# include "ABodyParser.hpp"
+# include "FormParser.hpp"
+# include "MultipartParser.hpp"
+# include "ConfigFileParser.hpp"
+# include "structs.h"
 
 class MethodExecuter
 {
@@ -28,12 +28,12 @@ class MethodExecuter
 		bool				isImplementedMethod(const std::string &methodName);
 		AMethod				*createMethod(const std::string &methodName, const std::string &path);
 		t_executionResult	execute(AMethod *method, HttpRequest *request);
-		bool				setConfig(t_Server *serverConfig);
+		bool				setConfig(t_Configs *serverConfig);
 		t_Location			*availableLocation(const std::string &path);
 		std::string			modifyRequestURI(HttpRequest *req);
 
 	private:
-		t_Server	*_serverConfig;
+		t_Configs	*_serverConfig;
 		t_Location	_defaultLocation;
 
 		std::map<std::string, std::string>	_rootedLocations;

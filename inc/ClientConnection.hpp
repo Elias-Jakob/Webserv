@@ -3,13 +3,14 @@
 # include "HttpRequest.hpp"
 # include "MethodExecuter.hpp"
 # include "ResponseBuilder.hpp"
-# include "../../structs.h"
+# include "structs.h"
 
 enum ConnectionState
 {
 	READING_REQUEST,
 	PROCESSING,
-	SENDING_RESPONSE
+	SENDING_RESPONSE,
+	CGI_PROCESSING
 };
 
 /**
@@ -22,22 +23,31 @@ enum ConnectionState
 class ClientConnection
 {
 	public:
+		ClientConnection();
+		// TODO: implement copy constructor and assignment operator
+		// ClientConnection(const ClientConnection &other);
+		// ClientConnection	&operator=(const ClientConnection &other);
+		~ClientConnection();
+
 		int				fd;
 		ConnectionState	state;
+		std::string		cgi_path;
 		std::string		request_buffer;
 		std::string		response_buffer;
-		size_t			bytes_sent;
+		size_t			bytesSent;
 		HttpRequest*	request;
 		AMethod			*_currentMethod;
 		MethodExecuter*	executor;
 		ResponseBuilder	*responseBuilder;
 		bool			keep_alive;
-
-		ClientConnection();
-		~ClientConnection();
+		size_t		inactiveTime;
 
 		void	processRequest();
 		void	cleanUpClient();
+
+		// CGI
+		pid_t	cgiPid;
+		
 };
 
 #endif

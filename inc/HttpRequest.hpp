@@ -8,12 +8,12 @@
 
 # include <sstream>
 # include <vector>
-# include "../../limits_defines.hpp"
-# include "../parsers/ABodyParser.hpp"
-# include "../parsers/FormParser.hpp"
-# include "../parsers/MultipartParser.hpp"
-# include "../../structs.h"
-# include "../../print_controls.hpp"
+# include "limits_defines.hpp"
+# include "ABodyParser.hpp"
+# include "FormParser.hpp"
+# include "MultipartParser.hpp"
+# include "structs.h"
+# include "print_controls.hpp"
 
 typedef struct s_RequestLine
 {

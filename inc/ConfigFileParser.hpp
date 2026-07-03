@@ -1,12 +1,16 @@
-#ifndef CONFIG_FILE_PARSER_HPP
-# define CONFIG_FILE_PARSER_HPP
-# include <iostream>
-# include <fstream>
-# include <vector>
-# include <map>
-# include <algorithm>
-# include <sstream>
-# include "../../print_controls.hpp"
+#ifndef CONFIGFILEPARSER_HPP
+# define CONFIGFILEPARSER_HPP
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <sstream>
+# include <stdexcept>
+# include <cerrno>
+# include <cstring>
+# include "print_controls.hpp"
 
 enum e_TokenType
 {
@@ -23,6 +27,8 @@ enum e_TokenType
 	STR,
 	END_OF_FILE
 };
+
+typedef std::map<std::string, std::vector<std::string> >	t_Endpoints;
 
 typedef struct s_Token
 {
@@ -48,7 +54,7 @@ typedef struct s_Location
 	std::vector<std::string>	uploadExtensions; // .txt, .pdf, .jpg, ...
 }				t_Location;
 
-typedef struct s_Server
+typedef struct s_Configs
 {
 	size_t						maxBodySize;
 	std::string					serverName;
@@ -56,8 +62,8 @@ typedef struct s_Server
 	std::map<int, std::string>	errorPages;
 	std::vector<t_Location>		locations;
 
-	std::map<std::string, std::vector<std::string> >	endpoints;
-}				t_Server;
+	t_Endpoints	endpoints;
+}	t_Configs;
 
 class ConfigFileParser
 {
@@ -65,9 +71,7 @@ class ConfigFileParser
 		ConfigFileParser();
 		~ConfigFileParser();
 
-		void parseFile(const std::string &filePath);
-		t_Server	getServerConfigData();
-
+		t_Configs	&parseFile(const std::string &filePath);
 	private:
 		// TOKENIZATION
 		std::vector<t_Token>	_tokens;
@@ -81,7 +85,7 @@ class ConfigFileParser
 		bool		isNbr(const std::string &s);
 
 		// PARSING
-		t_Server	_server;
+		t_Configs	_configs;
 
 		void 	parseToDataStructure();
 		size_t	createServer(size_t *i);
@@ -98,13 +102,3 @@ class ConfigFileParser
 };
 
 #endif
-/*
-	TOKENS:
-		KEYWORD("server"),
-		BRACE_OPEN,
-		BRACE_CLOSE,
-		IDENTIFIER("listen"),
-		ASSIGN,
-		VALUE("8080"),
-		END_OF_FILE
-*/

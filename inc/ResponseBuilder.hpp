@@ -1,7 +1,7 @@
 #ifndef RESPONSE_BUILDER_HPP
 # define RESPONSE_BUILDER_HPP
 # include <iostream>
-# include "../../structs.h"
+# include "structs.h"
 # include <map>
 
 # include <iostream>
@@ -11,10 +11,18 @@
 
 # include <sstream>
 # include "HttpStatus.hpp"
-# include "../config/ConfigFileParser.hpp"
+# include "ConfigFileParser.hpp"
 
 class ResponseBuilder
 {
+// <<<<<<< HEAD:inc/ResponseBuilder.hpp
+// 	private:
+// 		std::string setErrorResponseHeaders(size_t contentLength);
+// 		std::string setResponseHeaders(t_executionResult &result);
+// 		std::string generateErrorPage(const std::string &code, const std::string &phrase);
+//
+// =======
+// >>>>>>> origin/configFileParser:src/http/ResponseBuilder.hpp
 	public:
 		ResponseBuilder();
 		~ResponseBuilder();
@@ -22,10 +30,11 @@ class ResponseBuilder
 		std::string formatResponse(t_executionResult result);
 		std::string	redirectResponse(t_executionResult *result, const std::string &redirecURL);
 		std::string	buildErrorResponse(int errorCode);
-		bool		setConfig(t_Server *serverConfig);
+		bool		setConfig(t_Configs *serverConfig);
+		std::string cgiFormation(const std::string &cgiBody);
 
 	private:
-		t_Server	*_serverConfig;
+		t_Configs	*_serverConfig;
 		std::string setErrorResponseHeaders(size_t contentLength);
 		std::string buildStatusLine(t_executionResult *result);
 		std::string buildResponseHeaders(t_executionResult &result);

@@ -3,7 +3,7 @@
 int main(int argc, char *argv[])
 {
 	ConfigFileParser parser;
-	t_Server	serverData;
+	t_Configs	serverData;
 	if (argc == 2)
 		parser.parseFile(argv[1]);
 

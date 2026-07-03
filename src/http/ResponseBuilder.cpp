@@ -9,7 +9,7 @@ ResponseBuilder::ResponseBuilder()
 ResponseBuilder::~ResponseBuilder()
 {}
 
-bool ResponseBuilder::setConfig(t_Server *serverConfig)
+bool ResponseBuilder::setConfig(t_Configs *serverConfig)
 {
 	_serverConfig = serverConfig;
 	std::cout << "ResponseBuilder::setConfig() : server_name = " << _serverConfig->serverName << std::endl;
@@ -61,6 +61,25 @@ std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
 
 	statusLine = "HTTP/1.1 " + result->statusCode + " " + result->statusPhrase + "\r\n";
 	return statusLine;
+}
+
+std::string ResponseBuilder::cgiFormation(const std::string &cgiBody)
+{
+	std::string resp;
+	std::string	statusLine;
+	std::string headers;
+	statusLine = "HTTP/1.1 200 OK\r\n";
+	std::string	messageHeaders;
+	std::stringstream	ss;
+
+	ss << cgiBody.size();
+	messageHeaders += "Content-Length: " + ss.str() + "\r\n";
+	messageHeaders += "Date: " + getHttpDate() + "\r\n";
+	messageHeaders += "Server: webserv/1.0\r\n";
+	messageHeaders+= "Connection: keep-alive\r\n\r\n";
+	
+	resp = buildFullResponse(statusLine, messageHeaders, cgiBody);
+	return resp;
 }
 
 std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
