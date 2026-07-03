@@ -1,7 +1,9 @@
 #!/usr/bin/python3
-import time
+import time, os
 
 time.sleep(3)
+
+print(os.environ)
 
 for i in range(10):
     print(

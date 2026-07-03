@@ -35,6 +35,7 @@ class CGIProcessLauncher
 		// void	createArgs(char *const argv[3], char **envp,
 			// std::map<std::string, std::string>	&envpMap, std::string file);
 		char	**getArray(std::vector<std::string> lst);
+		char	**generateEnv(ClientConnection &client);
 		void	cleanUp(bool closeAll);
 };
 

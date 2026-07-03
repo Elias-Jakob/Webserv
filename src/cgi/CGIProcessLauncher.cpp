@@ -45,10 +45,38 @@ void	CGIProcessLauncher::createArgs(char *argv[3], char **envp,
 
 char	**CGIProcessLauncher::getArray(std::vector<std::string> lst)
 {
-	char	**arr = new char*[lst.size() + 1]();
+	char	**arr;
+
+	if (lst.empty())
+		return (NULL);
+	arr = new char*[lst.size() + 1]();
 	for (size_t	i = 0; i < lst.size(); ++i)
 		arr[i] = (char *)lst[i].c_str();
 	return (arr);
+}
+
+char	**CGIProcessLauncher::generateEnv(ClientConnection &client)
+{
+	std::ostringstream	content_len;
+	std::vector<std::string>	env;
+
+	/*
+	meta-variable-name = "AUTH_TYPE" | "CONTENT_LENGTH" |
+													"CONTENT_TYPE" | "GATEWAY_INTERFACE" |
+													"PATH_INFO" | "PATH_TRANSLATED" |
+													"QUERY_STRING" | "REMOTE_ADDR" |
+													"REMOTE_HOST" | "REMOTE_IDENT" |
+													"REMOTE_USER" | "REQUEST_METHOD" |
+													"SCRIPT_NAME" | "SERVER_NAME" |
+													"SERVER_PORT" | "SERVER_PROTOCOL" |
+													"SERVER_SOFTWARE"
+	*/
+	content_len << client.request->getRequestBody().size() + 1;
+	env.push_back("AUTH_TYPE=null")
+	env.push_back("CONTENT_LENGTH=" + content_len.str());
+	env.push_back("CONTENT_TYPE=" + client.request->getContentData().type);
+	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	return (this->getArray(env));
 }
 
 void	CGIProcessLauncher::cleanUp(bool closeAll = false)
@@ -111,13 +139,11 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		if (last_slash != std::string::npos)
 			file = file.substr(last_slash + 1);
 
-		std::cout << "file " << file << " root " << root << std::endl;
 		args.push_back("/usr/bin/python3");
 		args.push_back(file);
 		
-		// env.push_back();
 		argv = this->getArray(args);
-		envp = this->getArray(env);
+		envp = this->generateEnv(client);
 
 		if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 				|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
@@ -130,18 +156,10 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 
 		if (chdir(root.c_str()) != -1)
 			execve(file.c_str(), argv, envp);
-		std::cerr << "CGI process failed hello: " << std::strerror(errno) << std::endl;
+		std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
 
 		delete[] argv;
 		delete[] envp;
-		/*
-		for (char *i = *argv; i != NULL; ++i)
-			delete[] i;
-		delete[] argv;
-		for (char *i = *envp; i != NULL; ++i)
-			delete[] i;
-		delete[] envp;
-		*/
 		this->cleanUp(true);
 		std::exit(EXIT_FAILURE);
 	}
