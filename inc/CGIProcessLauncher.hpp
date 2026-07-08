@@ -5,8 +5,6 @@
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
 
-class Server;
-
 typedef struct	s_CGIProcess
 {
 	ClientConnection	*client;
@@ -16,27 +14,35 @@ typedef struct	s_CGIProcess
 class CGIProcessLauncher
 {
 	public:
-		CGIProcessLauncher();
-		CGIProcessLauncher(Server *server);
-		CGIProcessLauncher(const CGIProcessLauncher &other);
-		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
+		CGIProcessLauncher(int &epollFd, std::map<int, t_CGIProcess> &cgiProcesses);
 		~CGIProcessLauncher();
+
 		void	newProcess(ClientConnection &client);
 	private:
+		CGIProcessLauncher();
+		CGIProcessLauncher(const CGIProcessLauncher &other);
+		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
+
+		int	&epollFd;
+		std::map<int, t_CGIProcess>	&cgiProcesses;
 		struct epoll_event	epEvent;
-		Server	*server;
-		std::string	*path;
 		pid_t	pid;
-		// char	**argv;
-		// char	**envp;
 		int	stdinPipe[2];
 		int	stdoutPipe[2];
+		std::vector<std::string>	args;
+		std::vector<std::string>	envs;
 
-		// void	createArgs(char *const argv[3], char **envp,
-			// std::map<std::string, std::string>	&envpMap, std::string file);
-		char	**getArray(std::vector<std::string> lst);
-		char	**generateEnv(ClientConnection &client);
 		void	cleanUp(bool closeAll);
+		void	runChildProcess(ClientConnection &client);
+
+		char	**getArray(std::vector<std::string> &lst);
+		char	**createArgv(ClientConnection &client);
+		char	**createEnvp(HttpRequest*	request);
+
+
+		// utils
+		std::string	toMetaFormat(std::string	originalKey);
+		std::string	vecJoin(std::vector<std::string> &vec);
 };
 
 #endif

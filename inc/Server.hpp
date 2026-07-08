@@ -35,11 +35,7 @@ class Server
 		Server(t_Configs &configs);
 		~Server();
 
-		std::map<int, t_CGIProcess>	cgiProcesses;
-
 		void	serverStartup();
-		const t_Configs	&getConfigs();
-		const int	&getEpollFd();
 	private:
 		Server();
 		Server(const Server &other);
@@ -48,10 +44,11 @@ class Server
 		t_Configs	&configs;
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
-		CGIProcessLauncher	cgiLauncher;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
+		std::map<int, t_CGIProcess>	cgiProcesses;
 		int	epollFd;
+		CGIProcessLauncher	cgiLauncher;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
 		bool	initListenSockets();
@@ -59,9 +56,9 @@ class Server
 		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
 		void	handleClientRead(int);
 		void	handleClientWrite(int);
+		void	handleCGIWrite(int fd);
 		void	removeClient(ClientConnection &client);
 		void	timeoutInactiveClients();
-		void	readFromCGI(int fd);
 		void	killCGIProcesses(ClientConnection &client);
 };
 

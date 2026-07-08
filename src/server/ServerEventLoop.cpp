@@ -161,7 +161,7 @@ void	Server::timeoutInactiveClients()
 	}
 }
 
-void	Server::readFromCGI(int fd)
+void	Server::handleCGIWrite(int fd)
 {
 	struct epoll_event	epEvent;
 	char buf[1024] = { 0 };
@@ -213,7 +213,7 @@ void	Server::eventLoop()
 				if (events[i].events & EPOLLOUT) // the client is available for write
 					this->handleClientWrite(events[i].data.fd);
 			} else if (this->cgiProcesses.find(events[i].data.fd) != this->cgiProcesses.end()) {
-				readFromCGI(events[i].data.fd);
+				handleCGIWrite(events[i].data.fd);
 			}
 		}
 		this->timeoutInactiveClients();

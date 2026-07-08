@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs)
+Server::Server(t_Configs &configs) : configs(configs), cgiLauncher(epollFd, cgiProcesses)
 {}
 
 Server::~Server()
@@ -63,7 +63,7 @@ bool	Server::initListenSockets()
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
-	for (t_Endpoints::const_iterator	interface = this->configs.endpoints.begin();
+	for (t_MultiStrMap::const_iterator	interface = this->configs.endpoints.begin();
 			interface != this->configs.endpoints.end(); ++interface) {
 		for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 				port != interface->second.end(); ++port) {
@@ -94,7 +94,6 @@ bool	Server::initListenSockets()
 
 void	Server::serverStartup()
 {
-	this->cgiLauncher = CGIProcessLauncher(this);
 	this->methodExecuter.setConfig(&this->configs);
 	this->responseBuilder.setConfig(&this->configs);
 	this->epollFd = epoll_create1(0);
@@ -104,9 +103,3 @@ void	Server::serverStartup()
 		throw std::runtime_error("Failed to set up any listening sockets");
 	this->eventLoop();
 }
-
-const t_Configs	&Server::getConfigs()
-{ return (this->configs); }
-
-const int	&Server::getEpollFd()
-{ return (this->epollFd); }

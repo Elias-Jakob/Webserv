@@ -28,7 +28,7 @@ enum e_TokenType
 	END_OF_FILE
 };
 
-typedef std::map<std::string, std::vector<std::string> >	t_Endpoints;
+typedef std::map<std::string, std::vector<std::string> >	t_MultiStrMap;
 
 typedef struct s_Token
 {
@@ -62,7 +62,7 @@ typedef struct s_Configs
 	std::map<int, std::string>	errorPages;
 	std::vector<t_Location>		locations;
 
-	t_Endpoints	endpoints;
+	t_MultiStrMap	endpoints;
 }	t_Configs;
 
 class ConfigFileParser
