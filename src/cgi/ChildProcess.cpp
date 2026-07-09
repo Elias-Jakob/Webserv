@@ -1,17 +1,5 @@
 # include "CGIProcessLauncher.hpp"
 
-char	**CGIProcessLauncher::getArray(std::vector<std::string> &lst)
-{
-	char	**arr = NULL;
-
-	if (lst.empty())
-		return (NULL);
-	arr = new char*[lst.size() + 1]();
-	for (size_t	i = 0; i < lst.size(); ++i)
-		arr[i] = (char *)lst[i].c_str();
-	return (arr);
-}
-
 char	**CGIProcessLauncher::createArgv(ClientConnection &client)
 {
 	std::string	file;
@@ -26,30 +14,7 @@ char	**CGIProcessLauncher::createArgv(ClientConnection &client)
 		file = file.substr(last_slash + 1);
 	this->args.push_back("/usr/bin/python3");
 	this->args.push_back(file);
-	return (this->getArray(args));
-}
-
-std::string	CGIProcessLauncher::vecJoin(std::vector<std::string> &vec)
-{
-	std::string	concat;
-
-	for (std::vector<std::string>::const_iterator	it = vec.begin();
-			it != vec.end(); ++it) {
-		if (it != vec.begin())
-			concat += ",";
-		concat += *it;
-	}
-	return (concat);
-}
-
-std::string	CGIProcessLauncher::toMetaFormat(std::string	originalKey)
-{
-	for (std::string::iterator	it = originalKey.begin(); it != originalKey.end(); ++it) {
-		*it = std::toupper(static_cast<unsigned char>(*it));
-		if (*it == '-')
-			*it = '_';
-	}
-	return ("HTTP_" + originalKey);
+	return (cgi::getArray(args));
 }
 
 char	**CGIProcessLauncher::createEnvp(HttpRequest* request)
@@ -99,10 +64,10 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest* request)
 	// "AUTH_TYPE"    | "PATH_INFO"   | "PATH_TRANSLATED" |
 	// "QUERY_STRING" | "REMOTE_ADDR" | "REMOTE_HOST"     |
 	// "REMOTE_IDENT" | "REMOTE_USER" |
-
+	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)
-		this->envs.push_back(this->toMetaFormat(it->first) + "=" + this->vecJoin(it->second));
-	return (this->getArray(this->envs));
+		this->envs.push_back(cgi::toMetaFormat(it->first) + "=" + cgi::strJoin(it->second));
+	return (cgi::getArray(this->envs));
 }
 
 void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
@@ -130,7 +95,7 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	close(this->stdinPipe[1]);
 	close(this->stdoutPipe[0]);
 	if (chdir(cgiDir.c_str()) != -1)
-		execve(argv[1], argv, envp);
+		execve(argv[0], argv, envp);
 	std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
 	delete[] argv;
 	delete[] envp;

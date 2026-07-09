@@ -13,9 +13,13 @@ SRC = src/http/ClientConnection.cpp \
 		src/config/ConfigFileParser.cpp \
 		src/server/Server.cpp \
 		src/server/ServerEventLoop.cpp \
+		src/server/CGIHandler.cpp \
+		src/server/ReceiveHandler.cpp \
+		src/server/SendHandler.cpp \
 		src/cgi/CGIProcessLauncher.cpp \
 		src/cgi/CGIError.cpp \
 		src/cgi/ChildProcess.cpp \
+		src/cgi/CGIUtils.cpp \
 		src/main.cpp
 
 OBJDIR = obj

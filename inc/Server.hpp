@@ -21,6 +21,7 @@
 // POSIX
 # include <sys/socket.h>
 # include <sys/epoll.h>
+# include <sys/wait.h>
 # include <stdlib.h>
 # include <unistd.h>
 # include <netdb.h>
@@ -53,16 +54,13 @@ class Server
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
 		bool	initListenSockets();
 		void	eventLoop();
-		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
-		void	handleClientRead(int);
-		void	handleClientWrite(int);
-		void	handleCGIWrite(int fd);
+		void	handleNewClient(int listenFd);
+		void	handleIncoming(int);
+		void	handleOutgoing(int);
+		void	handleCGIOutput(int fd);
 		void	removeClient(ClientConnection &client);
 		void	timeoutInactiveClients();
 		void	killCGIProcesses(ClientConnection &client);
 };
-
-// DEBUG HELPERS
-//
 
 #endif // !SERVER_HPP

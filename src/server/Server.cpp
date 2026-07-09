@@ -26,7 +26,8 @@ void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
 				continue;
 			throw std::runtime_error(std::strerror(errno));
 		}
-		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+		// TODO: check if FD_CLOEXEC works on linux
+		if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
 			throw std::runtime_error(std::strerror(errno));
 		// TODO: setsockopt
 		int opt = 1;

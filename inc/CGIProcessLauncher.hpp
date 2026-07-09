@@ -35,14 +35,15 @@ class CGIProcessLauncher
 		void	cleanUp(bool closeAll);
 		void	runChildProcess(ClientConnection &client);
 
-		char	**getArray(std::vector<std::string> &lst);
 		char	**createArgv(ClientConnection &client);
 		char	**createEnvp(HttpRequest*	request);
-
-
-		// utils
-		std::string	toMetaFormat(std::string	originalKey);
-		std::string	vecJoin(std::vector<std::string> &vec);
 };
+
+// utils
+namespace cgi {
+	char	**getArray(std::vector<std::string> &lst);
+	std::string	toMetaFormat(std::string	originalKey);
+	std::string	strJoin(std::vector<std::string> &vec);
+}
 
 #endif

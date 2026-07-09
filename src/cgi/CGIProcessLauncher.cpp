@@ -28,11 +28,13 @@ void	CGIProcessLauncher::cleanUp(bool closeAll = false)
 void	CGIProcessLauncher::newProcess(ClientConnection &client)
 {
 	// TODO:
-	// 1. is it viable to just use one pipe for in and out? if not why?
-	if (pipe(this->stdinPipe) == -1)
+	// 1. just a thought: is it viable to just use one pipe for in and out? if not why?
+	// 2. is it necessary to set the in/out ends to non blocking?
+	if (pipe(this->stdinPipe) == -1 ||
+			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1)
 		throw CGIError(std::strerror(errno));
-	if (pipe(this->stdoutPipe) == -1
-			|| fcntl(this->stdoutPipe[0], F_SETFL, O_NONBLOCK)) {
+	if (pipe(this->stdoutPipe) == -1 ||
+			fcntl(this->stdoutPipe[0], F_SETFL, O_NONBLOCK) == -1) {
 		this->cleanUp();
 		throw CGIError(std::strerror(errno));
 	}
@@ -50,13 +52,18 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 
 		process.client = &client;
 		process.pid = pid;
-		this->cleanUp();
 		this->epEvent.events = EPOLLIN;
 		this->epEvent.data.fd = this->stdoutPipe[0];
 		if (epoll_ctl(this->epollFd, EPOLL_CTL_ADD, this->stdoutPipe[0], &this->epEvent) == -1) {
 			this->cleanUp(true);
 			throw CGIError(std::strerror(errno));
 		}
+		// write the request body into the stdin pipe of the cgi process
+		// TODO: This should also be added by epoll bc what if the request body is bigger then the pipe buffer or if the request is not yet complete
+		if (!client.request->getRequestBody().empty())
+			write(this->stdinPipe[1], client.request->getRequestBody().c_str(), client.request->getRequestBody().size());
+
+		this->cleanUp(); // this closes stdin[0, 1] and stdout[1]
 	}
 	else
 		this->runChildProcess(client);
