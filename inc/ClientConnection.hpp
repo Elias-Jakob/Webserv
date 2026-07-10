@@ -47,6 +47,10 @@ class ClientConnection
 
 		// CGI
 		pid_t	cgiPid;
+
+	private:
+		void	executeRequest();
+		void	deleteMethod();
 		
 };
 

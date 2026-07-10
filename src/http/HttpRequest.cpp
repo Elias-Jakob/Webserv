@@ -453,7 +453,7 @@ bool HttpRequest::isImplementedMethod() // 501
 
 bool HttpRequest::isHttpVersionSupported() // 505
 {
-	if (_requestLine.version == "HTTP/1.1")
+	if (_requestLine.version == "HTTP/1.1" || _requestLine.version == "HTTP/1.0")
 		return true;
 	return false;
 }
