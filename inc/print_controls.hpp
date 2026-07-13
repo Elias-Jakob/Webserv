@@ -4,7 +4,7 @@
 // MAIN DATA
 # define PRINT_REQUEST 			1
 # define PRINT_RESPONSE 		1
-# define PRINT_SERVER_CONFIG	1
+# define PRINT_SERVER_CONFIG	0
 
 // METHODS
 # define METHOD_PRINT			0

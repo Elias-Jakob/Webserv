@@ -21,10 +21,13 @@ t_Configs	&ConfigFileParser::parseFile(const std::string &filePath)
 	// printTokens();
 	// validate_tokens();
 	parseToDataStructure();
-	parseEndpoints();
+	// parseEndpoints(); // need to create endpoints earlier(in SERVER)
 	if (PRINT_SERVER_CONFIG)
-		printServer();
+		printServers();
+	// printServer();
+	_configs = _servers[0];
 	return (this->_configs);
+	// return _servers;
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
@@ -146,6 +149,7 @@ void ConfigFileParser::parseToDataStructure()
 	{
 		if (_tokens[i].type == SERVER)
 		{
+			std::cout << i << std::endl;
 			createServer(&i);
 		}
 	}
@@ -154,7 +158,8 @@ void ConfigFileParser::parseToDataStructure()
 size_t ConfigFileParser::createServer(size_t *i)
 {
 	size_t	j;
-
+	t_Configs	serverConfigs;
+	*i += 1;
 	for (j = *i; j < _tokens.size(); j++)
 	{
 		if (j >= 2 
@@ -165,21 +170,28 @@ size_t ConfigFileParser::createServer(size_t *i)
 			std::stringstream	ss(_tokens[j - 1].val);
 			int	errorCode;
 			ss >> errorCode;
-			_configs.errorPages[errorCode] = _tokens[j + 1].val;
+			serverConfigs.errorPages[errorCode] = _tokens[j + 1].val;
 			j += 1;
 		}
 		else if (_tokens[j].type == ASSIGN)
 		{
 			if (checkIdentifier(_tokens[j-1].val))
-				setValue(_tokens[j-1].val, j);
+				setValue(_tokens[j-1].val, j, &serverConfigs);
 		}
 		else if (_tokens[j].type == LOCATION)
 		{
 			// std::cout << _tokens[j+1].val << std::endl;
-			j += createLocation(j);
+			j += createLocation(j, &serverConfigs);
+		}
+		else if (_tokens[j].type == SERVER || _tokens[j].type == BRACE_CLOSE)
+		{
+			std::cout << "SERVER TOKEN" << std::endl;
+			break ;
 		}
 	}
-	*i += j;
+	*i = j;
+	parseEndpoints(&serverConfigs);
+	_servers.push_back(serverConfigs);
 	return j;
 }
 
@@ -253,7 +265,7 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 	return i + 1;
 }
 
-size_t ConfigFileParser::createLocation(size_t i)
+size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs) // add serverConfigs.
 {
 	t_Location	tempLoc;
 	size_t		j = i;
@@ -272,33 +284,34 @@ size_t ConfigFileParser::createLocation(size_t i)
 		}
 		j++;
 	}
+	serverConfigs->locations.push_back(tempLoc);
 	_configs.locations.push_back(tempLoc);
 	return (j - i);
 }
 
 // accepting multiple Ports on one interface map<string, vector<string>>
-void	ConfigFileParser::parseEndpoints()
+void	ConfigFileParser::parseEndpoints(t_Configs *serverConfs)
 {
 	size_t	seperator = 0;
-	for (size_t i = 0; i < _configs.listenInterfaces.size(); i++)
+	for (size_t i = 0; i < serverConfs->listenInterfaces.size(); i++)
 	{
-		seperator = _configs.listenInterfaces[i].find(':', 0);
+		seperator = serverConfs->listenInterfaces[i].find(':', 0);
 		if (seperator != std::string::npos)
 		{
-			std::string	s = _configs.listenInterfaces[i];
+			std::string	s = serverConfs->listenInterfaces[i];
 			std::string	interface;
 			std::string	port;
 
 			interface = s.substr(0, seperator);
 			port = s.substr(seperator + 1, s.size() - seperator -1);
 
-			std::map<std::string, std::vector<std::string> >::iterator it = _configs.endpoints.find(interface);
-			if (it != _configs.endpoints.end())
+			std::map<std::string, std::vector<std::string> >::iterator it = serverConfs->endpoints.find(interface);
+			if (it != serverConfs->endpoints.end())
 			{
 				it->second.push_back(port);
 			}
 			else
-				_configs.endpoints[interface].push_back(port);//  = port;
+				serverConfs->endpoints[interface].push_back(port);//  = port;
 		}
 	}
 }
@@ -313,16 +326,20 @@ bool	ConfigFileParser::checkIdentifier(const std::string identifier)
 	return false;
 }
 
-void ConfigFileParser::setValue(const std::string id, size_t j)
+// change to set values for this->server.
+void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serverConfigs)
 {
 	if (j + 1 >= _tokens.size())
 		return ;
 	if (id == "listen")
-		_configs.listenInterfaces.push_back(_tokens[j + 1].val);
+	{
+		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
+		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
+	}
 	else if (id == "server_name")
-		_configs.serverName = _tokens[j+1].val;
+		serverConfigs->serverName = _tokens[j+1].val;
 	else if (id == "client_max_body_size")
-		_configs.maxBodySize = convertStrToSize(_tokens[j + 1].val);
+		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
 }
 
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
@@ -339,13 +356,22 @@ size_t	ConfigFileParser::convertStrToSize(const std::string value)
 	return size;
 }
 
-void ConfigFileParser::printServer()
+void ConfigFileParser::printServers()
+{
+	for(size_t i = 0; i < _servers.size(); i++)
+	{
+		// std::cout << "Server " << _servers[i].serverName << std::endl;
+		printServer(i);
+	}
+}
+
+void ConfigFileParser::printServer(size_t z)
 {
 	std::cout << "\n\nSERVER DATA{" << std::endl;
-	std::cout << "name: "<< _configs.serverName << std::endl;
-	std::cout << "max_body_size: " << _configs.maxBodySize << std::endl;
-	std::map<std::string, std::vector<std::string> >::iterator itIP = _configs.endpoints.begin();
-	std::map<std::string, std::vector<std::string> >::iterator itIPe = _configs.endpoints.end();
+	std::cout << "name: "<< _servers[z].serverName << std::endl;
+	std::cout << "max_body_size: " << _servers[z].maxBodySize << std::endl;
+	std::map<std::string, std::vector<std::string> >::iterator itIP = _servers[z].endpoints.begin();
+	std::map<std::string, std::vector<std::string> >::iterator itIPe = _servers[z].endpoints.end();
 	std::cout << "Endpoints {\n";
 	while (itIP != itIPe)
 	{
@@ -359,8 +385,8 @@ void ConfigFileParser::printServer()
 	}
 	std::cout << "}" << std::endl;
 
-	std::map<int, std::string>::iterator it = _configs.errorPages.begin();
-	std::map<int, std::string>::iterator ite = _configs.errorPages.end();
+	std::map<int, std::string>::iterator it = _servers[z].errorPages.begin();
+	std::map<int, std::string>::iterator ite = _servers[z].errorPages.end();
 	std::cout << "errorPages{\n";
 	while (it != ite)
 	{
@@ -368,57 +394,57 @@ void ConfigFileParser::printServer()
 		it++;
 	}
 	std::cout << "}" << std::endl;
-	for (size_t i = 0; i < _configs.locations.size(); i++)
+	for (size_t i = 0; i < _servers[z].locations.size(); i++)
 	{
 		std::cout << "location {" << std::endl;
-		std::cout << "\tpath= " << _configs.locations[i].path << std::endl;
-		std::cout << "\troot= " << _configs.locations[i].root << std::endl;
-		if (_configs.locations[i].defaultPage.size() > 0)
-			std::cout << "\tindex= " << _configs.locations[i].defaultPage << std::endl;
-		if (_configs.locations[i].allowedMethods.size() > 0)
+		std::cout << "\tpath= " << _servers[z].locations[i].path << std::endl;
+		std::cout << "\troot= " << _servers[z].locations[i].root << std::endl;
+		if (_servers[z].locations[i].defaultPage.size() > 0)
+			std::cout << "\tindex= " << _servers[z].locations[i].defaultPage << std::endl;
+		if (_servers[z].locations[i].allowedMethods.size() > 0)
 		{
 			std::cout << "\tmethods= ";
-			for(size_t j = 0; j < _configs.locations[i].allowedMethods.size(); j++)
+			for(size_t j = 0; j < _servers[z].locations[i].allowedMethods.size(); j++)
 			{
-				if (j + 1 == _configs.locations[i].allowedMethods.size())
-					std::cout << _configs.locations[i].allowedMethods[j] << std::endl;
+				if (j + 1 == _servers[z].locations[i].allowedMethods.size())
+					std::cout << _servers[z].locations[i].allowedMethods[j] << std::endl;
 				else
-					std::cout << _configs.locations[i].allowedMethods[j] << ", ";
+					std::cout << _servers[z].locations[i].allowedMethods[j] << ", ";
 			}
 		}
-		if (_configs.locations[i].redirect)
+		if (_servers[z].locations[i].redirect)
 		{
-			std::cout << "\tredirectCode: " << _configs.locations[i].redirectCode << std::endl;
-			std::cout << "\tredirectURL: " << _configs.locations[i].redirectURL << std::endl;
+			std::cout << "\tredirectCode: " << _servers[z].locations[i].redirectCode << std::endl;
+			std::cout << "\tredirectURL: " << _servers[z].locations[i].redirectURL << std::endl;
 		}
-		if (_configs.locations[i].upload)
-			std::cout << "\tuploadStorage: " << _configs.locations[i].uploadStore << std::endl;
-		if (_configs.locations[i].upload)
+		if (_servers[z].locations[i].upload)
+			std::cout << "\tuploadStorage: " << _servers[z].locations[i].uploadStore << std::endl;
+		if (_servers[z].locations[i].upload)
 		{
 			std::cout << "\textensions = ";
-			for (size_t j = 0; j < _configs.locations[i].uploadExtensions.size(); j++)
+			for (size_t j = 0; j < _servers[z].locations[i].uploadExtensions.size(); j++)
 			{
-				if (j + 1 == _configs.locations[i].uploadExtensions.size())
-					std::cout << _configs.locations[i].uploadExtensions[j] << std::endl;
+				if (j + 1 == _servers[z].locations[i].uploadExtensions.size())
+					std::cout << _servers[z].locations[i].uploadExtensions[j] << std::endl;
 				else
-					std::cout << _configs.locations[i].uploadExtensions[j] << ", ";
+					std::cout << _servers[z].locations[i].uploadExtensions[j] << ", ";
 			}
 		}
-		if (_configs.locations[i].cgiExtensions.size() > 0)
+		if (_servers[z].locations[i].cgiExtensions.size() > 0)
 		{
 			std::cout << "\tcgiExtensions: ";
-			for (size_t j = 0; j < _configs.locations[i].cgiExtensions.size(); j++)
+			for (size_t j = 0; j < _servers[z].locations[i].cgiExtensions.size(); j++)
 			{
-				if (j + 1 == _configs.locations[i].cgiExtensions.size())
-					std::cout << _configs.locations[i].cgiExtensions[j] << std::endl;
+				if (j + 1 == _servers[z].locations[i].cgiExtensions.size())
+					std::cout << _servers[z].locations[i].cgiExtensions[j] << std::endl;
 				else
-					std::cout << _configs.locations[i].cgiExtensions[j] << ", ";
+					std::cout << _servers[z].locations[i].cgiExtensions[j] << ", ";
 			}
 		}
-		if (_configs.locations[i].autoIndex)
+		if (_servers[z].locations[i].autoIndex)
 			std::cout << "\tautoindex: " << "on" << std::endl;
-		if (_configs.locations[i].formSubmit)
-			std::cout << "\tform_output_file: " << _configs.locations[i].formUploadFile << std::endl;
+		if (_servers[z].locations[i].formSubmit)
+			std::cout << "\tform_output_file: " << _servers[z].locations[i].formUploadFile << std::endl;
 		std::cout<< "}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;
