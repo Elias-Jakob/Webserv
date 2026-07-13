@@ -125,13 +125,13 @@ void	Server::handleClientWrite(int clientFd)
 
 void	Server::killCGIProcesses(ClientConnection &client)
 {
-	struct epoll_event	epEvent;
-	
+	struct epoll_event	*epEvent;
+	epEvent = NULL;
 	for (std::map<int, t_CGIProcess>::iterator	it = this->cgiProcesses.begin();
 			it != this->cgiProcesses.end(); ) {
 		if (it->second.client == &client) {
 			kill(it->second.pid, SIGKILL);
-			epEvent.data.fd = it->first;
+			epEvent->data.fd = it->first;
 			if (epoll_ctl(epollFd, EPOLL_CTL_DEL, it->first, NULL) == -1)
 				throw std::runtime_error(std::strerror(errno));
 			close(it->first);
@@ -174,7 +174,7 @@ void	Server::readFromCGI(int fd)
 		throw std::runtime_error(std::strerror(errno));
 	if (readBytes == 0) { // pipe was closed
 		
-		client.response_buffer = this->responseBuilder.cgiFormation(client.response_buffer);
+		client.response_buffer = this->responseBuilder.cgiResponse(client.response_buffer);
 		client.state = SENDING_RESPONSE;
 		epEvent.events = EPOLLOUT;
 		epEvent.data.fd = client.fd;

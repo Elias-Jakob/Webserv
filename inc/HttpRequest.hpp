@@ -15,11 +15,19 @@
 # include "structs.h"
 # include "print_controls.hpp"
 
+typedef struct	s_query
+{
+	std::string	key;
+	std::string	value;
+}				t_query;
+
 typedef struct s_RequestLine
 {
-	std::string	method;
-	std::string requestURI;
-	std::string	version;
+	std::string				method;
+	std::string 			requestURI;
+	std::string				version;
+	std::string				queryStr;
+	std::vector<t_query>	query;
 }				t_RequestLine;
 
 enum e_parsingState
@@ -52,7 +60,7 @@ class HttpRequest
 		std::map<std::string, s_FormField> _parsedMessageBody;
 		// ERROR
 		int				_errorCode;
-
+		std::string		_fileExtension;
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -63,6 +71,16 @@ class HttpRequest
 		void	addHeader(const std::string &key, const std::string &value);
 		bool	isValidURI(const std::string &uri);
 		std::string	toLowerCase(std::string &str);
+
+		bool	hasQuery(size_t	*posQuery);
+		void	handleQuery(size_t posQuery);
+		void	setQueryPairs(const std::string &queryStr);
+		void	setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end);
+		void	extractFileExtension();
+		bool	unchunkBody(); // new
+		size_t	chunkedSize();
+		std::string	chunkedData(size_t chunked_size);
+		
 
 	protected:
 		// HELPERS
