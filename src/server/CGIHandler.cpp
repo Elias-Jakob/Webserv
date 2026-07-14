@@ -28,7 +28,7 @@ void	Server::handleCGIOutput(int fd)
 	if (readBytes == -1) // handle
 		throw std::runtime_error(std::strerror(errno));
 	if (readBytes == 0) { // pipe was closed
-		caller.response_buffer = this->responseBuilder.cgiFormation(caller.response_buffer);
+		caller.response_buffer = this->responseBuilder.cgiResponse(caller.response_buffer);
 		caller.state = SENDING_RESPONSE;
 		epEvent.events = EPOLLOUT;
 		epEvent.data.fd = caller.fd;

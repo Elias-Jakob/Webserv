@@ -34,7 +34,7 @@ extern sig_atomic_t	sigFlag;
 class Server
 {
 	public:
-		Server(t_Configs &configs);
+		Server(std::vector<t_Configs> &configs);
 		~Server();
 
 		void	serverStartup();
@@ -43,7 +43,7 @@ class Server
 		Server(const Server &other);
 		Server	&operator=(const Server &other);
 
-		t_Configs	&configs;
+		std::vector<t_Configs>	&configs;
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
 		std::vector<int>	listenSockets;

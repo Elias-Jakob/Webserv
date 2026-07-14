@@ -86,19 +86,20 @@ class ConfigFileParser
 
 		// PARSING
 		t_Configs	_configs;
-
+		std::vector<t_Configs>	_servers;
 		void 	parseToDataStructure();
 		size_t	createServer(size_t *i);
 		// size_t	createLocation(size_t i);
 		bool	checkIdentifier(const std::string identifier);
-		void	setValue(const std::string id, size_t j);
-		void	printServer();
+		void	setValue(const std::string id, size_t j, t_Configs *serverConfigs);
+		void	printServer(size_t z);
 		size_t	convertStrToSize(const std::string value);
 		
-		size_t	createLocation(size_t i);
+		size_t	createLocation(size_t i, t_Configs *serverConfigs);
 		size_t	setLocationVal(size_t i, t_Location *loc);
 
-		void	parseEndpoints();
+		void	parseEndpoints(t_Configs *serverConf);
+		void	printServers();
 };
 
 #endif

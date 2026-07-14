@@ -19,4 +19,7 @@
 #define MAX_FILE_UPLOADS 10
 #define CGI_TIMEOUT 30
 
+// Query
+# define MAX_QUERY_STRING_LENGTH 2048
+
 #endif

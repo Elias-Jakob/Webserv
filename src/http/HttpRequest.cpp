@@ -31,66 +31,6 @@ HttpRequest::~HttpRequest()
 }
 
 // =========================================================================
-// Getters & Setters
-// =========================================================================
-
-s_RequestLine &HttpRequest::getRequestLine()
-{
-	return _requestLine;
-}
-
-std::map<
-			std::string,
-			std::vector<std::string> > &HttpRequest::getRequestHeaders()
-{
-	return _headers;
-}
-
-std::string	&HttpRequest::getRequestBody()
-{
-	return _fullMessageBody;
-}
-
-std::map<std::string, s_FormField> &HttpRequest::getParsedBody()
-{
-	return _parsedMessageBody;
-}
-
-t_ContentData	&HttpRequest::getContentData()
-{
-	return _contentData;
-}
-
-std::string &HttpRequest::getMethod()
-{
-	return _requestLine.method;
-}
-
-int HttpRequest::getErrorCode()
-{
-	std::cout << "HttpRequest::getErrorCode() => " << _errorCode << std::endl;
-	return _errorCode;
-}
-
-std::string &HttpRequest::getURI()
-{
-	return _requestLine.requestURI;
-}
-
-std::string	HttpRequest::getRedirectLocation()
-{
-	std::cout << "HttpRequest::getRedirectLocatio()" << std::endl;
-	std::string	location;
-	std::map<std::string, std::vector<std::string> >::iterator it;
-
-	std::cout << "\t_headers.size = " << _headers.size() << std::endl;
-	it = _headers.find("Location");
-	if (it != _headers.end())
-		location = it->second[0];
-	return location;
-}
-
-// =========================================================================
 // Public Methods
 // =========================================================================
 
@@ -224,6 +164,11 @@ bool	HttpRequest::parseRequestLine()
 	_requestLine.requestURI = reqLine.substr(posSP1 + 1, posSP2 - posSP1 - 1);
 	_requestLine.version = reqLine.substr(posSP2 + 1);
 
+	size_t	posQuery = 0; // Query
+	if (hasQuery(&posQuery))
+		handleQuery(posQuery);
+
+	extractFileExtension();
 	_current_pos = posCRLF + 2;  // Skip \r\n
 	// std::cout << "current_pos " << _current_pos << std::endl; 
 	if (foundEndOfRequest())
@@ -236,6 +181,8 @@ bool	HttpRequest::parseRequestLine()
 
 	return true;
 }
+
+
 
 /**
 	* @brief Searches for the end of the header-section (\r\n\r\n).
@@ -309,11 +256,12 @@ bool	HttpRequest::extractBody()
 	    std::cout << _messageBuffer[i];
 	std::cout << std::endl;
     size_t contentLength = 0;
-    std::map<std::string, std::vector<std::string> >::iterator it;
 
+    std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("content-length"); // Get Content-Length from headers
     if (it != _headers.end() && !it->second.empty())
-    {
+	{
+		std::cout << "\tCONTENT-LENGTH HANDLING" << std::endl;
         contentLength = atoi(it->second[0].c_str());
         if (contentLength > MAX_BODY_SIZE)// Check body-size limit
         {
@@ -321,13 +269,22 @@ bool	HttpRequest::extractBody()
             return setErrorCode(413);
         }
     }
-    else
-	{
-        contentLength = 0;
+	else {
+		std::cout << "\tIN ELSE" << std::endl;
+		it = _headers.find("transfer-encoding");
+		if (it != _headers.end() && !it->second.empty() 
+			&& it->second[0] == "chunked") 
+		{
+				std::cout << "\tCHUNKED TRANSFER HANDLING" << std::endl;
+				return unchunkBody();
+		}
 	}
-	if (_requestLine.method == "POST" && contentLength == 0)
-	{
+    // else { // needed?
+    //     contentLength = 0;
+	// }
+	if (_requestLine.method == "POST" && contentLength == 0) {
 		_state = PARSING_ERROR;
+		std::cout << "PARSING_ERROR" << std::endl;
 		return setErrorCode(411);
 	}
 	std::cout << "content-length = " << contentLength << std::endl;
@@ -355,6 +312,60 @@ bool	HttpRequest::extractBody()
     else
         _fullMessageBody = "";
     return true;
+}
+
+/**
+ * @brief no chunk-extension yet.
+ */
+bool	HttpRequest::unchunkBody()
+{
+	// std::cout << "buffer_sub : \n"<< _messageBuffer.substr(_current_pos) << std::endl;
+	size_t	posEnd =_messageBuffer.find("0\r\n", _current_pos);
+	if (posEnd != std::string::npos)
+	{
+		std::cout << "FOUND END OF MESSAGE" << "\n\t unchunking body now..." << std::endl;
+		std::string	chunked_message = _messageBuffer.substr(_current_pos);
+		// size_t		chunked_size = chunkedSize();
+		// std::cout << "chunked_size = " << chunked_size << std::endl;
+		// std::string	chunked_data = chunkedData(chunked_size);
+		// _fullMessageBody += chunked_data;
+		size_t chunked_size = 0;
+		while ((chunked_size = chunkedSize()) != 0)
+		{
+			std::string chunked_data = chunkedData(chunked_size);
+			_fullMessageBody += chunked_data;
+		} 
+		// std::cout << "chunked_message: " << chunked_message << std::endl;
+		// unchunk here.
+		return true;
+	}
+	std::cout << "NOT UNCHUNKED BODY!" << std::endl;
+	return false;
+}
+
+std::string	HttpRequest::chunkedData(size_t chunked_size)
+{
+	size_t posEndData = _messageBuffer.find("\r\n", _current_pos);
+	if ((posEndData - _current_pos) != chunked_size)
+	{
+		std::cout << "\tchunked_size & sizeof data dont match!" << std::endl;
+		return "";
+	}
+	std::string data = _messageBuffer.substr(_current_pos, chunked_size);
+	_current_pos = posEndData + 2;
+	return data;
+}
+
+size_t	HttpRequest::chunkedSize()
+{
+	size_t	posEndSize = _messageBuffer.find("\r\n", _current_pos);
+	if (posEndSize == std::string::npos)
+		return 0;
+	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
+	std::cout << "\tsizeStr [\"" << sizeStr << "\"]" << std::endl;
+	_current_pos = posEndSize + 2;
+	return atoi(sizeStr.c_str());
+	// return 1;
 }
 
 /**
@@ -453,7 +464,7 @@ bool HttpRequest::isImplementedMethod() // 501
 
 bool HttpRequest::isHttpVersionSupported() // 505
 {
-	if (_requestLine.version == "HTTP/1.1")
+	if (_requestLine.version == "HTTP/1.1" || _requestLine.version == "HTTP/1.0")
 		return true;
 	return false;
 }
@@ -629,4 +640,171 @@ void	HttpRequest::addHeader(const std::string &key, const std::string &value)
 		for (size_t i = 0; i < temp.size(); i++)
 			it->second.push_back(temp[i]);
 	}
+}
+
+void	HttpRequest::extractFileExtension()
+{
+	size_t	posExt = _requestLine.requestURI.find('.');
+	if (posExt != std::string::npos)
+	{
+		// _fileExtension = _requestLine.requestURI.substr(posExt, _requestLine.requestURI.size() - posExt);
+		_fileExtension = _requestLine.requestURI.substr(posExt);
+		std::cout << "\t_fileExtension: "<< _fileExtension << std::endl;
+	}
+}
+
+/**
+ * @brief Checks for Query char ('?') & sets position of it.
+ */
+bool	HttpRequest::hasQuery(size_t *posQuery)
+{
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::hasQuery()" << std::endl;
+
+	size_t	pos = 0;
+	pos = _requestLine.requestURI.find('?');
+	if (pos != std::string::npos)
+	{
+		*posQuery = pos;
+		std::cout << "\tpos of '?' = " << pos << std::endl;
+		return true;
+	}
+	return false;
+}
+
+
+/**
+ * @brief Splits URI + Query and sets new request-URI.
+ */
+void	HttpRequest::handleQuery(size_t posQuery)
+{
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::handleQuery()" << std::endl;
+
+	std::string	uri = _requestLine.requestURI;
+	_requestLine.requestURI = uri.substr(0, posQuery);
+	std::cout << "\tnew URI = " << _requestLine.requestURI << std::endl;
+	std::string	queryStr = uri.substr(posQuery + 1);
+	_requestLine.queryStr = queryStr;
+	if (queryStr.size() > MAX_QUERY_STRING_LENGTH)
+	{
+		_state = PARSING_ERROR;
+		setErrorCode(414);
+		return;
+	}
+	setQueryPairs(queryStr);
+}
+
+/**
+ * @brief split key=value&key=value&
+ */
+void	HttpRequest::setQueryPairs(const std::string &queryStr)
+{
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::setQueryPairs()" 
+			<< "\n\tQuery = " << queryStr << std::endl;
+
+	size_t	start = 0;
+	size_t	end = 0;
+	while (end < queryStr.size())
+	{
+		end = queryStr.find('&', start);
+		if (end == std::string::npos)
+			end = queryStr.size();
+		// std::cout << "\t:end = " << end << std::endl;
+		size_t posEqual = queryStr.find('=', start);
+		// std::cout << "\t:posEqual = " << posEqual << std::endl;
+		if (posEqual != std::string::npos)
+		{
+			setQueryKeyValue(queryStr, start, posEqual, end);
+		}
+		start = ++end;
+	}
+
+// Print 
+	if (PRINT_REQUEST)
+	{
+		std::cout << "QUERY-Key-Value-Pairs:" << std::endl;
+		for (size_t i = 0; i < _requestLine.query.size(); i++)
+		{
+			std::cout << "\t(\"" << _requestLine.query[i].key 
+				<< "\"=\"" << _requestLine.query[i].value << "\")" 
+				<< std::endl;
+		}
+	}
+}
+
+/**
+ * @brief
+ */
+void	HttpRequest::setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end)
+{
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::setQueryKeyValue()" << std::endl;
+
+	t_query	query;
+
+	query.key = queryStr.substr(start, posEqual - start);
+	query.value = queryStr.substr(posEqual + 1, end - posEqual - 1);
+	// std::cout << "\t("<< query.key << " = " << query.value << ")" << std::endl;
+	_requestLine.query.push_back(query);
+}
+// =========================================================================
+// Getters & Setters
+// =========================================================================
+
+s_RequestLine &HttpRequest::getRequestLine()
+{
+	return _requestLine;
+}
+
+std::map<
+			std::string,
+			std::vector<std::string> > &HttpRequest::getRequestHeaders()
+{
+	return _headers;
+}
+
+std::string	&HttpRequest::getRequestBody()
+{
+	return _fullMessageBody;
+}
+
+std::map<std::string, s_FormField> &HttpRequest::getParsedBody()
+{
+	return _parsedMessageBody;
+}
+
+t_ContentData	&HttpRequest::getContentData()
+{
+	return _contentData;
+}
+
+std::string &HttpRequest::getMethod()
+{
+	return _requestLine.method;
+}
+
+int HttpRequest::getErrorCode()
+{
+	std::cout << "HttpRequest::getErrorCode() => " << _errorCode << std::endl;
+	return _errorCode;
+}
+
+std::string &HttpRequest::getURI()
+{
+	return _requestLine.requestURI;
+}
+
+std::string	HttpRequest::getRedirectLocation()
+{
+	std::cout << "HttpRequest::getRedirectLocatio()" << std::endl;
+	std::string	location;
+	std::map<std::string, std::vector<std::string> >::iterator it;
+
+	std::cout << "\t_headers.size = " << _headers.size() << std::endl;
+	it = _headers.find("Location");
+	if (it != _headers.end())
+		location = it->second[0];
+	return location;
 }

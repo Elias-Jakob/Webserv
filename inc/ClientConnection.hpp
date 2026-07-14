@@ -50,10 +50,13 @@ class ClientConnection
 		pid_t	cgiPid;
 		int	cgiIn;
 		int	cgiOut;
+		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
 
 		void	processRequest();
 		void	cleanUpClient();
-		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
+	private:
+		void	executeRequest();
+		void	deleteMethod();
 };
 
 #endif

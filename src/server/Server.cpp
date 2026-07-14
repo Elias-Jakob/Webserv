@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs), cgiLauncher(epollFd, cgiPipes)
+Server::Server(std::vector<t_Configs> &configs) : configs(configs), cgiLauncher(epollFd, cgiPipes)
 {}
 
 Server::~Server()
@@ -45,7 +45,7 @@ void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
 }
 
 // TESTING: todo
-bool	Server::initListenSockets()
+bool	Server::initListenSockets(t_Configs	&config)
 {
 	struct addrinfo	hints, *res;
 	int	gaiErr, fd;
@@ -63,8 +63,8 @@ bool	Server::initListenSockets()
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
-	for (t_MultiStrMap::const_iterator	interface = this->configs.endpoints.begin();
-			interface != this->configs.endpoints.end(); ++interface) {
+	for (t_MultiStrMap::const_iterator	interface = config.endpoints.begin();
+			interface != config.endpoints.end(); ++interface) {
 		for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 				port != interface->second.end(); ++port) {
 			res = NULL;
@@ -99,7 +99,10 @@ void	Server::serverStartup()
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1 || fcntl(this->epollFd, F_SETFD, FD_CLOEXEC) == -1)
 		throw std::runtime_error(std::strerror(errno));
-	if (!this->initListenSockets())
-		throw std::runtime_error("Failed to set up any listening sockets");
+	for (std::vector<t_Configs>::iterator	it = this->configs; it != this->configs.end(); ++it) {
+		std::cout << "Set up server" << std::endl;
+		if (!this->initListenSockets(*it))
+			throw std::runtime_error("Failed to set up any listening sockets");
+	}
 	this->eventLoop();
 }
