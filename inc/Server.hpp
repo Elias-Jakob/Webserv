@@ -17,6 +17,7 @@
 # include <cstring>
 # include <cstdlib> // std::exit
 # include <algorithm> // for std::find
+# include <ctime>
 
 // POSIX
 # include <sys/socket.h>
@@ -47,7 +48,7 @@ class Server
 		ResponseBuilder	responseBuilder;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		std::map<int, t_CGIProcess>	cgiProcesses;
+		std::map<int, ClientConnection&>	cgiPipes;
 		int	epollFd;
 		CGIProcessLauncher	cgiLauncher;
 
@@ -58,9 +59,9 @@ class Server
 		void	handleIncoming(int);
 		void	handleOutgoing(int);
 		void	handleCGIOutput(int fd);
+		void	writeRequestBodyToCGI(int fd);
 		void	removeClient(ClientConnection &client);
 		void	timeoutInactiveClients();
-		void	killCGIProcesses(ClientConnection &client);
 };
 
 #endif // !SERVER_HPP

@@ -17,6 +17,6 @@
 
 // Resource & Performance
 #define MAX_FILE_UPLOADS 10
-#define CGI_PROCESS_TIMEOUT 30
+#define CGI_TIMEOUT 30
 
 #endif

@@ -43,18 +43,24 @@ void	Server::handleNewClient(int listenFd)
 
 void	Server::removeClient(ClientConnection &client)
 {
-	this->killCGIProcesses(client);
+	// if (client.cgiIn != -1)
+	// 	this->cgiPipes.erase(client.cgiIn);
+	// if (client.cgiOut != -1)
+	// 	this->cgiPipes.erase(client.cgiOut);
+	if (client.cgiPid != -1)
+		client.terminateCGIProcess(&(this->cgiPipes));
 	close(client.fd);
 	this->clients.erase(client.fd);
 }
 
 void	Server::timeoutInactiveClients()
 {
+	time_t	current = std::time(NULL);
+
 	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 			it != this->clients.end(); ) {
-		it->second.inactiveTime++;
-		if (it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
-			std::cout << "Removed inactive client after timeout... fd = " << it->first << std::endl;
+		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
+			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
 			this->removeClient((it++)->second);
 		}
 		else ++it;
@@ -81,13 +87,16 @@ void	Server::eventLoop()
 					this->removeClient(this->clients.at(events[i].data.fd));
 					continue;
 				}
-				this->clients.at(events[i].data.fd).inactiveTime = 0;
+				this->clients.at(events[i].data.fd).inactiveTime = std::time(NULL);
 				if (events[i].events & EPOLLIN) // the client is available for read
 					this->handleIncoming(events[i].data.fd);
 				if (events[i].events & EPOLLOUT) // the client is available for write
 					this->handleOutgoing(events[i].data.fd);
-			} else if (this->cgiProcesses.find(events[i].data.fd) != this->cgiProcesses.end()) {
-				handleCGIOutput(events[i].data.fd);
+			} else if (this->cgiPipes.find(events[i].data.fd) != this->cgiPipes.end()) {
+				if (events[i].events & EPOLLOUT)
+					this->writeRequestBodyToCGI(events[i].data.fd);
+				else// if (events[i].events & EPOLLIN)
+					this->handleCGIOutput(events[i].data.fd);
 			}
 		}
 		this->timeoutInactiveClients();

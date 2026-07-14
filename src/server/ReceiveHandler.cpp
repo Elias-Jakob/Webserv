@@ -34,6 +34,10 @@ void	Server::handleIncoming(int clientFd)
 		client.processRequest();
 		if (client.state == CGI_PROCESSING) {
 			try {
+				if (client.cgiPid != -1) {
+					client.terminateCGIProcess(&(this->cgiPipes));
+					std::cout << "Re-request CGI: Interupting/Terminating previouse CGI process" << std::endl;
+				}
 				this->cgiLauncher.newProcess(client);
 			}
 			catch (const CGIError &e) {

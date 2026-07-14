@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs), cgiLauncher(epollFd, cgiProcesses)
+Server::Server(t_Configs &configs) : configs(configs), cgiLauncher(epollFd, cgiPipes)
 {}
 
 Server::~Server()
@@ -82,7 +82,7 @@ bool	Server::initListenSockets()
 				this->listenSockets.push_back(fd);
 			} catch (const std::runtime_error	&e) {
 				std::cerr << "Failed to set up listening endpoint " << interface->first
-					<< ":" << *port << std::endl;
+					<< ":" << *port << ": " << e.what() << std::endl;
 				if (res != NULL)
 				freeaddrinfo(res);
 				if (fd != -1)

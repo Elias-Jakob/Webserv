@@ -5,16 +5,10 @@
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
 
-typedef struct	s_CGIProcess
-{
-	ClientConnection	*client;
-	int	pid;
-} t_CGIProcess;
-
 class CGIProcessLauncher
 {
 	public:
-		CGIProcessLauncher(int &epollFd, std::map<int, t_CGIProcess> &cgiProcesses);
+		CGIProcessLauncher(int &epollFd, std::map<int, ClientConnection&> &cgiPipes);
 		~CGIProcessLauncher();
 
 		void	newProcess(ClientConnection &client);
@@ -24,7 +18,7 @@ class CGIProcessLauncher
 		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
 
 		int	&epollFd;
-		std::map<int, t_CGIProcess>	&cgiProcesses;
+		std::map<int, ClientConnection&>	&cgiPipes;
 		struct epoll_event	epEvent;
 		pid_t	pid;
 		int	stdinPipe[2];
@@ -32,7 +26,8 @@ class CGIProcessLauncher
 		std::vector<std::string>	args;
 		std::vector<std::string>	envs;
 
-		void	cleanUp(bool closeAll);
+		// void	cleanUp(bool closeAll);
+		void	cleanUp(bool closeAll = true);
 		void	runChildProcess(ClientConnection &client);
 
 		char	**createArgv(ClientConnection &client);

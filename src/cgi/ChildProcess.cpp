@@ -89,7 +89,7 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
 		std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
-		this->cleanUp(true);
+		this->cleanUp();
 		std::exit(EXIT_FAILURE);
 	}
 	close(this->stdinPipe[1]);
@@ -99,6 +99,6 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
 	delete[] argv;
 	delete[] envp;
-	this->cleanUp(true);
+	this->cleanUp();
 	std::exit(EXIT_FAILURE);
 }

@@ -9,8 +9,8 @@ void	Server::handleOutgoing(int clientFd)
 	std::cout << "\033[35m==========\nRESPONSE sending...\n" << std::endl;
 	sentBytes = send(clientFd, client.response_buffer.c_str(), client.response_buffer.size(), 0);
 	if (sentBytes == -1)
-		throw std::runtime_error(std::strerror(errno));
-	client.bytesSent += sentBytes; // TODO:
+		throw std::runtime_error("send failed: " + std::string(std::strerror(errno))); // TODO:
+	client.bytesSent += sentBytes;
 	if (client.bytesSent < client.response_buffer.size()) {
 		std::cout << "bytes sent: " << sentBytes << " response_buffer: " << client.response_buffer.size() << " was not fully sent" << std::endl;
 		return;
