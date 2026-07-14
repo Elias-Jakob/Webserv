@@ -24,6 +24,7 @@ class Get : public AMethod
 		~Get();
 
 		bool execute();
+		bool		setFileHeaders(struct stat &fileInfo);
 	
 	private:
 		bool		handleRedirect();

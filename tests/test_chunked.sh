@@ -82,38 +82,38 @@ sleep 0.5
 
 # Test 3: Chunked form data (name=value pairs)
 print_test "POST chunked form data"
-CHUNKED=$(printf "14\r\nname=John&age=30\r\n0\r\n\r\n")
+CHUNKED=$(printf "10\r\nname=John&age=30\r\n0\r\n\r\n")
 STATUS=$(send_chunked_request "/cgi-bin/form.php" "$CHUNKED")
 check_status "Should accept chunked form data" "200" "$STATUS"
 sleep 0.5
 
-# # Test 4: Empty chunks (chunk of size 0)
-# print_test "POST with empty intermediate chunk"
-# CHUNKED=$(printf "5\r\nHello\r\n0\r\n\r\n")
-# STATUS=$(send_chunked_request "/" "$CHUNKED")
-# check_status "Should terminate on 0 chunk" "200" "$STATUS"
-# sleep 0.5
+# Test 4: Empty chunks (chunk of size 0)
+print_test "POST with empty intermediate chunk"
+CHUNKED=$(printf "5\r\nHello\r\n0\r\n\r\n")
+STATUS=$(send_chunked_request "/" "$CHUNKED")
+check_status "Should terminate on 0 chunk" "200" "$STATUS"
+sleep 0.5
 
-# # Test 5: Large data split into multiple chunks
-# print_test "POST with large data in multiple chunks"
-# CHUNKED=$(printf "a\r\n0123456789\r\na\r\nabcdefghij\r\n0\r\n\r\n")
-# STATUS=$(send_chunked_request "/" "$CHUNKED")
-# check_status "Should reconstruct large chunked data" "200" "$STATUS"
-# sleep 0.5
+# Test 5: Large data split into multiple chunks
+print_test "POST with large data in multiple chunks"
+CHUNKED=$(printf "a\r\n0123456789\r\na\r\nabcdefghij\r\n0\r\n\r\n")
+STATUS=$(send_chunked_request "/" "$CHUNKED")
+check_status "Should reconstruct large chunked data" "200" "$STATUS"
+sleep 0.5
 
-# # Test 6: Chunked POST to upload endpoint
-# print_test "POST chunked to upload handler"
-# CHUNKED=$(printf "13\r\nfile_content_1\r\n0\r\n\r\n")
-# STATUS=$(send_chunked_request "/upload" "$CHUNKED")
-# check_status "Should handle chunked upload" "200" "$STATUS"
-# sleep 0.5
+# Test 6: Chunked POST to upload endpoint
+print_test "POST chunked to upload handler"
+CHUNKED=$(printf "e\r\nfile_content_1\r\n0\r\n\r\n")
+STATUS=$(send_chunked_request "/upload" "$CHUNKED")
+check_status "Should handle chunked upload" "200" "$STATUS"
+sleep 0.5
 
-# # Test 7: Verify unchunking works with CGI scripts
-# print_test "POST chunked to CGI script"
-# CHUNKED=$(printf "c\r\ntest=value!\r\n0\r\n\r\n")
-# STATUS=$(send_chunked_request "/cgi-bin/script.py" "$CHUNKED")
-# check_status "Should pass unchunked data to CGI" "200" "$STATUS"
-# sleep 0.5
+# Test 7: Verify unchunking works with CGI scripts
+print_test "POST chunked to CGI script"
+CHUNKED=$(printf "b\r\ntest=value!\r\n0\r\n\r\n")
+STATUS=$(send_chunked_request "/cgi-bin/script.py" "$CHUNKED")
+check_status "Should pass unchunked data to CGI" "200" "$STATUS"
+sleep 0.5
 
 echo ""
 echo -e "Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
