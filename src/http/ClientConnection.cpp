@@ -23,7 +23,8 @@ ClientConnection::ClientConnection() :
 	inactiveTime(std::time(NULL)),
 	cgiPid(-1),
 	cgiIn(-1),
-	cgiOut(-1)
+	cgiOut(-1),
+	cgiWrittenBytes(0)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }
@@ -132,5 +133,5 @@ void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgi
 			cgiPipes->erase(this->cgiOut);
 	}
 	this->cgiPid = this->cgiIn = this->cgiOut = -1;
-	
+	this->cgiWrittenBytes = 0;
 }

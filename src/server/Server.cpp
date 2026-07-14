@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs), cgiLauncher(epollFd, cgiPipes)
+Server::Server(t_Configs &configs) : configs(configs), epoll(), cgiLauncher(epoll, cgiPipes)
 {}
 
 Server::~Server()
@@ -12,8 +12,6 @@ Server::~Server()
 	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 			it != this->clients.end(); ++it)
 		if (it->first != -1) close(it->first);
-	if (this->epollFd != -1)
-		close(this->epollFd);
 }
 
 void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
@@ -49,7 +47,7 @@ bool	Server::initListenSockets()
 {
 	struct addrinfo	hints, *res;
 	int	gaiErr, fd;
-	struct epoll_event	epEvent;
+	// struct epoll_event	epEvent;
 
 	// INFO: hints indicate what the returned socket address will be used for
 	std::memset(&hints, 0, sizeof(addrinfo));
@@ -59,7 +57,7 @@ bool	Server::initListenSockets()
 	hints.ai_flags = AI_PASSIVE; // indicates that the returned socket address structure is intended for use in a call to bind
 
 	// ?
-	epEvent.events = EPOLLIN;
+	// epEvent.events = EPOLLIN;
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
@@ -73,9 +71,10 @@ bool	Server::initListenSockets()
 				if (gaiErr != 0)
 					throw std::runtime_error(gai_strerror(gaiErr));
 				this->setupSocketAddr(res, fd);
-				epEvent.data.fd = fd;
-				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-					throw std::runtime_error(std::strerror(errno));
+				this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
+				// epEvent.data.fd = fd;
+				// if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
+				// 	throw std::runtime_error(std::strerror(errno));
 				std::cout << "Listening endpoint " << interface->first << ":" << *port
 					<< " has been sucessfully set up" << std::endl;
 				this->listenSockets.push_back(fd);
@@ -96,9 +95,9 @@ void	Server::serverStartup()
 {
 	this->methodExecuter.setConfig(&this->configs);
 	this->responseBuilder.setConfig(&this->configs);
-	this->epollFd = epoll_create1(0);
-	if (this->epollFd == -1 || fcntl(this->epollFd, F_SETFD, FD_CLOEXEC) == -1)
-		throw std::runtime_error(std::strerror(errno));
+	// this->epollFd = epoll_create1(0);
+	// if (this->epollFd == -1 || fcntl(this->epollFd, F_SETFD, FD_CLOEXEC) == -1)
+	// 	throw std::runtime_error(std::strerror(errno));
 	if (!this->initListenSockets())
 		throw std::runtime_error("Failed to set up any listening sockets");
 	this->eventLoop();

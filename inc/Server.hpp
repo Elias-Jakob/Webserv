@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include "ConfigFileParser.hpp"
+# include "Epoll.hpp"
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
 # include "CGIProcessLauncher.hpp"
@@ -14,14 +15,14 @@
 # include <map>
 # include <stdexcept>
 # include <cerrno>
-# include <cstring>
+# include <cstring> // std::strerror
 // # include <cstdlib> // std::exit
 # include <algorithm> // for std::find
 # include <ctime>
 
 // POSIX
 # include <sys/socket.h>
-# include <sys/epoll.h>
+// # include <sys/epoll.h>
 # include <sys/wait.h>
 # include <stdlib.h>
 # include <unistd.h>
@@ -49,7 +50,8 @@ class Server
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
 		std::map<int, ClientConnection&>	cgiPipes;
-		int	epollFd;
+		Epoll	epoll;
+		// int	epollFd;
 		CGIProcessLauncher	cgiLauncher;
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);

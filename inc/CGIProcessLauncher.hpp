@@ -1,14 +1,14 @@
 #ifndef CGIPROCESSLAUNCHER_HPP
 # define CGIPROCESSLAUNCHER_HPP
 
-# include <sys/epoll.h>
+# include "Epoll.hpp"
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
 
 class CGIProcessLauncher
 {
 	public:
-		CGIProcessLauncher(int &epollFd, std::map<int, ClientConnection&> &cgiPipes);
+		CGIProcessLauncher(Epoll &epoll, std::map<int, ClientConnection&> &cgiPipes);
 		~CGIProcessLauncher();
 
 		void	newProcess(ClientConnection &client);
@@ -17,9 +17,9 @@ class CGIProcessLauncher
 		CGIProcessLauncher(const CGIProcessLauncher &other);
 		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
 
-		int	&epollFd;
+		Epoll	&epoll;
 		std::map<int, ClientConnection&>	&cgiPipes;
-		struct epoll_event	epEvent;
+		// struct epoll_event	epEvent;
 		pid_t	pid;
 		int	stdinPipe[2];
 		int	stdoutPipe[2];

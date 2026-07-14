@@ -14,7 +14,7 @@
 void	Server::handleNewClient(int listenFd)
 {
 	int	fd;
-	struct epoll_event	epEvent;
+	// struct epoll_event	epEvent;
 
 	fd = accept(listenFd, NULL, NULL);
 	if (fd == -1)
@@ -35,10 +35,11 @@ void	Server::handleNewClient(int listenFd)
 
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);
-	epEvent.events = EPOLLIN;
-	epEvent.data.fd = fd;
-	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-		throw std::runtime_error(std::strerror(errno));
+	this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
+	// epEvent.events = EPOLLIN;
+	// epEvent.data.fd = fd;
+	// if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
+	// 	throw std::runtime_error(std::strerror(errno));
 }
 
 void	Server::removeClient(ClientConnection &client)
@@ -74,7 +75,7 @@ void	Server::eventLoop()
 
 	while (sigFlag != SIGINT)
 	{
-		nFds = epoll_wait(this->epollFd, events, EPOLL_MAX_EVENTS, 1000);
+		nFds = epoll_wait(this->epoll.fd, events, EPOLL_MAX_EVENTS, 1000);
 		if (nFds == -1) {
 			if (sigFlag == SIGINT)
 				break ;

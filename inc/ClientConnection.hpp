@@ -50,6 +50,7 @@ class ClientConnection
 		pid_t	cgiPid;
 		int	cgiIn;
 		int	cgiOut;
+		size_t	cgiWrittenBytes;
 
 		void	processRequest();
 		void	cleanUpClient();
