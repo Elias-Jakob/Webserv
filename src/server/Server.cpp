@@ -26,8 +26,7 @@ void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
 				continue;
 			throw std::runtime_error(std::strerror(errno));
 		}
-		// TODO: check if FD_CLOEXEC works on linux
-		if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 			throw std::runtime_error(std::strerror(errno));
 		// TODO: setsockopt
 		int opt = 1;
@@ -98,7 +97,7 @@ void	Server::serverStartup()
 	this->methodExecuter.setConfig(&this->configs);
 	this->responseBuilder.setConfig(&this->configs);
 	this->epollFd = epoll_create1(0);
-	if (this->epollFd == -1)
+	if (this->epollFd == -1 || fcntl(this->epollFd, F_SETFD, FD_CLOEXEC) == -1)
 		throw std::runtime_error(std::strerror(errno));
 	if (!this->initListenSockets())
 		throw std::runtime_error("Failed to set up any listening sockets");

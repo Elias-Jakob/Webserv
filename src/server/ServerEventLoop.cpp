@@ -21,7 +21,7 @@ void	Server::handleNewClient(int listenFd)
 		throw std::runtime_error(std::strerror(errno));
 	std::cout << "New client connected... socket file descriptor = " << fd << std::endl;
 	// TODO: check if FD_CLOEXEC works on linux
-	if (fcntl(fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 		throw std::runtime_error(std::strerror(errno));
 
 	// Initialize client connection directly in map (avoid copy issues)
@@ -74,8 +74,12 @@ void	Server::eventLoop()
 
 	while (sigFlag != SIGINT)
 	{
-		if ((nFds = epoll_wait(this->epollFd, events, EPOLL_MAX_EVENTS, 1000)) == -1)
+		nFds = epoll_wait(this->epollFd, events, EPOLL_MAX_EVENTS, 1000);
+		if (nFds == -1) {
+			if (sigFlag == SIGINT)
+				break ;
 			throw std::runtime_error(std::strerror(errno));
+		}
 		for (int	i = 0; i < nFds; ++i) {
 			if (std::find(this->listenSockets.begin(), this->listenSockets.end(),
 					events[i].data.fd) != this->listenSockets.end()) {

@@ -82,23 +82,21 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	envp = this->createEnvp(client.request);
 
 	// WARNING: this could be dangerous
-	// check with chris if this is safe or is any of those function could break
+	// check with chris if this is safe or if any of those function could break
 	cgiDir = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
 	//
 	
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
-		std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
 		this->cleanUp();
-		std::exit(EXIT_FAILURE);
+		throw std::runtime_error("CGI process failed: " + std::string(std::strerror(errno)));
 	}
-	close(this->stdinPipe[1]);
-	close(this->stdoutPipe[0]);
+	close(this->stdinPipe[0]);
+	close(this->stdoutPipe[1]);
 	if (chdir(cgiDir.c_str()) != -1)
 		execve(argv[0], argv, envp);
-	std::cerr << "CGI process failed: " << std::strerror(errno) << std::endl;
 	delete[] argv;
 	delete[] envp;
 	this->cleanUp();
-	std::exit(EXIT_FAILURE);
+	throw std::runtime_error("CGI process failed: " + std::string(std::strerror(errno)));
 }

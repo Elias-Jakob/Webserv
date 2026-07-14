@@ -29,10 +29,10 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 	// TODO:
 	// 1. just a thought: is it viable to just use one pipe for in and out? if not why?
 	// 2. is it necessary to set the in/out ends to non blocking?
-	if (pipe(this->stdinPipe) == -1 ||
+	if (pipe(this->stdinPipe) == -1 || fcntl(this->stdinPipe[1], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1)
 		throw CGIError(std::strerror(errno));
-	if (pipe(this->stdoutPipe) == -1 ||
+	if (pipe(this->stdoutPipe) == -1 || fcntl(this->stdoutPipe[0], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdoutPipe[0], F_SETFL, O_NONBLOCK) == -1) {
 		this->cleanUp();
 		throw CGIError(std::strerror(errno));
