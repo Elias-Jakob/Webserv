@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs)
+Server::Server(std::vector<t_Configs> &configs) : configs(configs)
 {}
 
 Server::~Server()
@@ -63,8 +63,10 @@ bool	Server::initListenSockets()
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
-	for (t_Endpoints::const_iterator	interface = this->configs.endpoints.begin();
-			interface != this->configs.endpoints.end(); ++interface) {
+	for (size_t i = 0; i < this->configs.size(); i++)
+	{
+	for (t_Endpoints::const_iterator	interface = this->configs[i].endpoints.begin();
+			interface != this->configs[i].endpoints.end(); ++interface) {
 		for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 				port != interface->second.end(); ++port) {
 			res = NULL;
@@ -89,14 +91,15 @@ bool	Server::initListenSockets()
 			}
 		}
 	}
+	}
 	return (this->listenSockets.size() > 0);
 }
 
 void	Server::serverStartup()
 {
 	this->cgiLauncher = CGIProcessLauncher(this);
-	this->methodExecuter.setConfig(&this->configs);
-	this->responseBuilder.setConfig(&this->configs);
+	this->methodExecuter.setConfig(this->configs);
+	this->responseBuilder.setConfig(&this->configs[0]);
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1)
 		throw std::runtime_error(std::strerror(errno));
@@ -106,7 +109,7 @@ void	Server::serverStartup()
 }
 
 const t_Configs	&Server::getConfigs()
-{ return (this->configs); }
+{ return (this->configs[0]); }
 
 const int	&Server::getEpollFd()
 { return (this->epollFd); }

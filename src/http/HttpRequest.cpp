@@ -493,13 +493,16 @@ bool HttpRequest::validRequest()
 		_errorCode = 403;
 		return false;
 	}
-	std::cout << 1 << std::endl;
+	// std::cout << 1 << std::endl;
     std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("host");
 	if (it == _headers.end() || it->second.size() == 0)
 	{
 		_errorCode = 400;
 		return false;
+	}
+	else {
+		_host = it->second[0];
 	}
 	if (_requestLine.method == "POST")
 	{
@@ -814,4 +817,9 @@ std::string	HttpRequest::getRedirectLocation()
 	if (it != _headers.end())
 		location = it->second[0];
 	return location;
+}
+
+std::string &HttpRequest::getHost()
+{
+	return _host;
 }

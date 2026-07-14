@@ -4,7 +4,7 @@ ConfigFileParser::ConfigFileParser(){}
 
 ConfigFileParser::~ConfigFileParser(){}
 
-t_Configs	&ConfigFileParser::parseFile(const std::string &filePath)
+std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 {
 	// check filename
 	std::ifstream	fs(filePath.c_str());
@@ -25,9 +25,9 @@ t_Configs	&ConfigFileParser::parseFile(const std::string &filePath)
 	if (PRINT_SERVER_CONFIG)
 		printServers();
 	// printServer();
-	_configs = _servers[0];
-	return (this->_configs);
-	// return _servers;
+	// _configs = _servers[0];
+	// return (this->_configs);
+	return _servers;
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
