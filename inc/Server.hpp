@@ -53,6 +53,8 @@ class Server
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
 		int	epollFd;
+		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
+		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
 		bool	initListenSockets();

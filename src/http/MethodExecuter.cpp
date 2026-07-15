@@ -20,14 +20,14 @@ MethodExecuter::~MethodExecuter()
 	* @param method the requested method.
 	* @param request the parsed request.
 	* @return t_executionResult result.
-**/
-t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
+	**/
+t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request, const std::string &listeningInterface)
 {
 	std::cout << "MethodExecuter::execute()" << std::endl;
 	t_executionResult	result;
 	std::string			modifiedURI;
 
-	modifiedURI = modifyRequestURI(request);
+	modifiedURI = modifyRequestURI(request, listeningInterface);
 	method->setRequiredData(request, modifiedURI);
 
 	result.success = method->execute(); // execution
@@ -118,7 +118,7 @@ bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 /**
 	* @brief Modifies the request-URI with the rooted directories.
 */
-std::string	MethodExecuter::modifyRequestURI(HttpRequest *req)
+std::string	MethodExecuter::modifyRequestURI(HttpRequest *req, const std::string &listeningInterface)
 {
 	std::cout << "MethodExecuter::modifyRequestURI()... " << req->getRequestLine().requestURI << std::endl;
 	std::string					uri;
@@ -128,8 +128,8 @@ std::string	MethodExecuter::modifyRequestURI(HttpRequest *req)
 	for(size_t i = 0; i < uriParts.size(); i++)
 		std::cout << "\t" << i << ": ("<< uriParts[i] << ")" << std::endl;
 	
-	std::string host = req->getHost();
-	std::map<std::string, std::map<std::string, std::string> >::iterator it_host = _rootedLocs.find(host);
+	// std::string host = req->getHost();
+	std::map<std::string, std::map<std::string, std::string> >::iterator it_host = _rootedLocs.find(listeningInterface);
 	if (it_host != _rootedLocs.end())
 	{
 		// std::map<std::string, std::string>::iterator it = _rootedLocations.begin();
@@ -154,6 +154,8 @@ std::string	MethodExecuter::modifyRequestURI(HttpRequest *req)
 			}
 		}
 	}
+	else
+		std::cout << "no Rooted locations found..." << std::endl;
 	for (size_t i = 0; i < uriParts.size(); i++) // create new uri
 	{
 		uri += uriParts[i];
@@ -205,13 +207,13 @@ bool	MethodExecuter::isAllowedMethod(t_Location *location, const std::string &me
 	* @param path -> requested resource.
 	* @return Pointer to AMethod-Obj, or NULL.
 **/
-AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::string &path, const std::string &host)
+AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::string &path, const std::string &listeningInterface)
 {
 	std::cout << "MethodExecuter::createMethod() -> " << methodName << std::endl;
 	AMethod		*tempMethod = NULL;
 	t_Location	*location = NULL;
 
-	location = availableLocation(path, host); // 
+	location = availableLocation(path, listeningInterface); // 
 	if (!location)
 	{
 		location = &_defaultLocation;
@@ -280,11 +282,17 @@ AMethod *MethodExecuter::createPost(std::string name, t_Location *location)
 
 bool MethodExecuter::isListening(size_t i, const std::string &host)
 {
+	std::cout << "isListening()\n\thost: " << host << std::endl;
 	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
 	{
+		std::cout << "\t" << _serverConfigs[i].listenInterfaces[i_ip] << std::endl;
 		if (host == _serverConfigs[i].listenInterfaces[i_ip])
+		{
+			std::cout << "isListening() ==> TRUE" << std::endl;
 			return true;
+		}
 	}
+	std::cout << "isListening() ==> FALSE" << std::endl;
 	return false;
 }
 /**
@@ -292,7 +300,7 @@ bool MethodExecuter::isListening(size_t i, const std::string &host)
 	*	fitting t_Location struct.
 	* @returns most fitting location struct.
 */
-t_Location	*MethodExecuter::availableLocation(const std::string &path, const std::string &host)
+t_Location	*MethodExecuter::availableLocation(const std::string &path, const std::string &listeningInterface)
 {
 	std::cout << "\nMethodExecuter::availableLocation(), path = " << path << std::endl;
 	t_Location					*loc;
@@ -303,14 +311,18 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 	defLoc = NULL;
 	pathParts = splitPath(path);
 
+	std::cout << "===== LOOP =====" << std::endl;
 	for (size_t i = 0; i < _serverConfigs.size(); i++)
 	{
-		if (!isListening(i, host))
+		std::cout << i << std::endl;
+		if (!isListening(i, listeningInterface))
 			continue ;
 		for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++)
 		{
 			for (size_t k = 0; k < pathParts.size(); k++)
 			{
+				std::cout << _serverConfigs[i].locations[j].path << " == "
+					<< pathParts[k] << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
 				if (_serverConfigs[i].locations[j].path == pathParts[k])

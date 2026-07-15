@@ -24,17 +24,18 @@ class ResponseBuilder
 		~ResponseBuilder();
 
 		std::string response(t_executionResult result);
-		std::string errorResponse(HttpRequest *request);
+		std::string errorResponse(HttpRequest *request, const std::string &listeningInterface);
 		std::string	errorResponseViaCode(int errorCode);
-		std::string	errorResponseViaResult(t_executionResult result);
+		std::string	errorResponseViaResult(t_executionResult result, const std::string &listeningInterface);
 		std::string cgiResponse(const std::string &cgiBody);
 		std::string	redirectResponse(
 						t_executionResult *result, 
 						const std::string &redirectURL);
-		bool		setConfig(t_Configs *serverConfig);
+		bool		setConfig(std::vector<t_Configs> serverConfig);
 
 	private:
-		t_Configs	*_serverConfig;
+		// t_Configs	*_serverConfig;
+		std::vector<t_Configs>	_serverConfigs;
 
 		std::string setErrorResponseHeaders(size_t contentLength);
 		std::string	setErrorStatusLine(int errorCode);
@@ -47,13 +48,13 @@ class ResponseBuilder
 										const std::string &messageHeaders,
 										const std::string &resultBody);
 		
-										std::string getHttpDate();
+		std::string getHttpDate();
 		std::string convertContentLength(); // size_t -> string
 		
 		std::string	statusLine(t_RequestLine reqLine, const std::string &codeStr, const std::string &phrase);
 		bool		isValidHttpVersion(const std::string &version);
-		bool		availableErrorPage(int errorCode, std::map<int, std::string>::iterator *itErrorPage);
-		std::string	buildBody(int errorCode, const std::string &codeStr, const std::string &phrase);
+		bool		availableErrorPage(int errorCode, std::map<int, std::string>::iterator *itErrorPage, const std::string &listeningInterface);
+		std::string	buildBody(int errorCode, const std::string &codeStr, const std::string &phrase, const std::string &listeningInterface);
 		std::string getErrorPage(std::map<int, std::string>::iterator itErrorPage);
 
 };
