@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include "ConfigFileParser.hpp"
+# include "Epoll.hpp"
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
 # include "CGIProcessLauncher.hpp"
@@ -14,13 +15,15 @@
 # include <map>
 # include <stdexcept>
 # include <cerrno>
-# include <cstring>
-# include <cstdlib> // std::exit
+# include <cstring> // std::strerror
+// # include <cstdlib> // std::exit
 # include <algorithm> // for std::find
+# include <ctime>
 
 // POSIX
 # include <sys/socket.h>
-# include <sys/epoll.h>
+// # include <sys/epoll.h>
+# include <sys/wait.h>
 # include <stdlib.h>
 # include <unistd.h>
 # include <netdb.h>
@@ -35,40 +38,33 @@ class Server
 		Server(std::vector<t_Configs> &configs);
 		~Server();
 
-		std::map<int, t_CGIProcess>	cgiProcesses;
-
 		void	serverStartup();
-		const t_Configs	&getConfigs();
-		const int	&getEpollFd();
 	private:
 		Server();
 		Server(const Server &other);
 		Server	&operator=(const Server &other);
 
 		std::vector<t_Configs>	&configs;
-
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
-		CGIProcessLauncher	cgiLauncher;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		int	epollFd;
+		std::map<int, ClientConnection&>	cgiPipes;
+		Epoll	epoll;
+		CGIProcessLauncher	cgiLauncher;
 		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
 		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
 		bool	initListenSockets();
 		void	eventLoop();
-		void	handleNewClient(int listenFd, MethodExecuter &methodExecuter, ResponseBuilder &responseBuilder);
-		void	handleClientRead(int);
-		void	handleClientWrite(int);
+		void	handleNewClient(int listenFd);
+		void	handleIncoming(int);
+		void	handleOutgoing(int);
+		void	handleCGIOutput(int fd);
+		void	writeRequestBodyToCGI(int fd);
 		void	removeClient(ClientConnection &client);
 		void	timeoutInactiveClients();
-		void	readFromCGI(int fd);
-		void	killCGIProcesses(ClientConnection &client);
 };
-
-// DEBUG HELPERS
-//
 
 #endif // !SERVER_HPP

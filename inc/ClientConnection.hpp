@@ -1,9 +1,14 @@
 #ifndef CLIENT_CONNECTION_HPP
 # define CLIENT_CONNECTION_HPP
+# include <ctime>
+
 # include "HttpRequest.hpp"
 # include "MethodExecuter.hpp"
 # include "ResponseBuilder.hpp"
 # include "structs.h"
+
+# include <sys/wait.h>
+# include <signal.h>
 
 enum ConnectionState
 {
@@ -40,19 +45,21 @@ class ClientConnection
 		MethodExecuter*	executor;
 		ResponseBuilder	*responseBuilder;
 		bool			keep_alive;
-		size_t		inactiveTime;
+		time_t		inactiveTime;
+
+		pid_t	cgiPid;
+		int	cgiIn;
+		int	cgiOut;
+		size_t	cgiWrittenBytes;
 		std::string		_listeningInterface;
+
+		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
 
 		void	processRequest();
 		void	cleanUpClient();
-
-		// CGI
-		pid_t	cgiPid;
-
 	private:
 		void	executeRequest();
 		void	deleteMethod();
-		
 };
 
 #endif

@@ -11,13 +11,13 @@
 // Network & Connction
 # define EPOLL_MAX_EVENTS 10
 #define MAX_CONNECTIONS 32
-# define KEEP_ALIVE_TIMEOUT 30
+# define KEEP_ALIVE_TIMEOUT 60
 #define READ_TIMEOUT 10
 #define WRTIE_TIMEOUT 10
 
 // Resource & Performance
 #define MAX_FILE_UPLOADS 10
-#define CGI_PROCESS_TIMEOUT 30
+#define CGI_TIMEOUT 30
 
 // Query
 # define MAX_QUERY_STRING_LENGTH 2048

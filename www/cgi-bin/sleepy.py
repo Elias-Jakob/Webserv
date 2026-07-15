@@ -1,9 +1,12 @@
 #!/usr/bin/python3
-import time
+import time, os
 
-time.sleep(3)
 
-for i in range(10):
+print("<p>")
+print(os.environ)
+print("</p>")
+for i in range(5):
     print(
         f"<h1>Blog post no.: {i}</h1><br>This is just some random unimportant text..."
     )
+    time.sleep(3)

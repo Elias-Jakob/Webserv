@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(std::vector<t_Configs> &configs) : configs(configs)
+Server::Server(std::vector<t_Configs> &configs) : configs(configs), epoll(), cgiLauncher(epoll, cgiPipes)
 {}
 
 Server::~Server()
@@ -12,8 +12,6 @@ Server::~Server()
 	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 			it != this->clients.end(); ++it)
 		if (it->first != -1) close(it->first);
-	if (this->epollFd != -1)
-		close(this->epollFd);
 }
 
 void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
@@ -26,7 +24,7 @@ void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
 				continue;
 			throw std::runtime_error(std::strerror(errno));
 		}
-		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 			throw std::runtime_error(std::strerror(errno));
 		// TODO: setsockopt
 		int opt = 1;
@@ -49,7 +47,6 @@ bool	Server::initListenSockets()
 {
 	struct addrinfo	hints, *res;
 	int	gaiErr, fd;
-	struct epoll_event	epEvent;
 
 	// INFO: hints indicate what the returned socket address will be used for
 	std::memset(&hints, 0, sizeof(addrinfo));
@@ -58,14 +55,11 @@ bool	Server::initListenSockets()
 	hints.ai_protocol = IPPROTO_TCP; // redundant: by chosing SOCK_STREAM as socktype the protocol would defualt to TCP
 	hints.ai_flags = AI_PASSIVE; // indicates that the returned socket address structure is intended for use in a call to bind
 
-	// ?
-	epEvent.events = EPOLLIN;
-
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
 	for (size_t i = 0; i < this->configs.size(); i++)
 	{
-		for (t_Endpoints::const_iterator	interface = this->configs[i].endpoints.begin();
+		for (t_MultiStrMap::const_iterator	interface = this->configs[i].endpoints.begin();
 				interface != this->configs[i].endpoints.end(); ++interface) {
 			for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 					port != interface->second.end(); ++port) {
@@ -75,17 +69,15 @@ bool	Server::initListenSockets()
 					if (gaiErr != 0)
 						throw std::runtime_error(gai_strerror(gaiErr));
 					this->setupSocketAddr(res, fd);
-					epEvent.data.fd = fd;
+					this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
 					this->listenFdToConfigIndex[fd] = i;
 					this->listenFdToInterface[fd] = interface->first + ":" + *port;
-					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-						throw std::runtime_error(std::strerror(errno));
 					std::cout << "Listening endpoint " << interface->first << ":" << *port
 						<< " has been sucessfully set up" << std::endl;
 					this->listenSockets.push_back(fd);
 				} catch (const std::runtime_error	&e) {
 					std::cerr << "Failed to set up listening endpoint " << interface->first
-						<< ":" << *port << std::endl;
+						<< ":" << *port << ": " << e.what() << std::endl;
 					if (res != NULL)
 					freeaddrinfo(res);
 					if (fd != -1)
@@ -99,19 +91,9 @@ bool	Server::initListenSockets()
 
 void	Server::serverStartup()
 {
-	this->cgiLauncher = CGIProcessLauncher(this);
 	this->methodExecuter.setConfig(this->configs);
 	this->responseBuilder.setConfig(this->configs);
-	this->epollFd = epoll_create1(0);
-	if (this->epollFd == -1)
-		throw std::runtime_error(std::strerror(errno));
 	if (!this->initListenSockets())
 		throw std::runtime_error("Failed to set up any listening sockets");
 	this->eventLoop();
 }
-
-const t_Configs	&Server::getConfigs()
-{ return (this->configs[0]); }
-
-const int	&Server::getEpollFd()
-{ return (this->epollFd); }

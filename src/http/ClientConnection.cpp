@@ -20,7 +20,11 @@ ClientConnection::ClientConnection() :
 	executor(NULL),
 	responseBuilder(NULL),
 	keep_alive(false),
-	inactiveTime(0)
+	inactiveTime(std::time(NULL)),
+	cgiPid(-1),
+	cgiIn(-1),
+	cgiOut(-1),
+	cgiWrittenBytes(0)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }
@@ -38,6 +42,8 @@ ClientConnection::~ClientConnection()
 		delete request;
 		request = NULL;
 	}
+	if (this->cgiPid != -1)
+		this->terminateCGIProcess();
 }
 
 // =========================================================================
@@ -84,6 +90,23 @@ void ClientConnection::cleanUpClient()
 	bytesSent = 0;
 }
 
+void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes)
+{
+	int	status;
+	
+	kill(this->cgiPid, SIGKILL);
+	waitpid(this->cgiPid, &status, WNOHANG);
+	close(this->cgiIn);
+	close(this->cgiOut);
+	if (cgiPipes) {
+		if (this->cgiIn != -1)
+			cgiPipes->erase(this->cgiIn);
+		if (this->cgiOut != -1)
+			cgiPipes->erase(this->cgiOut);
+	}
+	this->cgiPid = this->cgiIn = this->cgiOut = -1;
+	this->cgiWrittenBytes = 0;
+}
 /**
  * @brief Request handling execution.
  */
