@@ -6,13 +6,13 @@
 class Head : public Get
 {
 	public:
-
-	private:
 		Head();
 		Head(std::string name);
 		Head(std::string name, t_Location *location);
 		~Head();
 		bool serveFile(struct stat &fileInfo);
+
+	private:
 };
 
 #endif

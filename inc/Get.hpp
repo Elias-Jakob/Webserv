@@ -35,7 +35,7 @@ class Get : public AMethod
 		bool		serveDirectoryList();
 		std::string	directoryListing(const std::string &dirPath, const std::string &uriPath);
 
-		bool		serveFile(struct stat &fileInfo);
+		virtual bool		serveFile(struct stat &fileInfo);
 		
 		bool 		isFileAccessible(const std::string &path);
 		bool		checkCGI();
