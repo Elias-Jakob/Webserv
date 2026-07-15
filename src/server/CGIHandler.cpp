@@ -36,9 +36,9 @@ void	Server::handleCGIOutput(int fd)
 		waitpid(caller.cgiPid, &status, WNOHANG);
 		if ((WIFEXITED(status) && WEXITSTATUS(status) == 1) ||
 				caller.response_buffer.empty())
-			caller.response_buffer = this->responseBuilder.buildErrorResponse(500);
+			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 		else
-			caller.response_buffer = this->responseBuilder.cgiFormation(caller.response_buffer);
+			caller.response_buffer = this->responseBuilder.cgiResponse(caller.response_buffer);
 		caller.state = SENDING_RESPONSE;
 		this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 		close(fd);

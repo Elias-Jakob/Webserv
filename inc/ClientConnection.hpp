@@ -55,6 +55,9 @@ class ClientConnection
 		void	processRequest();
 		void	cleanUpClient();
 		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
+	private:
+		void	executeRequest();
+		void	deleteMethod();
 };
 
 #endif

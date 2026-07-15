@@ -36,10 +36,6 @@ void	Server::handleNewClient(int listenFd)
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);
 	this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
-	// epEvent.events = EPOLLIN;
-	// epEvent.data.fd = fd;
-	// if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-	// 	throw std::runtime_error(std::strerror(errno));
 }
 
 void	Server::removeClient(ClientConnection &client)

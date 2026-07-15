@@ -58,52 +58,24 @@ ClientConnection::~ClientConnection()
 void ClientConnection::processRequest()
 {
 	std::cout << "ClientConnection::processRequest()" << std::endl;
-	request->validRequest();
-	if (request->getErrorCode() != 0)
+	if(request->validRequest())
 	{
-		std::cout << "ERROR occured: " << request->getErrorCode() << std::endl;
-		response_buffer = responseBuilder->buildErrorResponse(request->getErrorCode());
+		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
+		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
+		if (_currentMethod != NULL)
+			executeRequest();
+		else
+			response_buffer = responseBuilder->errorResponseViaCode(405);
 	}
 	else
 	{
-		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
-		std::cout << "==========* EXECUTING METHOD *==========" << std::endl;
-		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
-		if (_currentMethod != NULL)
-		{
-			t_executionResult result = executor->execute(_currentMethod, request);
-			std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
-			std::cout << "==========* BUILDING RESPONSE * ==========" << std::endl;
-			if (result.statusCode == "301") // REDIRECTION
-			{
-				response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
-			}
-			else {
-				keep_alive = request->keepConnectionAlive();
-				result.keep_alive = keep_alive;
-				if (result.statusCode == "601") {
-					result.statusCode = "200";
-					state = CGI_PROCESSING;
-					cgi_path = result.statusPhrase;
-					result.statusPhrase = "OK";
-				} else
-					response_buffer = responseBuilder->formatResponse(result);
-			}
-		}
-		else
-		{
-			response_buffer = responseBuilder->buildErrorResponse(405);
-		}
+		std::cout << "ERROR occured: " << request->getErrorCode() << std::endl;
+		response_buffer = responseBuilder->errorResponse(request);
 	}
 	std::cout << "==========* BUILT RESPONSE *==========" << std::endl;
 	if (state != CGI_PROCESSING)
 		state = SENDING_RESPONSE;
-	
-	if (_currentMethod)
-	{
-		delete _currentMethod;
-		_currentMethod = NULL;
-	}
+	deleteMethod();
 }
 
 /**
@@ -134,4 +106,41 @@ void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgi
 	}
 	this->cgiPid = this->cgiIn = this->cgiOut = -1;
 	this->cgiWrittenBytes = 0;
+}
+/**
+ * @brief Request handling execution.
+ */
+void	ClientConnection::executeRequest()
+{
+	t_executionResult result = executor->execute(_currentMethod, request);
+	result.HttpVersion = request->getRequestLine().version;
+	std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
+	if (result.statusCode == "301") // REDIRECTION
+		response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
+	else
+	{
+		std::cout << "IN ELSE" << std::endl;
+		keep_alive = request->keepConnectionAlive();
+		result.keep_alive = keep_alive;
+		if (result.statusCode == "601")
+		{
+			result.statusCode = "200";
+			state = CGI_PROCESSING;
+			cgi_path = result.statusPhrase;
+			result.statusPhrase = "OK";
+		}
+		else if (!result.success)
+			response_buffer = responseBuilder->errorResponseViaResult(result);
+		else
+			response_buffer = responseBuilder->response(result);
+	}
+}
+
+void ClientConnection::deleteMethod()
+{	
+	if (_currentMethod)
+	{
+		delete _currentMethod;
+		_currentMethod = NULL;
+	}
 }
