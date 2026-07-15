@@ -61,6 +61,7 @@ class HttpRequest
 		// ERROR
 		int				_errorCode;
 		std::string		_fileExtension;
+		std::string		_host;
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -115,8 +116,8 @@ class HttpRequest
 		std::string							&getMethod();
 		int									getErrorCode();
 		std::string							&getURI();
+		std::string							&getHost();
 		std::string							getRedirectLocation();
-
 		// OUTPUT
 		void	printRequest(void);
 };

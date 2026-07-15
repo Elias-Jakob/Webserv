@@ -50,6 +50,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
 	std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
+	std::cout << _messageBuffer << std::endl;
 	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
@@ -279,9 +280,7 @@ bool	HttpRequest::extractBody()
 				return unchunkBody();
 		}
 	}
-    // else { // needed?
-    //     contentLength = 0;
-	// }
+
 	if (_requestLine.method == "POST" && contentLength == 0) {
 		_state = PARSING_ERROR;
 		std::cout << "PARSING_ERROR" << std::endl;
@@ -290,15 +289,8 @@ bool	HttpRequest::extractBody()
 	std::cout << "content-length = " << contentLength << std::endl;
 	size_t availableBytes = _messageBuffer.size() - _current_pos;
 	std::cout << "availableBytes = " << availableBytes << std::endl;
-    
-	
-// std::cout << "Body content: [";
-// for (size_t i = 0; i < contentLength; i++)
-//     std::cout << _messageBuffer[_current_pos + i];
-// std::cout << "]" << std::endl;
-// std::cout << "Expected bytes: " << contentLength << ", Got: " << availableBytes << std::endl;
-	
-	if (availableBytes < contentLength)// _availableBytes off by one
+
+	if (availableBytes < contentLength)
 	{
 		std::cout << availableBytes << " < " << contentLength << std::endl;
 		std::cout << "FALSE" << std::endl;
@@ -319,24 +311,23 @@ bool	HttpRequest::extractBody()
  */
 bool	HttpRequest::unchunkBody()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::unchunkBody()" << std::endl;
 	// std::cout << "buffer_sub : \n"<< _messageBuffer.substr(_current_pos) << std::endl;
 	size_t	posEnd =_messageBuffer.find("0\r\n", _current_pos);
 	if (posEnd != std::string::npos)
 	{
+		if ((_messageBuffer.find("\r\n", posEnd)) == std::string::npos)
+			return false;
 		std::cout << "FOUND END OF MESSAGE" << "\n\t unchunking body now..." << std::endl;
-		std::string	chunked_message = _messageBuffer.substr(_current_pos);
-		// size_t		chunked_size = chunkedSize();
-		// std::cout << "chunked_size = " << chunked_size << std::endl;
-		// std::string	chunked_data = chunkedData(chunked_size);
-		// _fullMessageBody += chunked_data;
+			std::string	chunked_message = _messageBuffer.substr(_current_pos);
 		size_t chunked_size = 0;
 		while ((chunked_size = chunkedSize()) != 0)
 		{
 			std::string chunked_data = chunkedData(chunked_size);
 			_fullMessageBody += chunked_data;
-		} 
-		// std::cout << "chunked_message: " << chunked_message << std::endl;
-		// unchunk here.
+			std::cout << "body = " << _fullMessageBody << std::endl;
+		}
 		return true;
 	}
 	std::cout << "NOT UNCHUNKED BODY!" << std::endl;
@@ -345,9 +336,16 @@ bool	HttpRequest::unchunkBody()
 
 std::string	HttpRequest::chunkedData(size_t chunked_size)
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::unchunkData()" << std::endl;
 	size_t posEndData = _messageBuffer.find("\r\n", _current_pos);
+	if (posEndData == std::string::npos)
+		return "";
 	if ((posEndData - _current_pos) != chunked_size)
 	{
+		std::cout << "\tposEndData: " << posEndData << " - _current_pos: " << _current_pos
+			<< " != chunked_size: " << chunked_size << std::endl;
+		std::cout << "\t=> " << posEndData - _current_pos << std::endl;
 		std::cout << "\tchunked_size & sizeof data dont match!" << std::endl;
 		return "";
 	}
@@ -358,13 +356,19 @@ std::string	HttpRequest::chunkedData(size_t chunked_size)
 
 size_t	HttpRequest::chunkedSize()
 {
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::chunkedSize()" << std::endl;
+
 	size_t	posEndSize = _messageBuffer.find("\r\n", _current_pos);
 	if (posEndSize == std::string::npos)
 		return 0;
+
 	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
-	std::cout << "\tsizeStr [\"" << sizeStr << "\"]" << std::endl;
+	std::cout << "\tchunked_sizeStr [\"" << sizeStr << "\"]" << std::endl;
+	std::cout << "\t -> converted to: << " << strtol(sizeStr.c_str(), NULL, 16) << std::endl;
 	_current_pos = posEndSize + 2;
-	return atoi(sizeStr.c_str());
+	// std::cout << "_messageBuffer[]: " << _messageBuffer[_current_pos] << std::endl;
+	return strtol(sizeStr.c_str(), NULL, 16);
 	// return 1;
 }
 
@@ -489,12 +493,16 @@ bool HttpRequest::validRequest()
 		_errorCode = 403;
 		return false;
 	}
+	// std::cout << 1 << std::endl;
     std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("host");
 	if (it == _headers.end() || it->second.size() == 0)
 	{
 		_errorCode = 400;
 		return false;
+	}
+	else {
+		_host = it->second[0];
 	}
 	if (_requestLine.method == "POST")
 	{
@@ -564,6 +572,7 @@ std::vector<std::string> splitHeaderValByComma(std::string val)
 
 void HttpRequest::printRequest(void)
 {
+	std::cout << "====================" << std::endl;
 	std::cout << "Request-Line:\n{" << std::endl;
 	std::cout << "\tAMethod: [" << _requestLine.method << "]" << std::endl;
 	std::cout << "\tPath: [" << _requestLine.requestURI << "]" << std::endl;
@@ -589,6 +598,7 @@ void HttpRequest::printRequest(void)
 	std::cout << "}" << std::endl;
 	std::cout << "Request-Body:\n{" << std::endl;
 	std::cout << _fullMessageBody << "\n}" << std::endl;
+	std::cout << "====================" << std::endl;
 }
 
 /**
@@ -807,4 +817,9 @@ std::string	HttpRequest::getRedirectLocation()
 	if (it != _headers.end())
 		location = it->second[0];
 	return location;
+}
+
+std::string &HttpRequest::getHost()
+{
+	return _host;
 }

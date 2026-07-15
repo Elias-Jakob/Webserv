@@ -1,6 +1,6 @@
 # include "Server.hpp"
 
-Server::Server(t_Configs &configs) : configs(configs)
+Server::Server(std::vector<t_Configs> &configs) : configs(configs)
 {}
 
 Server::~Server()
@@ -63,29 +63,34 @@ bool	Server::initListenSockets()
 
 	// TODO: replace with loop through all interface:port pairs
 	// for config.interface_port_pairs ...
-	for (t_Endpoints::const_iterator	interface = this->configs.endpoints.begin();
-			interface != this->configs.endpoints.end(); ++interface) {
-		for (std::vector<std::string>::const_iterator	port = interface->second.begin();
-				port != interface->second.end(); ++port) {
-			res = NULL;
-			gaiErr = getaddrinfo(interface->first.c_str(), (*port).c_str(), &hints, &res);
-			try {
-				if (gaiErr != 0)
-					throw std::runtime_error(gai_strerror(gaiErr));
-				this->setupSocketAddr(res, fd);
-				epEvent.data.fd = fd;
-				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
-					throw std::runtime_error(std::strerror(errno));
-				std::cout << "Listening endpoint " << interface->first << ":" << *port
-					<< " has been sucessfully set up" << std::endl;
-				this->listenSockets.push_back(fd);
-			} catch (const std::runtime_error	&e) {
-				std::cerr << "Failed to set up listening endpoint " << interface->first
-					<< ":" << *port << std::endl;
-				if (res != NULL)
-				freeaddrinfo(res);
-				if (fd != -1)
-					close(fd);
+	for (size_t i = 0; i < this->configs.size(); i++)
+	{
+		for (t_Endpoints::const_iterator	interface = this->configs[i].endpoints.begin();
+				interface != this->configs[i].endpoints.end(); ++interface) {
+			for (std::vector<std::string>::const_iterator	port = interface->second.begin();
+					port != interface->second.end(); ++port) {
+				this->listenFdToConfigIndex[fd] = i;
+				this->listenFdToInterface[fd] = interface->first + ":" + *port;
+				res = NULL;
+				gaiErr = getaddrinfo(interface->first.c_str(), (*port).c_str(), &hints, &res);
+				try {
+					if (gaiErr != 0)
+						throw std::runtime_error(gai_strerror(gaiErr));
+					this->setupSocketAddr(res, fd);
+					epEvent.data.fd = fd;
+					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
+						throw std::runtime_error(std::strerror(errno));
+					std::cout << "Listening endpoint " << interface->first << ":" << *port
+						<< " has been sucessfully set up" << std::endl;
+					this->listenSockets.push_back(fd);
+				} catch (const std::runtime_error	&e) {
+					std::cerr << "Failed to set up listening endpoint " << interface->first
+						<< ":" << *port << std::endl;
+					if (res != NULL)
+					freeaddrinfo(res);
+					if (fd != -1)
+						close(fd);
+				}
 			}
 		}
 	}
@@ -95,8 +100,8 @@ bool	Server::initListenSockets()
 void	Server::serverStartup()
 {
 	this->cgiLauncher = CGIProcessLauncher(this);
-	this->methodExecuter.setConfig(&this->configs);
-	this->responseBuilder.setConfig(&this->configs);
+	this->methodExecuter.setConfig(this->configs);
+	this->responseBuilder.setConfig(this->configs);
 	this->epollFd = epoll_create1(0);
 	if (this->epollFd == -1)
 		throw std::runtime_error(std::strerror(errno));
@@ -106,7 +111,7 @@ void	Server::serverStartup()
 }
 
 const t_Configs	&Server::getConfigs()
-{ return (this->configs); }
+{ return (this->configs[0]); }
 
 const int	&Server::getEpollFd()
 { return (this->epollFd); }

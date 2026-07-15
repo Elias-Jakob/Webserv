@@ -31,6 +31,7 @@ void	Server::handleNewClient(int listenFd, MethodExecuter &methodExecuter, Respo
 	this->clients[fd].executor = &methodExecuter;
 	this->clients[fd].responseBuilder = &responseBuilder;
 	this->clients[fd].bytesSent = 0;
+	this->clients[fd]._listeningInterface = listenFdToInterface[listenFd];
 
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);

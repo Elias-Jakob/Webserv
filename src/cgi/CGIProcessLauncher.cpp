@@ -105,7 +105,7 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 
 
 		// WARNING: this could be dangerous
-		root = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
+		root = client.executor->availableLocation(client.request->getURI(), client.request->getHost())->root.erase(0, 1);
 		file = client.cgi_path;
 		last_slash = file.find_last_of("/");
 		if (last_slash != std::string::npos)

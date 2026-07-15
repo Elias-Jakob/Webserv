@@ -41,6 +41,7 @@ class ClientConnection
 		ResponseBuilder	*responseBuilder;
 		bool			keep_alive;
 		size_t		inactiveTime;
+		std::string		_listeningInterface;
 
 		void	processRequest();
 		void	cleanUpClient();

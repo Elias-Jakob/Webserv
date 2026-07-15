@@ -72,7 +72,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody)
 /**
  * @brief Gets called if an error happend. 
  */
-std::string	ResponseBuilder::errorResponse(HttpRequest *request)
+std::string	ResponseBuilder::errorResponse(HttpRequest *request, const std::string &listeningInterface)
 {
 	int	errorCode = request->getErrorCode();
 	std::string	codeStr;
@@ -81,7 +81,7 @@ std::string	ResponseBuilder::errorResponse(HttpRequest *request)
 
 	std::string status = statusLine(request->getRequestLine(), codeStr, phrase);
 
-	std::string body = buildBody(errorCode, codeStr, phrase);
+	std::string body = buildBody(errorCode, codeStr, phrase, listeningInterface);
 
 	std::string headers = setErrorResponseHeaders(body.size());
 
@@ -114,7 +114,7 @@ std::string	ResponseBuilder::errorResponseViaCode(int errorCode)
 /**
  * @brief 
  */
-std::string ResponseBuilder::errorResponseViaResult(t_executionResult result)
+std::string ResponseBuilder::errorResponseViaResult(t_executionResult result, const std::string &listeningInterface)
 {
 	int	errorCode = atoi(result.statusCode.c_str());
 	std::string	codeStr;
@@ -124,7 +124,7 @@ std::string ResponseBuilder::errorResponseViaResult(t_executionResult result)
 	// std::string status = statusLine(request->getRequestLine(), codeStr, phrase);
 	std::string statusLine = buildStatusLine(&result);
 
-	std::string body = buildBody(errorCode, codeStr, phrase);
+	std::string body = buildBody(errorCode, codeStr, phrase, listeningInterface);
 
 	std::string headers = setErrorResponseHeaders(body.size());
 
@@ -135,12 +135,12 @@ std::string ResponseBuilder::errorResponseViaResult(t_executionResult result)
 /**
 	* @brief Stores the server-configurations
 */
-bool ResponseBuilder::setConfig(t_Configs *serverConfig)
+bool ResponseBuilder::setConfig(std::vector<t_Configs> serverConfigs)
 {
-	_serverConfig = serverConfig;
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::setConfig() : server_name = " 
-			<< _serverConfig->serverName << std::endl;
+	_serverConfigs = serverConfigs;
+	// if (BUILDER_PRINT)
+	// 	std::cout << "ResponseBuilder::setConfig() : server_name = " 
+	// 		<< _serverConfig->serverName << std::endl;
 	return true;
 }
 
@@ -318,24 +318,37 @@ std::string ResponseBuilder::statusLine(
 bool	ResponseBuilder::availableErrorPage(
 	int errorCode, 
 	std::map<int, 
-	std::string>::iterator *itErrorPage)
+	std::string>::iterator *itErrorPage,
+	const std::string &listeningInterface)
 {
-	*itErrorPage = _serverConfig->errorPages.find(errorCode);
-	if (*itErrorPage != _serverConfig->errorPages.end())
-		return true;
+	for (size_t i = 0; i < _serverConfigs.size(); i++)
+	{
+		for (size_t j = 0; j < _serverConfigs[i].listenInterfaces.size();j++)
+		{
+			if (_serverConfigs[i].listenInterfaces[j] == listeningInterface)
+			{
+				*itErrorPage = _serverConfigs[i].errorPages.find(errorCode);
+				if (*itErrorPage != _serverConfigs[i].errorPages.end())
+					return true;
+			}
+		}
+	}
 	return false;
 }
 
 /**
  * 
  */
-std::string	ResponseBuilder::buildBody(int errorCode, const std::string &codeStr, const std::string &phrase)
+std::string	ResponseBuilder::buildBody(int errorCode,
+										const std::string &codeStr, 
+										const std::string &phrase,
+										const std::string &listeningInterface)
 {
 	std::cout << "ResponseBuilder::buildBody()" << std::endl;
 	std::string	body;
 
 	std::map<int, std::string>::iterator	itErrorPage;
-	if (availableErrorPage(errorCode, &itErrorPage))
+	if (availableErrorPage(errorCode, &itErrorPage, listeningInterface))
 	{
 		std::cout << "\t SHOULD READ ERROR FILE" << std::endl;
 		body = getErrorPage(itErrorPage);

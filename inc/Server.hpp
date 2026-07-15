@@ -32,7 +32,7 @@ extern sig_atomic_t	sigFlag;
 class Server
 {
 	public:
-		Server(t_Configs &configs);
+		Server(std::vector<t_Configs> &configs);
 		~Server();
 
 		std::map<int, t_CGIProcess>	cgiProcesses;
@@ -45,13 +45,16 @@ class Server
 		Server(const Server &other);
 		Server	&operator=(const Server &other);
 
-		t_Configs	&configs;
+		std::vector<t_Configs>	&configs;
+
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
 		CGIProcessLauncher	cgiLauncher;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
 		int	epollFd;
+		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
+		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
 
 		void	setupSocketAddr(struct addrinfo *res, int &fd);
 		bool	initListenSockets();
