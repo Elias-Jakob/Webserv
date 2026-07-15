@@ -36,6 +36,14 @@ send_get_request() {
     echo "$status"
 }
 
+send_get_request_head() {
+    local uri="$1"
+    local request="HEAD $uri HTTP/1.0\r\nHost: localhost\r\n\r\n" # localhost replaced with HOST:PORT
+    local response=$(echo -ne "$request" | nc -w 2 $HOST $PORT 2>/dev/null)
+    local status=$(echo "$response" | head -n 1 | cut -d' ' -f2)
+    echo "$status"
+}
+
 check_status() {
     local test_name="$1"
     local expected="$2"
@@ -93,6 +101,12 @@ sleep 0.5
 # Test 8: GET text file with correct Content-Type
 print_test "GET /www/text.html (text file)"
 STATUS=$(send_get_request "/www/text.html")
+check_status "Should return 200" "200" "$STATUS"
+sleep 0.5
+
+# Test 9: HEAD text file with correct Content-Type
+print_test "HEAD /www/text.html (text file)"
+STATUS=$(send_get_request_head "/www/text.html")
 check_status "Should return 200" "200" "$STATUS"
 sleep 0.5
 

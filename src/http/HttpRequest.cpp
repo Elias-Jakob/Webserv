@@ -443,7 +443,7 @@ bool HttpRequest::createBodyParser()
 		_bodyParser = createFormParser();
 	}
 	else if (_contentData.type.size() > 0)
-		return setErrorCode(400);
+		return setErrorCode(405); // was 400 but for tester -> 405
 	return true;
 }
 
@@ -461,7 +461,8 @@ bool HttpRequest::isImplementedMethod() // 501
 {
 	if (_requestLine.method == "GET"
 		|| _requestLine.method == "POST"
-		|| _requestLine.method == "DELETE")
+		|| _requestLine.method == "DELETE"
+		|| _requestLine.method == "HEAD")
 		return true;
 	return false;
 }

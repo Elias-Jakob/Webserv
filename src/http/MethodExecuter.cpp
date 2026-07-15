@@ -124,10 +124,10 @@ std::string	MethodExecuter::modifyRequestURI(HttpRequest *req, const std::string
 	std::string					uri;
 	std::vector<std::string>	uriParts;
 
-	uriParts = splitPathDir(req->getRequestLine().requestURI);
+	uriParts = splitPath(req->getRequestLine().requestURI);
 	for(size_t i = 0; i < uriParts.size(); i++)
 		std::cout << "\t" << i << ": ("<< uriParts[i] << ")" << std::endl;
-	
+	std::cout << "uriParts.size() = " << uriParts.size() << std::endl;
 	// std::string host = req->getHost();
 	std::map<std::string, std::map<std::string, std::string> >::iterator it_host = _rootedLocs.find(listeningInterface);
 	if (it_host != _rootedLocs.end())
@@ -146,11 +146,19 @@ std::string	MethodExecuter::modifyRequestURI(HttpRequest *req, const std::string
 		{
 			std::cout << "loop to replace.." << i << std::endl;
 			std::map<std::string, std::string>::iterator it = it_host->second.find(uriParts[i]);
-			// it = _rootedLocations.find(uriParts[i]);
 			if (it != it_host->second.end())
 			{
-				std::cout << "\t - replace: " << uriParts[i] << " <-> " << it->second << std::endl;
-				uriParts[i] = it->second;
+				if (i == 0 && uriParts.size() > 1) {
+					std::cout << "\t" << it->second << " -> " << uriParts[i+1] << std::endl;
+					if (it->second != uriParts[i+1]) {
+						uriParts[i] = it->second;
+						std::cout << "\t -replace[0]: " << uriParts[i] << " <-> " << it->second << std::endl;
+					}
+				}
+				else {
+					std::cout << "\t - replace: " << uriParts[i] << " <-> " << it->second << std::endl;
+					uriParts[i] = it->second;
+				}
 			}
 		}
 	}
@@ -172,7 +180,8 @@ bool	MethodExecuter::isImplementedMethod(const std::string &methodName)
 {
 	if (methodName == "GET"
 		|| methodName == "POST"
-		|| methodName == "DELETE")
+		|| methodName == "DELETE"
+		|| methodName == "HEAD")
 		return true;
 	return false;
 }
@@ -229,6 +238,8 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 				tempMethod = createDelete(methodName, location);
 			if (methodName == "POST")
 				tempMethod = createPost(methodName, location);
+			if (methodName == "HEAD")
+				tempMethod = createHead(methodName, location);
 			return tempMethod;
 		}
 		else
@@ -280,13 +291,23 @@ AMethod *MethodExecuter::createPost(std::string name, t_Location *location)
 	return new Post(name, location);
 }
 
-bool MethodExecuter::isListening(size_t i, const std::string &host)
+AMethod *MethodExecuter::createHead(std::string name)
 {
-	std::cout << "isListening()\n\thost: " << host << std::endl;
+	return new Head(name);
+}
+
+AMethod *MethodExecuter::createHead(std::string name, t_Location *locationObj)
+{
+	return new Head(name, locationObj);
+}
+
+bool MethodExecuter::isListening(size_t i, const std::string &listeningInterface)
+{
+	std::cout << "isListening()\n\tlisteningInterface: " << listeningInterface << std::endl;
 	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
 	{
 		std::cout << "\t" << _serverConfigs[i].listenInterfaces[i_ip] << std::endl;
-		if (host == _serverConfigs[i].listenInterfaces[i_ip])
+		if (listeningInterface == _serverConfigs[i].listenInterfaces[i_ip])
 		{
 			std::cout << "isListening() ==> TRUE" << std::endl;
 			return true;
@@ -325,7 +346,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 					<< pathParts[k] << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
-				if (_serverConfigs[i].locations[j].path == pathParts[k])
+				if (_serverConfigs[i].locations[j].path == pathParts[k] && k == pathParts.size() - 1)
 				{
 					loc = &_serverConfigs[i].locations[j];
 					std::cout << "location: " << _serverConfigs[i].locations[j].path

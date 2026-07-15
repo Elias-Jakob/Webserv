@@ -10,7 +10,7 @@
 # define METHOD_PRINT			0
 # define DELETE_PRINT			0
 # define POST_PRINT				0
-# define GET_PRINT				0
+# define GET_PRINT				1
 
 // PARSER
 # define BODYPARSER_PRINT		0

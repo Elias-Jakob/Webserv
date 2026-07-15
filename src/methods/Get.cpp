@@ -99,7 +99,7 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 	if (_location->defaultPage.size() > 0) // index = yyy.html
 	{
 		if (GET_PRINT)
-			std::cout << "\tServe default-page" << _location->defaultPage << std::endl;
+			std::cout << "\tServe default-page " << _location->defaultPage << std::endl;
 		return serveDefaultPage();
 	}
 
@@ -297,7 +297,7 @@ bool	Get::checkCGI()
 		return false;
 	std::string fileExt;
 	size_t		pos;
-	
+
 	pos = _resource.find_last_of('.');
 	if (pos == std::string::npos)
 		return false;

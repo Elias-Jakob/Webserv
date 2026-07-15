@@ -13,6 +13,7 @@
 # include "Get.hpp"
 # include "Post.hpp"
 # include "Delete.hpp"
+# include "Head.hpp"
 # include "ABodyParser.hpp"
 # include "FormParser.hpp"
 # include "MultipartParser.hpp"
@@ -48,6 +49,8 @@ class MethodExecuter
 		static AMethod	*createGet(std::string name, t_Location *locationObj);
 		static AMethod	*createDelete(std::string name, t_Location *location);
 		static AMethod	*createPost(std::string name, t_Location *location);
+		static AMethod	*createHead(std::string name);
+		static AMethod	*createHead(std::string name, t_Location *location);
 		
 		void						setDefaultLocation();
 		bool						isAllowedMethod(t_Location *location, const std::string &method);
