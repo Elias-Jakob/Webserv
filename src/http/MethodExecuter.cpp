@@ -346,7 +346,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 					<< pathParts[k] << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
-				if (_serverConfigs[i].locations[j].path == pathParts[k] && k == pathParts.size() - 1)
+				if (_serverConfigs[i].locations[j].path == pathParts[k])// && k == pathParts.size() - 1)
 				{
 					loc = &_serverConfigs[i].locations[j];
 					std::cout << "location: " << _serverConfigs[i].locations[j].path
