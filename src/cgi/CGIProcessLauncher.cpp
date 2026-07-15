@@ -58,24 +58,12 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		client.cgiIn = this->stdinPipe[1];
 
 		this->epoll.ctl(this->stdinPipe[1], EPOLL_CTL_ADD, EPOLLOUT);
-		// this->epEvent.events = EPOLLOUT;
-		// this->epEvent.data.fd = this->stdinPipe[1];
-		// if (epoll_ctl(this->epollFd, EPOLL_CTL_ADD, this->stdinPipe[1], &this->epEvent) == -1) {
-		// 	this->cleanUp();
-		// 	throw CGIError(std::strerror(errno));
-		// }
 
 		// Reading output from the cgi
 		this->cgiPipes.insert(std::pair<int, ClientConnection&>(this->stdoutPipe[0], client));
 		client.cgiOut = this->stdoutPipe[0];
 
 		this->epoll.ctl(this->stdoutPipe[0], EPOLL_CTL_ADD, EPOLLIN);
-		// this->epEvent.events = EPOLLIN;
-		// this->epEvent.data.fd = this->stdoutPipe[0];
-		// if (epoll_ctl(this->epollFd, EPOLL_CTL_ADD, this->stdoutPipe[0], &this->epEvent) == -1) {
-		// 	this->cleanUp();
-		// 	throw CGIError(std::strerror(errno));
-		// }
 		this->cleanUp(false);
 	}
 	else

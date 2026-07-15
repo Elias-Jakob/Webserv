@@ -30,7 +30,7 @@ print_fail() {
 
 send_get_request() {
     local uri="$1"
-    local request="GET $uri HTTP/1.0\r\nHost: localhost\r\n\r\n"
+    local request="GET $uri HTTP/1.0\r\nHost: localhost\r\n\r\n" # localhost replaced with HOST:PORT
     local response=$(echo -ne "$request" | nc -w 2 $HOST $PORT 2>/dev/null)
     local status=$(echo "$response" | head -n 1 | cut -d' ' -f2)
     echo "$status"

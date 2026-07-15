@@ -51,6 +51,7 @@ class ClientConnection
 		int	cgiIn;
 		int	cgiOut;
 		size_t	cgiWrittenBytes;
+		std::string		_listeningInterface;
 
 		void	processRequest();
 		void	cleanUpClient();

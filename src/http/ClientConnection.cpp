@@ -61,7 +61,7 @@ void ClientConnection::processRequest()
 	if(request->validRequest())
 	{
 		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
-		_currentMethod = executor->createMethod(request->getMethod(), request->getURI());
+		_currentMethod = executor->createMethod(request->getMethod(), request->getURI(), _listeningInterface);
 		if (_currentMethod != NULL)
 			executeRequest();
 		else
@@ -70,7 +70,7 @@ void ClientConnection::processRequest()
 	else
 	{
 		std::cout << "ERROR occured: " << request->getErrorCode() << std::endl;
-		response_buffer = responseBuilder->errorResponse(request);
+		response_buffer = responseBuilder->errorResponse(request, _listeningInterface);
 	}
 	std::cout << "==========* BUILT RESPONSE *==========" << std::endl;
 	if (state != CGI_PROCESSING)
@@ -112,7 +112,7 @@ void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgi
  */
 void	ClientConnection::executeRequest()
 {
-	t_executionResult result = executor->execute(_currentMethod, request);
+	t_executionResult result = executor->execute(_currentMethod, request, _listeningInterface);
 	result.HttpVersion = request->getRequestLine().version;
 	std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
 	if (result.statusCode == "301") // REDIRECTION
@@ -130,7 +130,7 @@ void	ClientConnection::executeRequest()
 			result.statusPhrase = "OK";
 		}
 		else if (!result.success)
-			response_buffer = responseBuilder->errorResponseViaResult(result);
+			response_buffer = responseBuilder->errorResponseViaResult(result, _listeningInterface);
 		else
 			response_buffer = responseBuilder->response(result);
 	}

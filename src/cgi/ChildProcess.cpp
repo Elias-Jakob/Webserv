@@ -83,7 +83,8 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 
 	// WARNING: this could be dangerous
 	// check with chris if this is safe or if any of those function could break
-	cgiDir = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
+	// cgiDir = client.executor->availableLocation(client.request->getURI())->root.erase(0, 1);
+	cgiDir = client.executor->availableLocation(client.request->getURI(), client._listeningInterface)->root.erase(0, 1);
 	//
 	
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1

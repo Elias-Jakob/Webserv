@@ -71,7 +71,7 @@ class ConfigFileParser
 		ConfigFileParser();
 		~ConfigFileParser();
 
-		t_Configs	&parseFile(const std::string &filePath);
+		std::vector<t_Configs>	&parseFile(const std::string &filePath);
 	private:
 		// TOKENIZATION
 		std::vector<t_Token>	_tokens;

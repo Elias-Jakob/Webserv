@@ -164,6 +164,18 @@ bool	Get::serveDirectoryList()
 	return true;
 }
 
+// Extract file reading into a separate helper
+bool Get::setFileHeaders(struct stat &fileInfo)
+{
+    // Set headers without reading content
+    _lastModified = convertTimeToHttpDate(fileInfo.st_mtime);
+    std::stringstream ss;
+    ss << fileInfo.st_ino << "-" << fileInfo.st_size << "-" << fileInfo.st_mtime;
+    _etag = "\"" + ss.str() + "\"";
+    HttpStatus::setStatus(200, _code, _phrase);
+    return true;
+}
+
 /**
 	* @brief Reads file from disk and sets Last-Modified and ETag headers.
 	* @param fileInfo stat structure of the file
@@ -183,16 +195,16 @@ bool	Get::serveFile(struct stat &fileInfo)
 	std::string buffer(fileInfo.st_size, '\0');
 	resourceStream.read(&buffer[0], fileInfo.st_size);
 	_body = buffer;
-
-	_lastModified = convertTimeToHttpDate(fileInfo.st_mtime);
-
-	std::stringstream ss;
-	ss << fileInfo.st_ino << "-" << fileInfo.st_size << "-" << fileInfo.st_mtime;
-	_etag = "\"" + ss.str() + "\"";
-
 	resourceStream.close();
-	HttpStatus::setStatus(200, _code, _phrase);
-	return true;
+
+	// _lastModified = convertTimeToHttpDate(fileInfo.st_mtime);
+
+	// std::stringstream ss;
+	// ss << fileInfo.st_ino << "-" << fileInfo.st_size << "-" << fileInfo.st_mtime;
+	// _etag = "\"" + ss.str() + "\"";
+
+	// HttpStatus::setStatus(200, _code, _phrase);
+	return setFileHeaders(fileInfo);
 }
 
 /**

@@ -26,14 +26,18 @@ class MethodExecuter
 		~MethodExecuter();
 
 		bool				isImplementedMethod(const std::string &methodName);
-		AMethod				*createMethod(const std::string &methodName, const std::string &path);
-		t_executionResult	execute(AMethod *method, HttpRequest *request);
-		bool				setConfig(t_Configs *serverConfig);
-		t_Location			*availableLocation(const std::string &path);
-		std::string			modifyRequestURI(HttpRequest *req);
+		AMethod				*createMethod(const std::string &methodName, const std::string &path, const std::string &listeningInterface);
+		t_executionResult	execute(AMethod *method, HttpRequest *request, const std::string &listeningInterface);
+		bool				setConfig(std::vector<t_Configs> serverConfigs);
+		t_Location			*availableLocation(const std::string &path, const std::string &listeningInterface);
+		std::string			modifyRequestURI(HttpRequest *req, const std::string &listeningInterface);
 
 	private:
-		t_Configs	*_serverConfig;
+		std::vector<t_Configs>	_serverConfigs;
+		
+		std::map<std::string, std::map<std::string, std::string> >	_rootedLocs;
+		//			IP:PORT				loc/path		root
+		// t_Configs	*_serverConfig;
 		t_Location	_defaultLocation;
 
 		std::map<std::string, std::string>	_rootedLocations;
@@ -49,6 +53,7 @@ class MethodExecuter
 		bool						isAllowedMethod(t_Location *location, const std::string &method);
 		std::vector<std::string>	splitPath(const std::string &path);
 		std::vector<std::string>	splitPathDir(const std::string &path);
+		bool isListening(size_t i, const std::string &host);
 };
 
 #endif
