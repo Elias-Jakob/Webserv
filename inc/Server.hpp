@@ -45,7 +45,6 @@ class Server
 		Server	&operator=(const Server &other);
 
 		std::vector<t_Configs>	&configs;
-
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
 		std::vector<int>	listenSockets;

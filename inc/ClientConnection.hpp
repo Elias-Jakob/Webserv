@@ -53,9 +53,10 @@ class ClientConnection
 		size_t	cgiWrittenBytes;
 		std::string		_listeningInterface;
 
+		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
+
 		void	processRequest();
 		void	cleanUpClient();
-		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
 	private:
 		void	executeRequest();
 		void	deleteMethod();

@@ -27,7 +27,7 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 	// printServer();
 	// _configs = _servers[0];
 	// return (this->_configs);
-	return _servers;
+	return (_servers);
 }
 
 void ConfigFileParser::tokenize(const std::string &input)
