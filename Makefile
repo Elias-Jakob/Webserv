@@ -7,6 +7,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/methods/Delete.cpp \
 		src/methods/Get.cpp \
 		src/methods/Post.cpp \
+		src/methods/Head.cpp \
 		src/parsers/ABodyParser.cpp \
 		src/parsers/FormParser.cpp \
 		src/parsers/MultipartParser.cpp \

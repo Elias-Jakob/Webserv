@@ -69,8 +69,6 @@ bool	Server::initListenSockets()
 				interface != this->configs[i].endpoints.end(); ++interface) {
 			for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 					port != interface->second.end(); ++port) {
-				this->listenFdToConfigIndex[fd] = i;
-				this->listenFdToInterface[fd] = interface->first + ":" + *port;
 				res = NULL;
 				gaiErr = getaddrinfo(interface->first.c_str(), (*port).c_str(), &hints, &res);
 				try {
@@ -78,6 +76,8 @@ bool	Server::initListenSockets()
 						throw std::runtime_error(gai_strerror(gaiErr));
 					this->setupSocketAddr(res, fd);
 					epEvent.data.fd = fd;
+					this->listenFdToConfigIndex[fd] = i;
+					this->listenFdToInterface[fd] = interface->first + ":" + *port;
 					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &epEvent) == -1)
 						throw std::runtime_error(std::strerror(errno));
 					std::cout << "Listening endpoint " << interface->first << ":" << *port
