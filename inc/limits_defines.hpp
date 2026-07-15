@@ -11,7 +11,7 @@
 // Network & Connction
 # define EPOLL_MAX_EVENTS 10
 #define MAX_CONNECTIONS 32
-# define KEEP_ALIVE_TIMEOUT 30
+# define KEEP_ALIVE_TIMEOUT 60
 #define READ_TIMEOUT 10
 #define WRTIE_TIMEOUT 10
 
