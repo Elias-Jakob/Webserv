@@ -52,20 +52,35 @@ std::string	ResponseBuilder::redirectResponse(
 */
 std::string ResponseBuilder::cgiResponse(const std::string &cgiBody)
 {
-	std::string resp;
+	std::string resp, headers, cgiOutput(cgiBody);
 	std::string	statusLine = "HTTP/1.1 200 OK\r\n";
 	
-	std::stringstream	ss;
-	ss << cgiBody.size();
 
 	statusLine = "HTTP/1.1 200 OK\r\n";
 
-	std::string headers = "Content-Length: " + ss.str() + "\r\n";
+	size_t	contentType = cgiBody.find("Content-type: ");
+	std::cout << "contentType = " << contentType << std::endl;
+	if (contentType != std::string::npos) {
+		size_t	contentTypeEnd = cgiBody.find("\n", contentType);
+		std::cout << "contentTypeEnd = " << cgiBody.substr(contentType, contentTypeEnd) << std::endl;
+		headers += "Content-Type: text/plain;charset=UTF-8\n";//cgiBody.substr(contentType, contentTypeEnd + 1);
+		cgiOutput.erase(contentType, contentTypeEnd + 4);
+	}
+	std::stringstream	ss;
+	ss << cgiOutput.size();
+	size_t	contentLen = cgiBody.find("Content-Length: ");
+	if (contentLen == std::string::npos)
+		headers += "Content-Length: " + ss.str() + "\r\n";
+	else {
+		size_t	contentLenEnd = cgiBody.find("\n", contentLen);
+		headers += cgiBody.substr(contentLen, contentLenEnd);
+		cgiOutput.erase(contentLen, contentLenEnd);
+	}
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
-	headers+= "Connection: keep-alive\r\n\r\n";
+	headers += "Connection: keep-alive\r\n\r\n";
 	
-	resp = buildFullResponse(statusLine, headers, cgiBody);
+	resp = buildFullResponse(statusLine, headers, cgiOutput);
 	return resp;
 }
 
