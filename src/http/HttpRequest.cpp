@@ -824,3 +824,8 @@ std::string &HttpRequest::getHost()
 {
 	return _host;
 }
+
+std::string	HttpRequest::getFileExtension()
+{
+	return (_fileExtension);
+}

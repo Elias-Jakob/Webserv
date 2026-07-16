@@ -118,6 +118,7 @@ class HttpRequest
 		std::string							&getURI();
 		std::string							&getHost();
 		std::string							getRedirectLocation();
+		std::string							getFileExtension();
 		// OUTPUT
 		void	printRequest(void);
 };
