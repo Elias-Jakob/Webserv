@@ -4,6 +4,7 @@
 # include "Epoll.hpp"
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
+# include "CGIUtils.hpp"
 
 class CGIProcessLauncher
 {
@@ -33,12 +34,5 @@ class CGIProcessLauncher
 		char	**createArgv(ClientConnection &client);
 		char	**createEnvp(HttpRequest*	request);
 };
-
-// utils
-namespace cgi {
-	char	**getArray(std::vector<std::string> &lst);
-	std::string	toMetaFormat(std::string	originalKey);
-	std::string	strJoin(std::vector<std::string> &vec);
-}
 
 #endif

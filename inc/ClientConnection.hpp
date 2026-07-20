@@ -52,6 +52,7 @@ class ClientConnection
 		int	cgiOut;
 		size_t	cgiWrittenBytes;
 		std::string		_listeningInterface;
+		std::string		remoteAddr;
 
 		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
 

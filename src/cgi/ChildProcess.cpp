@@ -38,7 +38,7 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest *request)
 													"SERVER_PORT" | "SERVER_PROTOCOL" |
 													"SERVER_SOFTWARE"
 	*/
-	// Done count = 9; total = 17
+	// Done count = 10; total = 17
 	this->envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
@@ -72,7 +72,7 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest *request)
 	}
 	// These are still left on the todo side:
 	// "AUTH_TYPE"    | "PATH_INFO"   | "PATH_TRANSLATED" |
-	// "QUERY_STRING" | "REMOTE_ADDR" | "REMOTE_HOST"     |
+	//                | "REMOTE_ADDR" | "REMOTE_HOST"     |
 	// "REMOTE_IDENT" | "REMOTE_USER" |
 	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)

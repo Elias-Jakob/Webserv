@@ -38,7 +38,7 @@ void	Server::handleCGIOutput(int fd)
 				caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 		else
-			caller.response_buffer = this->responseBuilder.cgiResponse(caller.response_buffer);
+			caller.response_buffer = this->responseBuilder.cgiResponse(caller.response_buffer, caller.keep_alive);
 		caller.state = SENDING_RESPONSE;
 		this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 		close(fd);

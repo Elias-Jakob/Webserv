@@ -27,7 +27,7 @@ class ResponseBuilder
 		std::string errorResponse(HttpRequest *request, const std::string &listeningInterface);
 		std::string	errorResponseViaCode(int errorCode);
 		std::string	errorResponseViaResult(t_executionResult result, const std::string &listeningInterface);
-		std::string cgiResponse(const std::string &cgiBody);
+		std::string cgiResponse(const std::string &cgiBody, const bool &keepAlive);
 		std::string	redirectResponse(
 						t_executionResult *result, 
 						const std::string &redirectURL);
