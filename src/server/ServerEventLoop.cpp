@@ -63,8 +63,14 @@ void	Server::timeoutInactiveClients()
 		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
 			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
 			this->removeClient((it++)->second);
+			continue ;
 		}
-		else ++it;
+		if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
+			it->second.terminateCGIProcess(&(this->cgiPipes));
+			std::cout << "CGI Timeout client(" << it->first << ")" << std::endl;
+			// TODO: left off here: return correct status code
+		}
+		++it;
 	}
 }
 

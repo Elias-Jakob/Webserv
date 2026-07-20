@@ -21,6 +21,7 @@ ClientConnection::ClientConnection() :
 	responseBuilder(NULL),
 	keep_alive(false),
 	inactiveTime(std::time(NULL)),
+	cgiStartTime(0),
 	cgiPid(-1),
 	cgiIn(-1),
 	cgiOut(-1),

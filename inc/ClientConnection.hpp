@@ -47,6 +47,7 @@ class ClientConnection
 		bool			keep_alive;
 		time_t		inactiveTime;
 
+		std::time_t	cgiStartTime;
 		pid_t	cgiPid;
 		int	cgiIn;
 		int	cgiOut;

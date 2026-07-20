@@ -65,7 +65,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
 	} else headers += contLen;
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
-	headers += (keepAlive) ? "Connection: keep-alive\r\n" : "Connection: close\r\n";
+	headers += (keepAlive) ? "Connection: keep-alive\r\n\r\n" : "Connection: close\r\n\r\n";
 	body.append("\r\n");
 	// TODO: statusLine. its not check if the cgi is setting a status
 	return (this->buildFullResponse("HTTP/1.1 200 OK\r\n", headers, body));
