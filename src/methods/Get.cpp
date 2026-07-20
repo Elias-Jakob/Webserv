@@ -52,12 +52,26 @@ bool	Get::execute()
 	}
 	if (S_ISDIR(fileInfo.st_mode))
 	{
+		// return handleDirectory(fileInfo);
 		if (handleDirectory(fileInfo))
 			return true;
+		else
+			std::cout << "status_code: " << _code << std::endl;
+		// else if (_resource != "/")
+		// {
+		// 	HttpStatus::setStatus(404, _code, _phrase);
+		// 	return false;
+		// }
 	}
+	std::cout << "\t_resource" << _resource << std::endl;
+	// if (stat(_resource.c_str(), &fileInfo) != 0 && S_ISDIR(fileInfo.st_mode))
+	// {
+	// 	HttpStatus::setStatus(404, _code, _phrase);
+	// 	return false;
+	// }
 	if (!isFileAccessible(_resource))
 	{
-		HttpStatus::setStatus(403, _code, _phrase);
+		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
 	return serveFile(fileInfo);
@@ -119,7 +133,8 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 		return serveDirectoryList();
 	}
 
-	HttpStatus::setStatus(403, _code, _phrase);
+	HttpStatus::setStatus(404, _code, _phrase);
+	std::cout << "handleDirectory() => FALSE" << std::endl;
 	return false;
 }
 
@@ -128,13 +143,17 @@ bool	Get::handleDirectory(struct stat &fileInfo)
 */
 bool	Get::serveDefaultPage()
 {
+	if (GET_PRINT)
+		std::cout << "Get::serveDefaultPage()\n\t resource: " << _resource << std::endl;
 	if (_resource.at(_resource.size()-1) != '/')
 		_resource += "/";
-	_resource = "." + _location->root + "/" + _location->defaultPage;
+	_resource = _resource + _location->defaultPage;
+	// _resource = "." + _location->root + "/" + _location->defaultPage;
 
 	struct stat resourceInfo;
 	if (stat(_resource.c_str(), &resourceInfo) != 0)
 	{
+		std::cout << "here" << std::endl;
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
@@ -145,6 +164,7 @@ bool	Get::serveDefaultPage()
 */
 bool	Get::serveIndexPage()
 {
+	std::cout << "Get::serveIndexPage()" << std::endl;
 	struct stat resourceInfo;
 	if (stat(_resource.c_str(), &resourceInfo) != 0)
 	{
@@ -184,7 +204,7 @@ bool Get::setFileHeaders(struct stat &fileInfo)
 bool	Get::serveFile(struct stat &fileInfo)
 {
 	if (GET_PRINT)
-		std::cout << "Get::serveFile()" << std::endl;
+		std::cout << "Get::serveFile()\n\t _resource = " << _resource << std::endl;
 	std::ifstream resourceStream(_resource.c_str(), std::ios::binary);
 	if (!resourceStream)
 	{
@@ -288,36 +308,36 @@ std::string	Get::convertTimeToHttpDate(time_t time)
 	return std::string(buf);
 }
 
-/**
-*/
-bool	Get::checkCGI()
-{
-	std::cout << "Get::checkCGI()" << std::endl;
-	if (_location->cgiExtensions.size() < 1)
-		return false;
-	std::string fileExt;
-	size_t		pos;
+// /**
+// */
+// bool	Get::checkCGI()
+// {
+// 	std::cout << "Get::checkCGI()" << std::endl;
+// 	if (_location->cgiExtensions.size() < 1)
+// 		return false;
+// 	std::string fileExt;
+// 	size_t		pos;
 
-	pos = _resource.find_last_of('.');
-	if (pos == std::string::npos)
-		return false;
-	fileExt = _resource.substr(pos);
-	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
-	{
-		if (_location->cgiExtensions[i] == fileExt)
-		{
-			return executeCGI(_resource);
-		}
-	}
-	return false;
-}
+// 	pos = _resource.find_last_of('.');
+// 	if (pos == std::string::npos)
+// 		return false;
+// 	fileExt = _resource.substr(pos);
+// 	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
+// 	{
+// 		if (_location->cgiExtensions[i] == fileExt)
+// 		{
+// 			return executeCGI(_resource);
+// 		}
+// 	}
+// 	return false;
+// }
 
-/**
-*/
-bool	Get::executeCGI(const std::string &script)
-{
-	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
-	HttpStatus::setStatus(601, _code, _phrase);
-	_phrase = _resource;
-	return true;
-}
+// /**
+// */
+// bool	Get::executeCGI(const std::string &script)
+// {
+// 	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
+// 	HttpStatus::setStatus(601, _code, _phrase);
+// 	_phrase = _resource;
+// 	return true;
+// }

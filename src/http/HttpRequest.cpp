@@ -71,6 +71,8 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
+					// t_Location *loc = NULL;
+					// loc = availableLocation(_requestLine);
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -274,18 +276,18 @@ bool	HttpRequest::extractBody()
 		std::cout << "\tIN ELSE" << std::endl;
 		it = _headers.find("transfer-encoding");
 		if (it != _headers.end() && !it->second.empty() 
-			&& it->second[0] == "chunked") 
+			&& it->second[0] == "chunked")
 		{
 				std::cout << "\tCHUNKED TRANSFER HANDLING" << std::endl;
 				return unchunkBody();
 		}
 	}
-
-	if (_requestLine.method == "POST" && contentLength == 0) {
-		_state = PARSING_ERROR;
-		std::cout << "PARSING_ERROR" << std::endl;
-		return setErrorCode(411);
-	}
+	// REMOVE to avoid 411 if method is not allowed!
+	// if (_requestLine.method == "POST" && contentLength == 0) {
+	// 	_state = PARSING_ERROR;
+	// 	std::cout << "PARSING_ERROR" << std::endl;
+	// 	return setErrorCode(411);
+	// }
 	std::cout << "content-length = " << contentLength << std::endl;
 	size_t availableBytes = _messageBuffer.size() - _current_pos;
 	std::cout << "availableBytes = " << availableBytes << std::endl;
@@ -324,6 +326,10 @@ bool	HttpRequest::unchunkBody()
 		size_t chunked_size = 0;
 		while ((chunked_size = chunkedSize()) != 0)
 		{
+			// if (chunked_size > MAX_BODY_SIZE) {
+			// 	_state = PARSING_ERROR;
+			// 	return setErrorCode(413);
+			// }
 			std::string chunked_data = chunkedData(chunked_size);
 			_fullMessageBody += chunked_data;
 			std::cout << "body = " << _fullMessageBody << std::endl;
@@ -364,12 +370,12 @@ size_t	HttpRequest::chunkedSize()
 		return 0;
 
 	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
+
 	std::cout << "\tchunked_sizeStr [\"" << sizeStr << "\"]" << std::endl;
 	std::cout << "\t -> converted to: << " << strtol(sizeStr.c_str(), NULL, 16) << std::endl;
+
 	_current_pos = posEndSize + 2;
-	// std::cout << "_messageBuffer[]: " << _messageBuffer[_current_pos] << std::endl;
 	return strtol(sizeStr.c_str(), NULL, 16);
-	// return 1;
 }
 
 /**
@@ -442,8 +448,10 @@ bool HttpRequest::createBodyParser()
 		std::cout << "Want to create FormParser" << std::endl;
 		_bodyParser = createFormParser();
 	}
-	else if (_contentData.type.size() > 0)
-		return setErrorCode(405); // was 400 but for tester -> 405
+	else
+		return false;
+	// else if (_contentData.type.size() > 0)
+		// return setErrorCode(405); // was 400 but for tester -> 405
 	return true;
 }
 
@@ -505,15 +513,16 @@ bool HttpRequest::validRequest()
 	else {
 		_host = it->second[0];
 	}
-	if (_requestLine.method == "POST")
-	{
-		it = _headers.find("content-length");
-		if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
-		{
-			_errorCode = 411;
-			return false;
-		}
-	}
+	// REMOVE to avoid 411 if not allowed Method
+	// if (_requestLine.method == "POST")
+	// {
+	// 	it = _headers.find("content-length");
+	// 	if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
+	// 	{
+	// 		_errorCode = 411;
+	// 		return false;
+	// 	}
+	// }
 	if (_errorCode != 0)
 	{
 		std::cout << "\t==> FALSE" << std::endl;
@@ -823,4 +832,16 @@ std::string	HttpRequest::getRedirectLocation()
 std::string &HttpRequest::getHost()
 {
 	return _host;
+}
+
+void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
+{
+	_serverConfigs = serverConfigs;
+}
+
+bool	HttpRequest::hasBodyContentLength()
+{
+	if (_fullMessageBody.size() > 0)
+		return true;
+	return false;
 }

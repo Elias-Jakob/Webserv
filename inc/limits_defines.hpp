@@ -2,7 +2,7 @@
 # define LIMITS_DEFINES_HPP
 
 // Request parsing limits
-#define MAX_BODY_SIZE 10000
+#define MAX_BODY_SIZE 100
 #define MAX_HEADERS 16
 #define MAX_HEADER_LENGTH 256
 #define MAX_REQUEST_LINE_LENGTH 512// 8192      // 8KB

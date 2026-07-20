@@ -14,6 +14,7 @@
 # include "MultipartParser.hpp"
 # include "structs.h"
 # include "print_controls.hpp"
+# include "ConfigFileParser.hpp"
 
 typedef struct	s_query
 {
@@ -62,6 +63,9 @@ class HttpRequest
 		int				_errorCode;
 		std::string		_fileExtension;
 		std::string		_host;
+		std::vector<t_Configs>	_serverConfigs;
+
+
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -81,6 +85,10 @@ class HttpRequest
 		bool	unchunkBody(); // new
 		size_t	chunkedSize();
 		std::string	chunkedData(size_t chunked_size);
+		// bool	isAllowedMethod(t_Location *location, const std::string &method);
+		// t_Location	*availableLocation(const std::string &path, const std::string &listeningInterface);
+		// std::vector<std::string> splitPath(const std::string &path);
+		// bool	isListening(size_t i, const std::string &listeningInterface);
 		
 
 	protected:
@@ -118,6 +126,9 @@ class HttpRequest
 		std::string							&getURI();
 		std::string							&getHost();
 		std::string							getRedirectLocation();
+
+		bool								hasBodyContentLength();
+		void	setServerConfigs(std::vector<t_Configs> _serverConfigs);
 		// OUTPUT
 		void	printRequest(void);
 };

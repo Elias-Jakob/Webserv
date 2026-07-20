@@ -49,6 +49,8 @@ typedef struct s_Location
 	std::string		defaultPage;
 	bool			formSubmit;
 	std::string		formUploadFile;
+	bool			cgi;
+	std::string		cgiPath;
 	std::vector<std::string>	allowedMethods;
 	std::vector<std::string>	cgiExtensions;
 	std::vector<std::string>	uploadExtensions; // .txt, .pdf, .jpg, ...

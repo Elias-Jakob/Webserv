@@ -38,8 +38,8 @@ class Get : public AMethod
 		virtual bool		serveFile(struct stat &fileInfo);
 		
 		bool 		isFileAccessible(const std::string &path);
-		bool		checkCGI();
-		bool		executeCGI(const std::string &script);
+		// bool		checkCGI();
+		// bool		executeCGI(const std::string &script);
 		
 		std::string	convertTimeToHttpDate(time_t time);
 };

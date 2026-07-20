@@ -30,8 +30,10 @@ class MethodExecuter
 		AMethod				*createMethod(const std::string &methodName, const std::string &path, const std::string &listeningInterface);
 		t_executionResult	execute(AMethod *method, HttpRequest *request, const std::string &listeningInterface);
 		bool				setConfig(std::vector<t_Configs> serverConfigs);
-		t_Location			*availableLocation(const std::string &path, const std::string &listeningInterface);
+		t_Location			*availableLocation(const std::string &path, const std::string &listeningInterface, const std::string &methodName);
 		std::string			modifyRequestURI(HttpRequest *req, const std::string &listeningInterface);
+
+		std::vector<t_Configs>	getServerConfigs();
 
 	private:
 		std::vector<t_Configs>	_serverConfigs;
@@ -56,7 +58,7 @@ class MethodExecuter
 		bool						isAllowedMethod(t_Location *location, const std::string &method);
 		std::vector<std::string>	splitPath(const std::string &path);
 		std::vector<std::string>	splitPathDir(const std::string &path);
-		bool isListening(size_t i, const std::string &host);
+		bool 						isListening(size_t i, const std::string &host);
 };
 
 #endif

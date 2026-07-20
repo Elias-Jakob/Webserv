@@ -41,6 +41,8 @@ bool Post::execute()
 		std::cout << "POST->execute()" << std::endl;
 		// printParsedResult();
 	}
+	if (checkCGI())
+		return true;
 	if (!isValidContentType())
 		return false;
 	if (!isUploadLocation() && !isSubmitLocation())
