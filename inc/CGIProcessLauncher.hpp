@@ -4,7 +4,7 @@
 # include "Epoll.hpp"
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
-# include "CGIUtils.hpp"
+# include "cgi.hpp"
 
 class CGIProcessLauncher
 {

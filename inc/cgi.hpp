@@ -1,5 +1,5 @@
-#ifndef CGIUTILS_HPP
-# define CGIUTILS_HPP
+#ifndef CGI_HPP
+# define CGI_HPP
 
 # include <vector>
 # include <string>
@@ -13,4 +13,4 @@ namespace cgi {
 	std::string	checkForHeaders(std::string &body, const std::string &header);
 }
 
-#endif // !CGIUTILS_HPP
+#endif // !CGI_HPP

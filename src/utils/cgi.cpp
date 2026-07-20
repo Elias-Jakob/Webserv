@@ -1,4 +1,4 @@
-# include "CGIUtils.hpp"
+# include "cgi.hpp"
 
 char	**cgi::getArray(std::vector<std::string> &lst)
 {
