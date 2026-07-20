@@ -56,8 +56,10 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
 	std::string	headers, body(cgiBody), contType, contLen;
 	std::stringstream	ss;
 
-	contType = cgi::checkForHeaders(body, "content-type: ");
-	headers += (contType.empty()) ? "Content-Type: text/plain;charset=UTF-8\r\n" : contType; // TODO: is it correct to set this a default?
+	headers += cgi::checkForHeaders(body, "content-type: ");
+	// INFO: no content-type should be set if there none
+	// contType = cgi::checkForHeaders(body, "content-type: ");
+	// headers += (contType.empty()) ? "Content-Type: text/plain;charset=UTF-8\r\n" : contType; // TODO: is it correct to set this a default?
 	contLen = cgi::checkForHeaders(body, "content-length: ");
 	if (contLen.empty()) {
 		ss << body.size();
