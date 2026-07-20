@@ -64,7 +64,7 @@ class Server
 		void	handleCGIOutput(int fd);
 		void	writeRequestBodyToCGI(int fd);
 		void	removeClient(ClientConnection &client);
-		void	timeoutInactiveClients();
+		void	checkTimeouts();
 };
 
 #endif // !SERVER_HPP

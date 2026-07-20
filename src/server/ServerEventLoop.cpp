@@ -54,7 +54,7 @@ void	Server::removeClient(ClientConnection &client)
 	this->clients.erase(client.fd);
 }
 
-void	Server::timeoutInactiveClients()
+void	Server::checkTimeouts()
 {
 	time_t	current = std::time(NULL);
 
@@ -66,9 +66,11 @@ void	Server::timeoutInactiveClients()
 			continue ;
 		}
 		if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
+			std::cout << "Terminating CGI process after timeout... client fd = " << it->first << std::endl;
 			it->second.terminateCGIProcess(&(this->cgiPipes));
-			std::cout << "CGI Timeout client(" << it->first << ")" << std::endl;
-			// TODO: left off here: return correct status code
+			it->second.response_buffer = it->second.responseBuilder->errorResponseViaCode(504);
+			it->second.state = SENDING_RESPONSE; // TODO: is setting the client state even necessary?
+			this->epoll.ctl(it->first, EPOLL_CTL_MOD, EPOLLOUT);
 		}
 		++it;
 	}
@@ -110,6 +112,6 @@ void	Server::eventLoop()
 					this->handleCGIOutput(events[i].data.fd);
 			}
 		}
-		this->timeoutInactiveClients();
+		this->checkTimeouts();
 	}
 }

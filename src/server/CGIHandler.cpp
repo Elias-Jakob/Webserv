@@ -7,6 +7,7 @@ void	Server::writeRequestBodyToCGI(int fd)
 	std::string	requestBody = caller.request->getRequestBody();
 	
 	if (!caller.request->getRequestBody().empty()) {
+		// TODO: handle the write (e.g. what should be done if the pipe is full and -1 is returned because the pipes fd is set to NONBLOCK)
 		writtenBytes = write(fd, requestBody.c_str(), requestBody.size());
 		if (writtenBytes == -1)
 			throw std::runtime_error("failed while writing to cgi pipe: " + std::string(std::strerror(errno)));
