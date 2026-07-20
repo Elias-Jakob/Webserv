@@ -14,9 +14,10 @@
 void	Server::handleNewClient(int listenFd)
 {
 	int	fd;
-	// struct epoll_event	epEvent;
+	struct sockaddr	clientAddr;
+	socklen_t	clientAddrLen = sizeof(clientAddr);
 
-	fd = accept(listenFd, NULL, NULL);
+	fd = accept(listenFd, &clientAddr, &clientAddrLen);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
 	std::cout << "New client connected... socket file descriptor = " << fd << std::endl;
@@ -33,6 +34,8 @@ void	Server::handleNewClient(int listenFd)
 	this->clients[fd].responseBuilder = &(this->responseBuilder);
 	this->clients[fd].bytesSent = 0;
 	this->clients[fd]._listeningInterface = listenFdToInterface[listenFd];
+	// TODO: add converter function
+	// this->clients[fd].remoteAddr = 
 
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);
