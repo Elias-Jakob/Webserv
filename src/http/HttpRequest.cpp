@@ -15,7 +15,8 @@ HttpRequest::HttpRequest():
 	_state(PARSING_REQUEST_LINE), 
 	_current_pos(0),
 	_bodyParser(NULL),
-	_errorCode(0)
+	_errorCode(0),
+	_locationObj(NULL)
 {}
 
 /**
@@ -28,6 +29,8 @@ HttpRequest::~HttpRequest()
 		delete _bodyParser;
 		_bodyParser = NULL;
 	}
+	if (_locationObj)
+		_locationObj = NULL;
 }
 
 // =========================================================================
@@ -48,10 +51,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	// std::cout << partialMessage << std::endl;
+	
 	_messageBuffer += partialMessage;
 	// std::cout << _messageBuffer << std::endl;
-	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -230,6 +232,8 @@ bool HttpRequest::parseHeaderLine()
             std::string value = line.substr(valueStart);
 			// (key = host || content-length) only one value allowed -> bad request(400).
 			addHeader(key, value);
+			if (key == "host")
+				_host = value;
 		}
 		else
 		{
@@ -239,7 +243,105 @@ bool HttpRequest::parseHeaderLine()
         _current_pos = lineEnd + 2;
     }
 	_current_pos = endOfHeaders + 4;
+
+	findLocation(); // find corresponding t_Locatio
 	return true;
+}
+
+void	HttpRequest::findLocation()
+{
+	if (PRINT_REQUEST) {
+		std::cout << "HttpRequest::findLocation()" << std::endl;
+	}
+
+	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
+	t_Location	*loc;
+	t_Location	*defLoc;
+	for (size_t i = 0; i < _serverConfigs.size(); i++) {
+		if (!isListeningTo(i, _listeningInterface))
+			continue ;
+		for (size_t k = 0; k < pathParts.size(); k++) {
+			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {	
+				std::cout << pathParts[k] << " == " 
+					<< _serverConfigs[i].locations[j].path << std::endl;
+				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
+					defLoc = &_serverConfigs[i].locations[j];
+				if (_serverConfigs[i].locations[j].path == pathParts[k])
+				{
+					loc = &_serverConfigs[i].locations[j];
+					std::cout << "location: " << _serverConfigs[i].locations[j].path
+						<< " => " << pathParts[k] << " => " 
+						<< _serverConfigs[i].locations[j].root << std::endl;
+				}
+			}
+		}
+	}
+	if (!loc && defLoc)
+		loc = defLoc;
+	if (loc != NULL) // print result
+		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
+	else
+		std::cout << "\t ==> location NULL" << std::endl;
+	_locationObj = loc;
+	// return loc;
+}
+
+
+bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
+{
+	std::cout << "HttpRequest::isListening()\n\tIP:PORT: " << listeningInterface << std::endl;
+	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
+	{
+		std::cout << "\t" << _serverConfigs[i].listenInterfaces[i_ip] << std::endl;
+		if (listeningInterface == _serverConfigs[i].listenInterfaces[i_ip])
+		{
+			std::cout << "isListening() ==> TRUE" << std::endl;
+			return true;
+		}
+	}
+	std::cout << "isListening() ==> FALSE" << std::endl;
+	return false;
+}
+/**
+	* @brief splits the path at every '/' and stores in vector.
+	* @param path -> the resource path.
+	* @return vector of strings with the subpaths.
+*/
+std::vector<std::string> HttpRequest::splitPath(const std::string &path)
+{
+	std::cout << "MethodExecuter::splitPath()" << std::endl;
+	std::vector<std::string>	parts;
+	std::string	temp;
+	size_t	start = 0;
+	size_t	end = 0;
+
+	for (size_t i = 0; i < path.size(); i++)
+	{
+		if (path[i] == '/' && i == 0)
+		{
+			end = i+1;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			// start = end;
+		}
+		else if ((path[i] == '/' || path[i] == '.') && i > 0)
+		{
+			end = i;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			start = end;
+		}
+		else if (i + 1 == path.size())
+		{
+			end = i+1;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			break ;
+		}
+	}
+	for (size_t i = 0; i < parts.size(); i++) // print parts
+		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
+	return parts;
 }
 
 /**
@@ -841,9 +943,10 @@ std::string &HttpRequest::getHost()
 	return _host;
 }
 
-void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
+void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)
 {
 	_serverConfigs = serverConfigs;
+	_listeningInterface = listeningInterface;
 }
 
 bool	HttpRequest::hasBodyContentLength()

@@ -32,6 +32,7 @@ class ResponseBuilder
 						t_executionResult *result, 
 						const std::string &redirectURL);
 		bool		setConfig(std::vector<t_Configs> serverConfig);
+		std::vector<t_Configs> getServerConfigs();
 
 	private:
 		// t_Configs	*_serverConfig;

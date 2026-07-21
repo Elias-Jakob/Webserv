@@ -95,15 +95,6 @@ bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 		std::cout << "}" << std::endl;
 	}
 	setDefaultLocation();
-	// std::map<std::string, std::string>::iterator ite = _rootedLocations.end();
-	// std::cout << "_rootedLocations{\n";
-	// while (it != ite)
-	// {
-	// 	std::cout << "\t[" << it->first << "] = " << it->second << std::endl; 
-	// 	it++;
-	// }
-	// std::cout << "}" << std::endl;
-	// std::cout << "MethodExecuter::setConfig(): server_name = "  << _serverConfig->serverName << std::endl;
 	return true;
 }
 

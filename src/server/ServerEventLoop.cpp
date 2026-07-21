@@ -33,7 +33,7 @@ void	Server::handleNewClient(int listenFd)
 	this->clients[fd].responseBuilder = &(this->responseBuilder);
 	this->clients[fd].bytesSent = 0;
 	this->clients[fd]._listeningInterface = listenFdToInterface[listenFd];
-	this->clients[fd].request->setServerConfigs(clients[fd].executor->getServerConfigs());
+	this->clients[fd].request->setServerConfigs(clients[fd].executor->getServerConfigs(), listenFdToInterface[listenFd]);
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);
 	this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
