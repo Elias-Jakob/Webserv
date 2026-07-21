@@ -22,6 +22,7 @@ SRC = src/http/ClientConnection.cpp \
 		src/cgi/ChildProcess.cpp \
 		src/utils/Epoll.cpp \
 		src/utils/cgi.cpp \
+		src/utils/utils.cpp \
 		src/main.cpp
 
 OBJDIR = obj
