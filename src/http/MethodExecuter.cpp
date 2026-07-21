@@ -304,14 +304,14 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 		{
 			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++)
 			{	
-				std::cout << _serverConfigs[i].locations[j].path << " == "
-					<< pathParts[k] << std::endl;
+				std::cout << pathParts[k] << " == " 
+							<< _serverConfigs[i].locations[j].path << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
 				if (_serverConfigs[i].locations[j].path == pathParts[k])// && k == pathParts.size() - 1)
 				{
 					if (_serverConfigs[i].locations[j].cgi) { 
-						if ( isAllowedMethod(&_serverConfigs[i].locations[j], methodName)) {
+						if (isAllowedMethod(&_serverConfigs[i].locations[j], methodName)) {
 							loc = &_serverConfigs[i].locations[j];
 							std::cout << "set CGI path" << std::endl;
 						}

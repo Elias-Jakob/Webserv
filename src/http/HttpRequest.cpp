@@ -48,9 +48,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	std::cout << partialMessage << std::endl;
+	// std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
-	std::cout << _messageBuffer << std::endl;
+	// std::cout << _messageBuffer << std::endl;
 	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
@@ -278,7 +278,7 @@ bool	HttpRequest::extractBody()
 		if (it != _headers.end() && !it->second.empty() 
 			&& it->second[0] == "chunked")
 		{
-				std::cout << "\tCHUNKED TRANSFER HANDLING" << std::endl;
+				std::cout << "=====\tCHUNKED TRANSFER HANDLING" << std::endl;
 				return unchunkBody();
 		}
 	}
@@ -314,47 +314,56 @@ bool	HttpRequest::extractBody()
 bool	HttpRequest::unchunkBody()
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::unchunkBody()" << std::endl;
-	// std::cout << "buffer_sub : \n"<< _messageBuffer.substr(_current_pos) << std::endl;
-	size_t	posEnd =_messageBuffer.find("0\r\n", _current_pos);
-	if (posEnd != std::string::npos)
-	{
-		if ((_messageBuffer.find("\r\n", posEnd)) == std::string::npos)
-			return false;
-		std::cout << "FOUND END OF MESSAGE" << "\n\t unchunking body now..." << std::endl;
-			std::string	chunked_message = _messageBuffer.substr(_current_pos);
-		size_t chunked_size = 0;
-		while ((chunked_size = chunkedSize()) != 0)
-		{
-			// if (chunked_size > MAX_BODY_SIZE) {
-			// 	_state = PARSING_ERROR;
-			// 	return setErrorCode(413);
-			// }
-			std::string chunked_data = chunkedData(chunked_size);
-			_fullMessageBody += chunked_data;
-			std::cout << "body = " << _fullMessageBody << std::endl;
+		std::cout << "HttpRequest::unchunkBody()" << std::endl;	
+	size_t	posEnd = _messageBuffer.find("\r\n", _current_pos);
+	if (posEnd == std::string::npos)
+		return false;
+
+	bool	done = false;
+	while (done == false) {
+		size_t	chunked_size = chunkedSize();
+		if (chunked_size == 0) {
+			done = true;
+			std::cout << "unchunking done..." << std::endl;
+			break ;
 		}
-		return true;
+		// Return false if incomplete chunk header
+		if (chunked_size == (size_t)-1) // signal for incomplete data
+			return false;
+
+		std::string	chunked_data = chunkedData(chunked_size);
+
+		// If empty string AND size != 0, not enough data yet
+		if (chunked_data.empty() && chunked_size != 0)
+			return false; // wait for more data from network
+		
+		if (chunked_data.size() > MAX_BODY_SIZE) { // total size check
+			_state = PARSING_ERROR;
+			return setErrorCode(413);
+		}
+
+		_fullMessageBody += chunked_data;
+		// std::cout << "body = " << _fullMessageBody << std::endl;
 	}
-	std::cout << "NOT UNCHUNKED BODY!" << std::endl;
-	return false;
+	std::cout << "\n=====\tEND unchunkBody()\t=====" << std::endl;
+	return true;
 }
 
 std::string	HttpRequest::chunkedData(size_t chunked_size)
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::unchunkData()" << std::endl;
+		std::cout << "\tHttpRequest::unchunkData()" << std::endl;
+
+	// Check if we have enough bytes for the data + trailing CRLF
+	if (_current_pos + chunked_size + 2 > _messageBuffer.size())
+		return ""; // Not enough data yet, signal to wait
+
 	size_t posEndData = _messageBuffer.find("\r\n", _current_pos);
-	if (posEndData == std::string::npos)
-		return "";
-	if ((posEndData - _current_pos) != chunked_size)
-	{
-		std::cout << "\tposEndData: " << posEndData << " - _current_pos: " << _current_pos
-			<< " != chunked_size: " << chunked_size << std::endl;
-		std::cout << "\t=> " << posEndData - _current_pos << std::endl;
-		std::cout << "\tchunked_size & sizeof data dont match!" << std::endl;
-		return "";
+	if (posEndData == std::string::npos) {
+		std::cout << "\tNO CRLF!" << std::endl;
+		return ""; // CRLF not found, need more data
 	}
+
 	std::string data = _messageBuffer.substr(_current_pos, chunked_size);
 	_current_pos = posEndData + 2;
 	return data;
@@ -363,19 +372,17 @@ std::string	HttpRequest::chunkedData(size_t chunked_size)
 size_t	HttpRequest::chunkedSize()
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::chunkedSize()" << std::endl;
+		std::cout << "\tHttpRequest::chunkedSize()" << std::endl;
 
 	size_t	posEndSize = _messageBuffer.find("\r\n", _current_pos);
 	if (posEndSize == std::string::npos)
-		return 0;
+		return (size_t)-1; // Signal: incomplete chunk header, need more data
 
 	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
-
-	std::cout << "\tchunked_sizeStr [\"" << sizeStr << "\"]" << std::endl;
-	std::cout << "\t -> converted to: << " << strtol(sizeStr.c_str(), NULL, 16) << std::endl;
+	size_t chunked_size = strtol(sizeStr.c_str(), NULL, 16);
 
 	_current_pos = posEndSize + 2;
-	return strtol(sizeStr.c_str(), NULL, 16);
+	return chunked_size;
 }
 
 /**
