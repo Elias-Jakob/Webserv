@@ -5,7 +5,7 @@
 #define MAX_BODY_SIZE 10000
 #define MAX_HEADERS 16
 #define MAX_HEADER_LENGTH 256
-#define MAX_REQUEST_LINE_LENGTH 512// 8192      // 8KB
+#define MAX_REQUEST_LINE_LENGTH 8192      // 8KB
 #define MAX_URI_LENGTH 1024
 
 // Network & Connction

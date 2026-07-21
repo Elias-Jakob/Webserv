@@ -34,6 +34,9 @@ class AMethod
 		void	setBody(std::map<std::string, s_FormField> &parsedBody);
 		void	setContentData(s_ContentData contentData);
 		void	setReqUri(const std::string &requestURI);
+		bool	checkCGI();
+		bool	executeCGI(const std::string &script);
+
 
 		std::string &getBody();
 		std::string &getPhrase();

@@ -37,6 +37,7 @@ void	Server::handleNewClient(int listenFd)
 	// TODO: add converter function
 	// this->clients[fd].remoteAddr = 
 
+	this->clients[fd].request->setServerConfigs(clients[fd].executor->getServerConfigs());
 	// TODO: clean up
 	// this->clients[fd] = ClientConnection(fd);
 	this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);

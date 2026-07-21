@@ -3,7 +3,7 @@ import time
 
 s = socket.create_connection(("127.0.0.1", 8080))
 
-s.sendall(b"POST /www/cgi-bin/script.py HTTP/1.1\r\n")
+s.sendall(b"POST /cgi-bin/script.py HTTP/1.1\r\n")
 time.sleep(1)
 
 s.sendall(b"Host: localhost\r\n")

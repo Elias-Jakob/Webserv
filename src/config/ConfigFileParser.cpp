@@ -15,18 +15,11 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 	while (std::getline(fs, buffer))
 		str += buffer + '\n';
 
-	// std::cout << str << std::endl;
 	tokenize(str);
 	adjustTokens();
-	// printTokens();
-	// validate_tokens();
 	parseToDataStructure();
-	// parseEndpoints(); // need to create endpoints earlier(in SERVER)
 	if (PRINT_SERVER_CONFIG)
 		printServers();
-	// printServer();
-	// _configs = _servers[0];
-	// return (this->_configs);
 	return (_servers);
 }
 
@@ -195,7 +188,6 @@ size_t ConfigFileParser::createServer(size_t *i)
 	return j;
 }
 
-
 size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 {
 	if (i + 1 >= _tokens.size())
@@ -262,6 +254,11 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 		loc->formSubmit = true;
 		loc->formUploadFile = _tokens[i + 1].val;
 	}
+	if (_tokens[i - 1].val == "cgi_path")
+	{
+		loc->cgi = true;
+		loc->cgiPath = _tokens[i + 1].val;
+	}
 	return i + 1;
 }
 
@@ -275,6 +272,7 @@ size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs) // a
 	tempLoc.upload = false;
 	tempLoc.autoIndex = false;
 	tempLoc.formSubmit = false;
+	tempLoc.cgi = false;
 	while (_tokens.size() > j && _tokens[j].type != BRACE_CLOSE && _tokens[j].type != END_OF_FILE)
 	{
 		if (_tokens[j].type == ASSIGN)
@@ -445,6 +443,8 @@ void ConfigFileParser::printServer(size_t z)
 			std::cout << "\tautoindex: " << "on" << std::endl;
 		if (_servers[z].locations[i].formSubmit)
 			std::cout << "\tform_output_file: " << _servers[z].locations[i].formUploadFile << std::endl;
+		if (_servers[z].locations[i].cgi)
+			std::cout << "\tcgi_path: " << _servers[z].locations[i].cgiPath << std::endl;
 		std::cout<< "}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;

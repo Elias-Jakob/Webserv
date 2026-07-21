@@ -59,14 +59,21 @@ ClientConnection::~ClientConnection()
 void ClientConnection::processRequest()
 {
 	std::cout << "ClientConnection::processRequest()" << std::endl;
+	std::cout << "\t" << request->getErrorCode() << std::endl;
 	if(request->validRequest())
 	{
 		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
 		_currentMethod = executor->createMethod(request->getMethod(), request->getURI(), _listeningInterface);
-		if (_currentMethod != NULL)
-			executeRequest();
-		else
+		if (_currentMethod == NULL)
 			response_buffer = responseBuilder->errorResponseViaCode(405);
+		else if (request->getMethod() == "POST" && !request->hasBodyContentLength())
+			response_buffer = responseBuilder->errorResponseViaCode(411);
+		else
+			executeRequest();
+		// if (_currentMethod != NULL)
+			// executeRequest();
+		// else
+			// response_buffer = responseBuilder->errorResponseViaCode(405);
 	}
 	else
 	{

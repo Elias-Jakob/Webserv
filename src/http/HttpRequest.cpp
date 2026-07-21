@@ -48,9 +48,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	std::cout << partialMessage << std::endl;
+	// std::cout << partialMessage << std::endl;
 	_messageBuffer += partialMessage;
-	std::cout << _messageBuffer << std::endl;
+	// std::cout << _messageBuffer << std::endl;
 	// std::cout << _state << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
@@ -71,6 +71,8 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
+					// t_Location *loc = NULL;
+					// loc = availableLocation(_requestLine);
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -274,18 +276,18 @@ bool	HttpRequest::extractBody()
 		std::cout << "\tIN ELSE" << std::endl;
 		it = _headers.find("transfer-encoding");
 		if (it != _headers.end() && !it->second.empty() 
-			&& it->second[0] == "chunked") 
+			&& it->second[0] == "chunked")
 		{
-				std::cout << "\tCHUNKED TRANSFER HANDLING" << std::endl;
+				std::cout << "=====\tCHUNKED TRANSFER HANDLING" << std::endl;
 				return unchunkBody();
 		}
 	}
-
-	if (_requestLine.method == "POST" && contentLength == 0) {
-		_state = PARSING_ERROR;
-		std::cout << "PARSING_ERROR" << std::endl;
-		return setErrorCode(411);
-	}
+	// REMOVE to avoid 411 if method is not allowed!
+	// if (_requestLine.method == "POST" && contentLength == 0) {
+	// 	_state = PARSING_ERROR;
+	// 	std::cout << "PARSING_ERROR" << std::endl;
+	// 	return setErrorCode(411);
+	// }
 	std::cout << "content-length = " << contentLength << std::endl;
 	size_t availableBytes = _messageBuffer.size() - _current_pos;
 	std::cout << "availableBytes = " << availableBytes << std::endl;
@@ -312,43 +314,56 @@ bool	HttpRequest::extractBody()
 bool	HttpRequest::unchunkBody()
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::unchunkBody()" << std::endl;
-	// std::cout << "buffer_sub : \n"<< _messageBuffer.substr(_current_pos) << std::endl;
-	size_t	posEnd =_messageBuffer.find("0\r\n", _current_pos);
-	if (posEnd != std::string::npos)
-	{
-		if ((_messageBuffer.find("\r\n", posEnd)) == std::string::npos)
-			return false;
-		std::cout << "FOUND END OF MESSAGE" << "\n\t unchunking body now..." << std::endl;
-			std::string	chunked_message = _messageBuffer.substr(_current_pos);
-		size_t chunked_size = 0;
-		while ((chunked_size = chunkedSize()) != 0)
-		{
-			std::string chunked_data = chunkedData(chunked_size);
-			_fullMessageBody += chunked_data;
-			std::cout << "body = " << _fullMessageBody << std::endl;
+		std::cout << "HttpRequest::unchunkBody()" << std::endl;	
+	size_t	posEnd = _messageBuffer.find("\r\n", _current_pos);
+	if (posEnd == std::string::npos)
+		return false;
+
+	bool	done = false;
+	while (done == false) {
+		size_t	chunked_size = chunkedSize();
+		if (chunked_size == 0) {
+			done = true;
+			std::cout << "unchunking done..." << std::endl;
+			break ;
 		}
-		return true;
+		// Return false if incomplete chunk header
+		if (chunked_size == (size_t)-1) // signal for incomplete data
+			return false;
+
+		std::string	chunked_data = chunkedData(chunked_size);
+
+		// If empty string AND size != 0, not enough data yet
+		if (chunked_data.empty() && chunked_size != 0)
+			return false; // wait for more data from network
+		
+		if (chunked_data.size() > MAX_BODY_SIZE) { // total size check
+			_state = PARSING_ERROR;
+			return setErrorCode(413);
+		}
+
+		_fullMessageBody += chunked_data;
+		// std::cout << "body = " << _fullMessageBody << std::endl;
 	}
-	std::cout << "NOT UNCHUNKED BODY!" << std::endl;
-	return false;
+	std::cout << "\n=====\tEND unchunkBody()\t=====" << std::endl;
+	return true;
 }
 
 std::string	HttpRequest::chunkedData(size_t chunked_size)
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::unchunkData()" << std::endl;
+		std::cout << "\tHttpRequest::unchunkData()" << std::endl;
+
+	// Check if we have enough bytes for the data + trailing CRLF
+	if (_current_pos + chunked_size + 2 > _messageBuffer.size())
+		return ""; // Not enough data yet, signal to wait
+
 	size_t posEndData = _messageBuffer.find("\r\n", _current_pos);
-	if (posEndData == std::string::npos)
-		return "";
-	if ((posEndData - _current_pos) != chunked_size)
-	{
-		std::cout << "\tposEndData: " << posEndData << " - _current_pos: " << _current_pos
-			<< " != chunked_size: " << chunked_size << std::endl;
-		std::cout << "\t=> " << posEndData - _current_pos << std::endl;
-		std::cout << "\tchunked_size & sizeof data dont match!" << std::endl;
-		return "";
+	if (posEndData == std::string::npos) {
+		std::cout << "\tNO CRLF!" << std::endl;
+		return ""; // CRLF not found, need more data
 	}
+
 	std::string data = _messageBuffer.substr(_current_pos, chunked_size);
 	_current_pos = posEndData + 2;
 	return data;
@@ -357,19 +372,17 @@ std::string	HttpRequest::chunkedData(size_t chunked_size)
 size_t	HttpRequest::chunkedSize()
 {
 	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::chunkedSize()" << std::endl;
+		std::cout << "\tHttpRequest::chunkedSize()" << std::endl;
 
 	size_t	posEndSize = _messageBuffer.find("\r\n", _current_pos);
 	if (posEndSize == std::string::npos)
-		return 0;
+		return (size_t)-1; // Signal: incomplete chunk header, need more data
 
 	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
-	std::cout << "\tchunked_sizeStr [\"" << sizeStr << "\"]" << std::endl;
-	std::cout << "\t -> converted to: << " << strtol(sizeStr.c_str(), NULL, 16) << std::endl;
+	size_t chunked_size = strtol(sizeStr.c_str(), NULL, 16);
+
 	_current_pos = posEndSize + 2;
-	// std::cout << "_messageBuffer[]: " << _messageBuffer[_current_pos] << std::endl;
-	return strtol(sizeStr.c_str(), NULL, 16);
-	// return 1;
+	return chunked_size;
 }
 
 /**
@@ -442,8 +455,10 @@ bool HttpRequest::createBodyParser()
 		std::cout << "Want to create FormParser" << std::endl;
 		_bodyParser = createFormParser();
 	}
-	else if (_contentData.type.size() > 0)
-		return setErrorCode(405); // was 400 but for tester -> 405
+	else
+		return false;
+	// else if (_contentData.type.size() > 0)
+		// return setErrorCode(405); // was 400 but for tester -> 405
 	return true;
 }
 
@@ -505,15 +520,16 @@ bool HttpRequest::validRequest()
 	else {
 		_host = it->second[0];
 	}
-	if (_requestLine.method == "POST")
-	{
-		it = _headers.find("content-length");
-		if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
-		{
-			_errorCode = 411;
-			return false;
-		}
-	}
+	// REMOVE to avoid 411 if not allowed Method
+	// if (_requestLine.method == "POST")
+	// {
+	// 	it = _headers.find("content-length");
+	// 	if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
+	// 	{
+	// 		_errorCode = 411;
+	// 		return false;
+	// 	}
+	// }
 	if (_errorCode != 0)
 	{
 		std::cout << "\t==> FALSE" << std::endl;
@@ -828,4 +844,16 @@ std::string &HttpRequest::getHost()
 std::string	HttpRequest::getFileExtension()
 {
 	return (_fileExtension);
+}
+
+void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
+{
+	_serverConfigs = serverConfigs;
+}
+
+bool	HttpRequest::hasBodyContentLength()
+{
+	if (_fullMessageBody.size() > 0)
+		return true;
+	return false;
 }
