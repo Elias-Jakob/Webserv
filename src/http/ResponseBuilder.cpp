@@ -1,5 +1,4 @@
 #include "ResponseBuilder.hpp"
-# include "cgi.hpp"
 
 // =========================================================================
 // Constructors & Destructor
@@ -34,7 +33,7 @@ std::string ResponseBuilder::response(t_executionResult result)
 	* @brief Builds the response if a Redirect is needed.
 */
 std::string	ResponseBuilder::redirectResponse(
-	t_executionResult *result, 
+	t_executionResult *result,
 	const std::string &redirectURL)
 {
 	if (BUILDER_PRINT)
@@ -53,24 +52,32 @@ std::string	ResponseBuilder::redirectResponse(
 */
 std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool &keepAlive)
 {
-	std::string	headers, body(cgiBody), contType, contLen;
-	std::stringstream	ss;
+	std::string	headers, body(cgiBody), status, contType, contLen;
+	size_t	headerEnd;
+	int	badStatus;
 
-	headers += cgi::checkForHeaders(body, "content-type: ");
-	// INFO: no content-type should be set if there none
-	// contType = cgi::checkForHeaders(body, "content-type: ");
-	// headers += (contType.empty()) ? "Content-Type: text/plain;charset=UTF-8\r\n" : contType; // TODO: is it correct to set this a default?
-	contLen = cgi::checkForHeaders(body, "content-length: ");
-	if (contLen.empty()) {
-		ss << body.size();
-		headers += "Content-Length: " + ss.str() + "\r\n";
-	} else headers += contLen;
+	status = cgi::checkForHeaders(body, "status: ");
+	if (status.empty())
+		status = "HTTP/1.1 200 OK\r\n";
+	else {
+		status = status.substr(status.find(" "));
+		badStatus = utils::strToInt(status);
+		if (badStatus >= HttpStatus::BAD_REQUEST)
+			return (this->errorResponseViaCode(badStatus));
+		status = "HTTP/1.1" + status;
+	}
+	headerEnd = body.find("\r\n\r\n");
+	if (headerEnd != std::string::npos) {
+		headers = body.substr(0, headerEnd + 2);
+		body.erase(0, headerEnd + 4);
+	}
+	contLen = cgi::checkForHeaders(headers, "content-length: ");
+	headers += (!contLen.empty()) ? contLen :
+		"Content-Length: " + utils::numToStr<size_t>(body.size()) + "\r\n";
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
 	headers += (keepAlive) ? "Connection: keep-alive\r\n\r\n" : "Connection: close\r\n\r\n";
-	body.append("\r\n");
-	// TODO: statusLine. its not check if the cgi is setting a status
-	return (this->buildFullResponse("HTTP/1.1 200 OK\r\n", headers, body));
+	return (this->buildFullResponse(status, headers, body));
 }
 
 /**

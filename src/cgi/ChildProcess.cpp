@@ -42,10 +42,9 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest *request)
 	this->envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
-	if (!request->getRequestBody().empty()) {
-		content_len << request->getRequestBody().size() + 1;
-		this->envs.push_back("CONTENT_LENGTH=" + content_len.str());
-	}
+	if (!request->getRequestBody().empty())
+		this->envs.push_back("CONTENT_LENGTH=" +
+			utils::numToStr(request->getRequestBody().size() + 1));
 	if (!request->getContentData().type.empty())
 		this->envs.push_back("CONTENT_TYPE=" + request->getContentData().type);
 	this->envs.push_back("REQUEST_METHOD=" + request->getMethod());

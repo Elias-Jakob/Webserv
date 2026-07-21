@@ -5,6 +5,7 @@
 # include "ClientConnection.hpp"
 # include "CGIError.hpp"
 # include "cgi.hpp"
+# include "utils.hpp"
 
 class CGIProcessLauncher
 {
