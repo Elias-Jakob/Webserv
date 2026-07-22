@@ -20,9 +20,9 @@ void	Server::handleOutgoing(int clientFd)
 	std::cout << "bytes sent: " << sentBytes << "\n==========\033[m" << std::endl;
 	// std::cout << "response_buffer: " << client.response_buffer << std::endl;
 	// Clean up: close connection and remove from tracking
-	if (client.keep_alive == false)
+	if (!client.keep_alive || client.timeout)
 	{
-		std::cout << "Client connection is not set to keep-alive, closing socket..." << std::endl;
+		std::cout << ((client.timeout) ? "Timeout: close client connection" : "Client connection is not set to keep-alive, closing socket...") << std::endl;
 		this->removeClient(client);
 		return;
 	}

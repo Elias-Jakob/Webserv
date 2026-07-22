@@ -45,10 +45,6 @@ void	Server::handleNewClient(int listenFd)
 
 void	Server::removeClient(ClientConnection &client)
 {
-	// if (client.cgiIn != -1)
-	// 	this->cgiPipes.erase(client.cgiIn);
-	// if (client.cgiOut != -1)
-	// 	this->cgiPipes.erase(client.cgiOut);
 	if (client.cgiPid != -1)
 		client.terminateCGIProcess(&(this->cgiPipes));
 	close(client.fd);
@@ -57,23 +53,26 @@ void	Server::removeClient(ClientConnection &client)
 
 void	Server::checkTimeouts()
 {
+	std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 	time_t	current = std::time(NULL);
 
-	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
-			it != this->clients.end(); ) {
-		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
+	while (it != this->clients.end()) {
+		// client timeout
+		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
 			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
-			this->removeClient((it++)->second);
-			continue ;
+			it->second.timeout = true;
+			if (it->second.cgiPid == -1) {
+				this->removeClient((it++)->second);
+				continue ;
+			}
+			this->cgiTimeoutResponse(it->second);
 		}
-		if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
+		// cgi timeout
+		else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
 			std::cout << "Terminating CGI process after timeout... client fd = " << it->first << std::endl;
-			it->second.terminateCGIProcess(&(this->cgiPipes));
-			it->second.response_buffer = it->second.responseBuilder->errorResponseViaCode(504);
-			it->second.state = SENDING_RESPONSE; // TODO: is setting the client state even necessary?
-			this->epoll.ctl(it->first, EPOLL_CTL_MOD, EPOLLOUT);
+			this->cgiTimeoutResponse(it->second);
 		}
-		++it;
+		it++;
 	}
 }
 

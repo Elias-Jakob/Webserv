@@ -25,7 +25,8 @@ ClientConnection::ClientConnection() :
 	cgiPid(-1),
 	cgiIn(-1),
 	cgiOut(-1),
-	cgiWrittenBytes(0)
+	cgiWrittenBytes(0),
+	timeout(false)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }

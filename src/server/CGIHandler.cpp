@@ -48,4 +48,11 @@ void	Server::handleCGIOutput(int fd)
 	}
 }
 
+void	Server::cgiTimeoutResponse(ClientConnection &client)
+{
+	client.terminateCGIProcess(&(this->cgiPipes));
+	client.response_buffer = client.responseBuilder->errorResponseViaCode(504);
+	client.state = SENDING_RESPONSE; // TODO: is setting the client state even necessary?
+	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+}
 
