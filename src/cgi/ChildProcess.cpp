@@ -1,6 +1,6 @@
 # include "CGIProcessLauncher.hpp"
 
-char	**CGIProcessLauncher::createArgv(ClientConnection &client)
+char	**CGIProcessLauncher::createArgv(const ClientConnection &client)
 {
 	std::string	file;
 	size_t	last_slash;
@@ -23,8 +23,9 @@ char	**CGIProcessLauncher::createArgv(ClientConnection &client)
 	return (cgi::getArray(args));
 }
 
-char	**CGIProcessLauncher::createEnvp(HttpRequest *request)
+char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 {
+	HttpRequest	*request = client.request;
 	std::ostringstream	content_len;
 	t_MultiStrMap	headers;
 	/*
@@ -71,15 +72,16 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest *request)
 	}
 	// These are still left on the todo side:
 	// "AUTH_TYPE"    | "PATH_INFO"   | "PATH_TRANSLATED" |
-	//                | "REMOTE_ADDR" | "REMOTE_HOST"     |
+	//                |               | "REMOTE_HOST"     |
 	// "REMOTE_IDENT" | "REMOTE_USER" |
 	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
+	this->envs.push_back("REMOTE_ADDR=" + client.remoteAddr);
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)
 		this->envs.push_back(cgi::toMetaFormat(it->first) + "=" + cgi::strJoin(it->second));
 	return (cgi::getArray(this->envs));
 }
 
-void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
+void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 {
 	// 1. create argv (with path to interpreter)
 	// 2. create envp
@@ -88,7 +90,7 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	std::string	cgiDir;
 
 	argv = this->createArgv(client);
-	envp = this->createEnvp(client.request);
+	envp = this->createEnvp(client);
 
 	cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
 	

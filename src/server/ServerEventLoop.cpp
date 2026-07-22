@@ -20,8 +20,9 @@ void	Server::handleNewClient(int listenFd)
 	fd = accept(listenFd, &clientAddr, &clientAddrLen);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
-	std::cout << "New client connected... socket file descriptor = " << fd << std::endl;
-	// TODO: check if FD_CLOEXEC works on linux
+	this->clients[fd].remoteAddr = utils::addrToStr(clientAddr);
+	std::cout << "New client connected... socket file descriptor = " << fd << " ip: " << this->clients[fd].remoteAddr << std::endl;
+	// TODO: remove F_SETFD FD_CLOEXEC?
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 		throw std::runtime_error(std::strerror(errno));
 
@@ -34,8 +35,6 @@ void	Server::handleNewClient(int listenFd)
 	this->clients[fd].responseBuilder = &(this->responseBuilder);
 	this->clients[fd].bytesSent = 0;
 	this->clients[fd]._listeningInterface = listenFdToInterface[listenFd];
-	// TODO: add converter function
-	// this->clients[fd].remoteAddr = 
 
 	this->clients[fd].request->setServerConfigs(clients[fd].executor->getServerConfigs());
 	// TODO: clean up

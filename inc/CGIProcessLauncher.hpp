@@ -30,10 +30,10 @@ class CGIProcessLauncher
 
 		// void	cleanUp(bool closeAll);
 		void	cleanUp(bool closeAll = true);
-		void	runChildProcess(ClientConnection &client);
+		void	runChildProcess(const ClientConnection &client);
 
-		char	**createArgv(ClientConnection &client);
-		char	**createEnvp(HttpRequest*	request);
+		char	**createArgv(const ClientConnection &client);
+		char	**createEnvp(const ClientConnection &client);
 };
 
 #endif

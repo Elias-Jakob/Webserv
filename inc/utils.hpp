@@ -4,6 +4,9 @@
 # include <string>
 # include <sstream>
 
+# include <sys/socket.h>
+# include <netinet/in.h>
+
 // WARNING: check if it's still alright to implement templated functions in the header. like here with numToStr
 namespace utils {
 	unsigned char	tolower(unsigned char c);
@@ -16,6 +19,7 @@ namespace utils {
 		ss << num;
 		return (ss.str());
 	}
+	std::string	addrToStr(struct sockaddr addr);
 }
 
 #endif // !UTILS_HPP
