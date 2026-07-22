@@ -28,7 +28,7 @@ SRC = src/http/ClientConnection.cpp \
 OBJDIR = obj
 INCDIR = ./inc
 OBJ = $(SRC:%.cpp=$(OBJDIR)/%.o)
-DEPS = $(OBJ:.o=:.d)
+DEPS = $(OBJ:.o=.d)
 
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -g
