@@ -10,7 +10,8 @@ void	Server::handleIncoming(int clientFd)
 	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
 	bytesRecv = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (bytesRecv == -1)
-		throw std::runtime_error(std::strerror(errno));
+		return ;
+		// throw std::runtime_error(std::strerror(errno));
 	else if (bytesRecv == 0)
 	{
 		// Client closed connection

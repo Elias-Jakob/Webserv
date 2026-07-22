@@ -10,7 +10,8 @@ void	Server::writeRequestBodyToCGI(int fd)
 		// TODO: handle the write (e.g. what should be done if the pipe is full and -1 is returned because the pipes fd is set to NONBLOCK)
 		writtenBytes = write(fd, requestBody.c_str(), requestBody.size());
 		if (writtenBytes == -1)
-			throw std::runtime_error("failed while writing to cgi pipe: " + std::string(std::strerror(errno)));
+			return ;
+			// throw std::runtime_error("failed while writing to cgi pipe: " + std::string(std::strerror(errno)));
 		caller.cgiWrittenBytes += writtenBytes;
 		if (caller.cgiWrittenBytes < requestBody.size())
 			return ;
@@ -29,7 +30,8 @@ void	Server::handleCGIOutput(int fd)
 
 	readBytes = read(fd, buf, sizeof(buf) - 1);
 	if (readBytes == -1) // handle
-		throw std::runtime_error(std::strerror(errno));
+		return ;
+		// throw std::runtime_error(std::strerror(errno));
 	else if (readBytes > 0)
 		caller.response_buffer.append(buf);
 	else {
