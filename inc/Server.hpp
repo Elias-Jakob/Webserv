@@ -67,6 +67,7 @@ class Server
 		void	removeClient(ClientConnection &client);
 		void	checkTimeouts();
 		void	cgiTimeoutResponse(ClientConnection &client);
+		void	awaitCGIProcesses();
 };
 
 #endif // !SERVER_HPP

@@ -25,7 +25,6 @@ void	Server::handleCGIOutput(int fd)
 {
 	char buf[1024] = { 0 };
 	ssize_t	readBytes;
-	int status;
 	ClientConnection	&caller = this->cgiPipes.at(fd);
 
 	readBytes = read(fd, buf, sizeof(buf) - 1);
@@ -35,18 +34,11 @@ void	Server::handleCGIOutput(int fd)
 	else if (readBytes > 0)
 		caller.response_buffer.append(buf);
 	else {
-		// TODO: handle zombie processes
-		waitpid(caller.cgiPid, &status, WNOHANG);
-		if ((WIFEXITED(status) && WEXITSTATUS(status) == 1) ||
-				caller.response_buffer.empty())
+		if (caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
-		else
-			caller.response_buffer = this->responseBuilder.cgiResponse(caller.response_buffer, caller.keep_alive);
-		caller.state = SENDING_RESPONSE;
-		this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 		close(fd);
 		this->cgiPipes.erase(fd);
-		caller.cgiPid = caller.cgiOut = -1;
+		caller.cgiOut = -1;
 	}
 }
 
@@ -56,5 +48,29 @@ void	Server::cgiTimeoutResponse(ClientConnection &client)
 	client.response_buffer = client.responseBuilder->errorResponseViaCode(504);
 	client.state = SENDING_RESPONSE; // TODO: is setting the client state even necessary?
 	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+}
+
+/**
+	* @brief Check if any cgi process exited
+*/
+void	Server::awaitCGIProcesses()
+{
+	int status;
+
+	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
+			it != this->clients.end(); ++it) {
+		if (it->second.cgiPid == -1) continue ;
+		if (waitpid(it->second.cgiPid, &status, WNOHANG) > 0) {
+			if (WIFEXITED(status)) {
+				it->second.response_buffer = (WEXITSTATUS(status) != 0) ?
+					this->responseBuilder.errorResponseViaCode(500) :
+					this->responseBuilder.cgiResponse(it->second.response_buffer, it->second.keep_alive);
+			} else if (WIFSIGNALED(status))
+				it->second.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+			it->second.state = SENDING_RESPONSE;
+			this->epoll.ctl(it->second.fd, EPOLL_CTL_MOD, EPOLLOUT);
+			it->second.cgiPid = -1;
+		}
+	}
 }
 

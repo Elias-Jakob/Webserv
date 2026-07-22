@@ -11,7 +11,6 @@ int	main(int argc, char *argv[])
 {
 	ConfigFileParser	conf;
 
-	// TODO: handle signal SIGINT while reading conf file
 	try {
 		if (argc != 2)
 			throw std::invalid_argument("Error: wrong number of arguments...\n"

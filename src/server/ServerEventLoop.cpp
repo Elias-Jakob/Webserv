@@ -112,5 +112,7 @@ void	Server::eventLoop()
 			}
 		}
 		this->checkTimeouts();
+		// TODO: refactor integrate awaitCGIProcesses into checkTimeouts
+		this->awaitCGIProcesses();
 	}
 }

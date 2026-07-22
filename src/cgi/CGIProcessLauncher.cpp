@@ -44,6 +44,7 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		throw CGIError(std::strerror(errno));
 	}
 	else if (pid) {
+		std::cout << "Child process id = " << pid << std::endl;
 		// 1. add to cgi proce 1. add to cgi process info to processes list
 		// 2. add cgi stdout to list of interest of epoll
 		// 3. write request body into the cgi process
