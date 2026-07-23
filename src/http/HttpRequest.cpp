@@ -53,7 +53,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
 	
 	_messageBuffer += partialMessage;
-	// std::cout << _messageBuffer << std::endl;
+	// std::cout << "[\n" << partialMessage << "\n]" << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -73,8 +73,6 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
-					// t_Location *loc = NULL;
-					// loc = availableLocation(_requestLine);
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -245,14 +243,18 @@ bool HttpRequest::parseHeaderLine()
 	_current_pos = endOfHeaders + 4;
 
 	findLocation(); // find corresponding t_Locatio
+	if (isAllowedMethod())
+		std::cout << "\tMethod is allowed!" << std::endl;
+	else
+		std::cout << "\tMethod not allowed!" << std::endl;
+
 	return true;
 }
 
 void	HttpRequest::findLocation()
 {
-	if (PRINT_REQUEST) {
+	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::findLocation()" << std::endl;
-	}
 
 	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
 	t_Location	*loc;
@@ -261,9 +263,9 @@ void	HttpRequest::findLocation()
 		if (!isListeningTo(i, _listeningInterface))
 			continue ;
 		for (size_t k = 0; k < pathParts.size(); k++) {
-			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {	
-				std::cout << pathParts[k] << " == " 
-					<< _serverConfigs[i].locations[j].path << std::endl;
+			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {
+				// std::cout << pathParts[k] << " == " 
+				// 	<< _serverConfigs[i].locations[j].path << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
 				if (_serverConfigs[i].locations[j].path == pathParts[k])
@@ -344,6 +346,16 @@ std::vector<std::string> HttpRequest::splitPath(const std::string &path)
 	return parts;
 }
 
+bool	HttpRequest::isAllowedMethod()
+{
+	for (size_t i = 0; i < _locationObj->allowedMethods.size(); i++) {
+		if (_requestLine.method == _locationObj->allowedMethods[i])
+			return true;
+	}
+	return false;
+}
+
+
 /**
 	* @brief Extracts the message-body and parsses into std::string.
 	* @return false, if not received full body.
@@ -418,27 +430,35 @@ bool	HttpRequest::unchunkBody()
 	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::unchunkBody()" << std::endl;	
 	size_t	posEnd = _messageBuffer.find("\r\n", _current_pos);
-	if (posEnd == std::string::npos)
+	if (posEnd == std::string::npos) {
+		std::cout << "\tposEnd == std::string::npos" << std::endl;
 		return false;
-
+	}
 	bool	done = false;
 	while (done == false) {
+		size_t	pos_cpy = _current_pos;
 		size_t	chunked_size = chunkedSize();
+		std::cout << "\tchunked_size = " << chunked_size << std::endl;
 		if (chunked_size == 0) {
 			done = true;
 			std::cout << "unchunking done..." << std::endl;
 			break ;
 		}
 		// Return false if incomplete chunk header
-		if (chunked_size == (size_t)-1) // signal for incomplete data
+		if (chunked_size == (size_t)-1)	 // signal for incomplete data
+		{
+			std::cout << "\tIncomplete chunk header" << std::endl;
 			return false;
-
+		}
 		std::string	chunked_data = chunkedData(chunked_size);
 
 		// If empty string AND size != 0, not enough data yet
 		if (chunked_data.empty() && chunked_size != 0)
+		{
+			_current_pos = pos_cpy;
+			std::cout << "\tNot enough data yet." << std::endl;
 			return false; // wait for more data from network
-		
+		}
 		if (chunked_data.size() > MAX_BODY_SIZE) { // total size check
 			_state = PARSING_ERROR;
 			return setErrorCode(413);
@@ -716,7 +736,7 @@ void HttpRequest::printRequest(void)
 	}
 	std::cout << "}" << std::endl;
 	std::cout << "Request-Body:\n{" << std::endl;
-	std::cout << _fullMessageBody << "\n}" << std::endl;
+	// std::cout << _fullMessageBody << "\n}" << std::endl;
 	std::cout << "====================" << std::endl;
 }
 

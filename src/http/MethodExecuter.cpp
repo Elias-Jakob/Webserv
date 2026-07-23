@@ -305,6 +305,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 						if (isAllowedMethod(&_serverConfigs[i].locations[j], methodName)) {
 							loc = &_serverConfigs[i].locations[j];
 							std::cout << "set CGI path" << std::endl;
+							std::cout << "extensions.size() = " << loc->cgiExtensions.size() << std::endl;
 						}
 					}
 					else {

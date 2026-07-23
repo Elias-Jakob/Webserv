@@ -94,6 +94,7 @@ class HttpRequest
 		void	findLocation();
 		bool	isListeningTo(size_t i, const std::string &host);
 		std::vector<std::string>	splitPath(const std::string &path);
+		bool	isAllowedMethod();
 		
 
 	protected:
