@@ -50,12 +50,14 @@ void	Server::removeClient(ClientConnection &client)
 	this->clients.erase(client.fd);
 }
 
-void	Server::checkTimeouts()
+void	Server::checkOnClients()
 {
 	std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 	time_t	current = std::time(NULL);
 
 	while (it != this->clients.end()) {
+		if (it->second.cgiPid != -1)
+			this->checkProcessStatus(it->second);
 		// client timeout
 		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
 			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
@@ -77,6 +79,7 @@ void	Server::checkTimeouts()
 
 void	Server::eventLoop()
 {
+	// TODO: refactor.
 	int	nFds;
 	struct epoll_event	events[EPOLL_MAX_EVENTS];
 
@@ -95,6 +98,7 @@ void	Server::eventLoop()
 				continue;
 			}
 			if (this->clients.find(events[i].data.fd) != this->clients.end()) {
+				// TODO: not only check EPOLLHUP and EPOLLERR if its a client
 				if (events[i].events & (EPOLLHUP | EPOLLERR)) { // client was disconnected
 					this->removeClient(this->clients.at(events[i].data.fd));
 					continue;
@@ -111,8 +115,6 @@ void	Server::eventLoop()
 					this->handleCGIOutput(events[i].data.fd);
 			}
 		}
-		this->checkTimeouts();
-		// TODO: refactor integrate awaitCGIProcesses into checkTimeouts
-		this->awaitCGIProcesses();
+		this->checkOnClients();
 	}
 }

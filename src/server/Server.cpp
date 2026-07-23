@@ -9,14 +9,13 @@ Server::~Server()
 	for (std::vector<int>::iterator	it = this->listenSockets.begin();
 			it != this->listenSockets.end(); ++it)
 		if (*it != -1) close(*it);
-	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
-			it != this->clients.end(); ++it)
-		if (it->first != -1) close(it->first);
+	// for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
+	// 		it != this->clients.end(); ++it)
+	// 	if (it->first != -1) close(it->first);
 }
 
 void	Server::setupSocketAddr(struct addrinfo *res, int &fd)
 {
-	fd = -1;
 	for (struct addrinfo	*cur = res; cur != NULL; cur = cur->ai_next) {
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (fd == -1) {
@@ -64,6 +63,7 @@ bool	Server::initListenSockets()
 			for (std::vector<std::string>::const_iterator	port = interface->second.begin();
 					port != interface->second.end(); ++port) {
 				res = NULL;
+				fd = -1;
 				gaiErr = getaddrinfo(interface->first.c_str(), (*port).c_str(), &hints, &res);
 				try {
 					if (gaiErr != 0)

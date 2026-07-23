@@ -51,26 +51,22 @@ void	Server::cgiTimeoutResponse(ClientConnection &client)
 }
 
 /**
-	* @brief Check if any cgi process exited
+	* @brief Check if cgi process exited
 */
-void	Server::awaitCGIProcesses()
+void	Server::checkProcessStatus(ClientConnection &client)
 {
 	int status;
 
-	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
-			it != this->clients.end(); ++it) {
-		if (it->second.cgiPid == -1) continue ;
-		if (waitpid(it->second.cgiPid, &status, WNOHANG) > 0) {
-			if (WIFEXITED(status)) {
-				it->second.response_buffer = (WEXITSTATUS(status) != 0) ?
-					this->responseBuilder.errorResponseViaCode(500) :
-					this->responseBuilder.cgiResponse(it->second.response_buffer, it->second.keep_alive);
-			} else if (WIFSIGNALED(status))
-				it->second.response_buffer = this->responseBuilder.errorResponseViaCode(500);
-			it->second.state = SENDING_RESPONSE;
-			this->epoll.ctl(it->second.fd, EPOLL_CTL_MOD, EPOLLOUT);
-			it->second.cgiPid = -1;
-		}
+	if (waitpid(client.cgiPid, &status, WNOHANG) > 0) {
+		if (WIFEXITED(status)) {
+			client.response_buffer = (WEXITSTATUS(status) != 0) ?
+				this->responseBuilder.errorResponseViaCode(500) :
+				this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+		} else if (WIFSIGNALED(status))
+			client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+		client.state = SENDING_RESPONSE;
+		this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+		client.cgiPid = -1;
 	}
 }
 

@@ -92,7 +92,8 @@ void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 	argv = this->createArgv(client);
 	envp = this->createEnvp(client);
 
-	cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
+	if (client.cgi_path.find("/") != std::string::npos)
+		cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
 	
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
@@ -101,8 +102,8 @@ void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 	}
 	close(this->stdinPipe[0]);
 	close(this->stdoutPipe[1]);
-	int	success;
-	if ((success = chdir(cgiDir.c_str())) != -1)
+	int	success = 0;
+	if (cgiDir.empty() || (success = chdir(cgiDir.c_str())) != -1)
 		execve(argv[0], argv, envp);
 	delete[] argv;
 	delete[] envp;
