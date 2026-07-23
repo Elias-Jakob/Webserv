@@ -13,6 +13,8 @@
 # include "HttpStatus.hpp"
 # include "ConfigFileParser.hpp"
 # include "HttpRequest.hpp"
+# include "cgi.hpp"
+# include "utils.hpp"
 /**
 	* @class ResponseBuilder
 	* @brief Builds the full Http-Response to a string.
@@ -27,7 +29,7 @@ class ResponseBuilder
 		std::string errorResponse(HttpRequest *request, const std::string &listeningInterface);
 		std::string	errorResponseViaCode(int errorCode);
 		std::string	errorResponseViaResult(t_executionResult result, const std::string &listeningInterface);
-		std::string cgiResponse(const std::string &cgiBody);
+		std::string cgiResponse(const std::string &cgiBody, const bool &keepAlive);
 		std::string	redirectResponse(
 						t_executionResult *result, 
 						const std::string &redirectURL);
@@ -57,7 +59,6 @@ class ResponseBuilder
 		bool		availableErrorPage(int errorCode, std::map<int, std::string>::iterator *itErrorPage, const std::string &listeningInterface);
 		std::string	buildBody(int errorCode, const std::string &codeStr, const std::string &phrase, const std::string &listeningInterface);
 		std::string getErrorPage(std::map<int, std::string>::iterator itErrorPage);
-
 };
 
 #endif

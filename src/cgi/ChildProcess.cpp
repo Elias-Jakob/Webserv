@@ -1,6 +1,6 @@
 # include "CGIProcessLauncher.hpp"
 
-char	**CGIProcessLauncher::createArgv(ClientConnection &client)
+char	**CGIProcessLauncher::createArgv(const ClientConnection &client)
 {
 	std::string	file;
 	size_t	last_slash;
@@ -12,13 +12,20 @@ char	**CGIProcessLauncher::createArgv(ClientConnection &client)
 	last_slash = file.find_last_of("/");
 	if (last_slash != std::string::npos)
 		file = file.substr(last_slash + 1);
-	this->args.push_back("/usr/bin/python3");
-	this->args.push_back(file);
+	if (client.request->getFileExtension() == ".py")
+		this->args.push_back("/usr/bin/python3");
+	else if (client.request->getFileExtension() == ".php")
+		this->args.push_back("/usr/bin/php-cgi");
+	else
+		this->args.push_back("./" + file);
+	if (client.request->getFileExtension() == ".py" || client.request->getFileExtension() == ".php")
+		this->args.push_back(file);
 	return (cgi::getArray(args));
 }
 
-char	**CGIProcessLauncher::createEnvp(HttpRequest* request)
+char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 {
+	HttpRequest	*request = client.request;
 	std::ostringstream	content_len;
 	t_MultiStrMap	headers;
 	/*
@@ -32,25 +39,24 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest* request)
 													"SERVER_PORT" | "SERVER_PROTOCOL" |
 													"SERVER_SOFTWARE"
 	*/
-	// Done count = 9; total = 17
+	// Done count = 10; total = 17
 	this->envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
-	if (!request->getRequestBody().empty()) {
-		content_len << request->getRequestBody().size() + 1;
-		this->envs.push_back("CONTENT_LENGTH=" + content_len.str());
-	}
+	if (!request->getRequestBody().empty())
+		this->envs.push_back("CONTENT_LENGTH=" +
+			utils::numToStr(request->getRequestBody().size() + 1));
 	if (!request->getContentData().type.empty())
 		this->envs.push_back("CONTENT_TYPE=" + request->getContentData().type);
 	this->envs.push_back("REQUEST_METHOD=" + request->getMethod());
 	this->envs.push_back("SCRIPT_NAME=" + request->getURI());
 
 	// TODO: QUERY_STRING
-	// this->envs.push_back("QUERY_STRING=" + request->getQuery());
+	this->envs.push_back("QUERY_STRING=" + request->getRequestLine().queryStr);
 	// TODO: PATH_INFO & PATH_TRANSLATED
 	// PATH_INFO = the path that may follow after the cgi script; PATH_TRANSLATED = PATH_INFO mapped to the real filesystem path
 	this->envs.push_back("PATH_INFO=");
-	this->envs.push_back("PATH_TRANSLATED=");
+	// this->envs.push_back("PATH_TRANSLATED=\"\"");
 	//
 	headers = request->getRequestHeaders();
 	if (!headers["host"].empty()) {
@@ -60,17 +66,22 @@ char	**CGIProcessLauncher::createEnvp(HttpRequest* request)
 		if (portPos != std::string::npos)
 			this->envs.push_back("SERVER_PORT=" + host.substr(portPos + 1));
 	}
+	if (request->getFileExtension() == ".php") {
+		this->envs.push_back("REDIRECT_STATUS=200");
+		this->envs.push_back("SCRIPT_FILENAME=" + this->args.back());
+	}
 	// These are still left on the todo side:
 	// "AUTH_TYPE"    | "PATH_INFO"   | "PATH_TRANSLATED" |
-	// "QUERY_STRING" | "REMOTE_ADDR" | "REMOTE_HOST"     |
+	//                |               | "REMOTE_HOST"     |
 	// "REMOTE_IDENT" | "REMOTE_USER" |
 	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
+	this->envs.push_back("REMOTE_ADDR=" + client.remoteAddr);
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)
 		this->envs.push_back(cgi::toMetaFormat(it->first) + "=" + cgi::strJoin(it->second));
 	return (cgi::getArray(this->envs));
 }
 
-void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
+void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 {
 	// 1. create argv (with path to interpreter)
 	// 2. create envp
@@ -79,21 +90,23 @@ void	CGIProcessLauncher::runChildProcess(ClientConnection &client)
 	std::string	cgiDir;
 
 	argv = this->createArgv(client);
-	envp = this->createEnvp(client.request);
+	envp = this->createEnvp(client);
 
 	cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
 	
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
 		this->cleanUp();
-		throw std::runtime_error("CGI process failed: " + std::string(std::strerror(errno)));
+		throw std::runtime_error("CGI process failed dup2: " + std::string(std::strerror(errno)));
 	}
 	close(this->stdinPipe[0]);
 	close(this->stdoutPipe[1]);
-	if (chdir(cgiDir.c_str()) != -1)
+	int	success;
+	if ((success = chdir(cgiDir.c_str())) != -1)
 		execve(argv[0], argv, envp);
 	delete[] argv;
 	delete[] envp;
 	this->cleanUp();
-	throw std::runtime_error("CGI process failed: " + std::string(std::strerror(errno)));
+	std::cerr << "cgiDir: " << cgiDir << " " << success << std::endl;
+	throw std::runtime_error("CGI process failed execve: " + std::string(std::strerror(errno)));
 }

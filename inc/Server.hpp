@@ -3,6 +3,7 @@
 
 # include "ConfigFileParser.hpp"
 # include "Epoll.hpp"
+# include "utils.hpp"
 # include "ClientConnection.hpp"
 # include "MethodExecuter.hpp"
 # include "CGIProcessLauncher.hpp"
@@ -64,7 +65,9 @@ class Server
 		void	handleCGIOutput(int fd);
 		void	writeRequestBodyToCGI(int fd);
 		void	removeClient(ClientConnection &client);
-		void	timeoutInactiveClients();
+		void	checkTimeouts();
+		void	cgiTimeoutResponse(ClientConnection &client);
+		void	awaitCGIProcesses();
 };
 
 #endif // !SERVER_HPP

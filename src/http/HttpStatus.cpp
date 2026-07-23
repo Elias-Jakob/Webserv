@@ -29,6 +29,7 @@ std::map<int, std::string> HttpStatus::initStatusMap()
 	// 5xx Server Errors
 	phrases[500] = "Internal Server Error";
 	phrases[501] = "Not Implemented";
+	phrases[504] = "Gateway Timeout";
 	phrases[505] = "HTTP Version Not Supported";
 
 	phrases[601] = "none";

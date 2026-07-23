@@ -15,11 +15,11 @@ int	main(int argc, char *argv[])
 		if (argc != 2)
 			throw std::invalid_argument("Error: wrong number of arguments...\n"
 				"Expected usage: ./webserv <webserver.conf>");
-		Server	serv(conf.parseFile(argv[1]));
 		// TODO: signal
 		if (signal(SIGINT, &sigIntHandler) == SIG_ERR)
 			throw std::runtime_error(std::strerror(errno));
 		//
+		Server	serv(conf.parseFile(argv[1]));
 		serv.serverStartup();
 	}
 	catch (const std::exception &e) {

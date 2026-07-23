@@ -29,9 +29,7 @@ void	CGIProcessLauncher::cleanUp(bool closeAll)// = true)
 
 void	CGIProcessLauncher::newProcess(ClientConnection &client)
 {
-	// TODO:
-	// 1. just a thought: is it viable to just use one pipe for in and out? if not why?
-	// 2. is it necessary to set the in/out ends to non blocking?
+	client.cgiStartTime = std::time(NULL);
 	if (pipe(this->stdinPipe) == -1 || fcntl(this->stdinPipe[1], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1)
 		throw CGIError(std::strerror(errno));
@@ -46,6 +44,7 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		throw CGIError(std::strerror(errno));
 	}
 	else if (pid) {
+		std::cout << "Child process id = " << pid << std::endl;
 		// 1. add to cgi proce 1. add to cgi process info to processes list
 		// 2. add cgi stdout to list of interest of epoll
 		// 3. write request body into the cgi process

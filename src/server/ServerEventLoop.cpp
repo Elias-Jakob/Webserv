@@ -14,13 +14,15 @@
 void	Server::handleNewClient(int listenFd)
 {
 	int	fd;
-	// struct epoll_event	epEvent;
+	struct sockaddr	clientAddr;
+	socklen_t	clientAddrLen = sizeof(clientAddr);
 
-	fd = accept(listenFd, NULL, NULL);
+	fd = accept(listenFd, &clientAddr, &clientAddrLen);
 	if (fd == -1)
 		throw std::runtime_error(std::strerror(errno));
-	std::cout << "New client connected... socket file descriptor = " << fd << std::endl;
-	// TODO: check if FD_CLOEXEC works on linux
+	this->clients[fd].remoteAddr = utils::addrToStr(clientAddr);
+	std::cout << "New client connected... socket file descriptor = " << fd << " ip: " << this->clients[fd].remoteAddr << std::endl;
+	// TODO: remove F_SETFD FD_CLOEXEC?
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 		throw std::runtime_error(std::strerror(errno));
 
@@ -41,27 +43,34 @@ void	Server::handleNewClient(int listenFd)
 
 void	Server::removeClient(ClientConnection &client)
 {
-	// if (client.cgiIn != -1)
-	// 	this->cgiPipes.erase(client.cgiIn);
-	// if (client.cgiOut != -1)
-	// 	this->cgiPipes.erase(client.cgiOut);
 	if (client.cgiPid != -1)
 		client.terminateCGIProcess(&(this->cgiPipes));
 	close(client.fd);
 	this->clients.erase(client.fd);
 }
 
-void	Server::timeoutInactiveClients()
+void	Server::checkTimeouts()
 {
+	std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 	time_t	current = std::time(NULL);
 
-	for (std::map<int, ClientConnection>::iterator	it = this->clients.begin();
-			it != this->clients.end(); ) {
-		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT) {
+	while (it != this->clients.end()) {
+		// client timeout
+		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
 			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
-			this->removeClient((it++)->second);
+			it->second.timeout = true;
+			if (it->second.cgiPid == -1) {
+				this->removeClient((it++)->second);
+				continue ;
+			}
+			this->cgiTimeoutResponse(it->second);
 		}
-		else ++it;
+		// cgi timeout
+		else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
+			std::cout << "Terminating CGI process after timeout... client fd = " << it->first << std::endl;
+			this->cgiTimeoutResponse(it->second);
+		}
+		it++;
 	}
 }
 
@@ -101,6 +110,8 @@ void	Server::eventLoop()
 					this->handleCGIOutput(events[i].data.fd);
 			}
 		}
-		this->timeoutInactiveClients();
+		this->checkTimeouts();
+		// TODO: refactor integrate awaitCGIProcesses into checkTimeouts
+		this->awaitCGIProcesses();
 	}
 }

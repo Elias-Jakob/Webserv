@@ -33,7 +33,7 @@ std::string ResponseBuilder::response(t_executionResult result)
 	* @brief Builds the response if a Redirect is needed.
 */
 std::string	ResponseBuilder::redirectResponse(
-	t_executionResult *result, 
+	t_executionResult *result,
 	const std::string &redirectURL)
 {
 	if (BUILDER_PRINT)
@@ -50,23 +50,34 @@ std::string	ResponseBuilder::redirectResponse(
 /**
 	* @brief Builds the Response after a cgi-execution.
 */
-std::string ResponseBuilder::cgiResponse(const std::string &cgiBody)
+std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool &keepAlive)
 {
-	std::string resp;
-	std::string	statusLine = "HTTP/1.1 200 OK\r\n";
-	
-	std::stringstream	ss;
-	ss << cgiBody.size();
+	std::string	headers, body(cgiBody), status, contType, contLen;
+	size_t	headerEnd;
+	int	badStatus;
 
-	statusLine = "HTTP/1.1 200 OK\r\n";
-
-	std::string headers = "Content-Length: " + ss.str() + "\r\n";
+	status = cgi::checkForHeaders(body, "status: ");
+	if (status.empty())
+		status = "HTTP/1.1 200 OK\r\n";
+	else {
+		status = status.substr(status.find(" "));
+		badStatus = utils::strToInt(status);
+		if (badStatus >= HttpStatus::BAD_REQUEST)
+			return (this->errorResponseViaCode(badStatus));
+		status = "HTTP/1.1" + status;
+	}
+	headerEnd = body.find("\r\n\r\n");
+	if (headerEnd != std::string::npos) {
+		headers = body.substr(0, headerEnd + 2);
+		body.erase(0, headerEnd + 4);
+	}
+	contLen = cgi::checkForHeaders(headers, "content-length: ");
+	headers += (!contLen.empty()) ? contLen :
+		"Content-Length: " + utils::numToStr<size_t>(body.size()) + "\r\n";
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
-	headers+= "Connection: keep-alive\r\n\r\n";
-	
-	resp = buildFullResponse(statusLine, headers, cgiBody);
-	return resp;
+	headers += (keepAlive) ? "Connection: keep-alive\r\n\r\n" : "Connection: close\r\n\r\n";
+	return (this->buildFullResponse(status, headers, body));
 }
 
 /**

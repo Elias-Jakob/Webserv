@@ -132,6 +132,7 @@ class HttpRequest
 		std::string							&getURI();
 		std::string							&getHost();
 		std::string							getRedirectLocation();
+		std::string							getFileExtension();
 
 		bool								hasBodyContentLength();
 		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);

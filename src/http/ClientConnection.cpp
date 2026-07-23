@@ -21,10 +21,12 @@ ClientConnection::ClientConnection() :
 	responseBuilder(NULL),
 	keep_alive(false),
 	inactiveTime(std::time(NULL)),
+	cgiStartTime(0),
 	cgiPid(-1),
 	cgiIn(-1),
 	cgiOut(-1),
-	cgiWrittenBytes(0)
+	cgiWrittenBytes(0),
+	timeout(false)
 {
 	std::cout << "ClientConnection created" << std::endl;
 }
@@ -103,8 +105,8 @@ void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgi
 	
 	kill(this->cgiPid, SIGKILL);
 	waitpid(this->cgiPid, &status, WNOHANG);
-	close(this->cgiIn);
-	close(this->cgiOut);
+	if (this->cgiIn != -1) close(this->cgiIn);
+	if (this->cgiOut != -1) close(this->cgiOut);
 	if (cgiPipes) {
 		if (this->cgiIn != -1)
 			cgiPipes->erase(this->cgiIn);
