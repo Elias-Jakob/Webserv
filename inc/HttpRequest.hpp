@@ -15,6 +15,7 @@
 # include "structs.h"
 # include "print_controls.hpp"
 # include "ConfigFileParser.hpp"
+// # include "MethodExecuter.hpp"
 
 typedef struct	s_query
 {
@@ -63,9 +64,10 @@ class HttpRequest
 		int				_errorCode;
 		std::string		_fileExtension;
 		std::string		_host;
+		// SERVER CONFIGURATIONS
 		std::vector<t_Configs>	_serverConfigs;
-
-
+		t_Location		*_locationObj;
+		std::string		_listeningInterface;
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -82,13 +84,17 @@ class HttpRequest
 		void	setQueryPairs(const std::string &queryStr);
 		void	setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end);
 		void	extractFileExtension();
+		
+		// CHUNKED ENDODING
 		bool	unchunkBody(); // new
 		size_t	chunkedSize();
 		std::string	chunkedData(size_t chunked_size);
-		// bool	isAllowedMethod(t_Location *location, const std::string &method);
-		// t_Location	*availableLocation(const std::string &path, const std::string &listeningInterface);
-		// std::vector<std::string> splitPath(const std::string &path);
-		// bool	isListening(size_t i, const std::string &listeningInterface);
+
+		// SERVER LOCATION_OBJ
+		void	findLocation();
+		bool	isListeningTo(size_t i, const std::string &host);
+		std::vector<std::string>	splitPath(const std::string &path);
+		bool	isAllowedMethod();
 		
 
 	protected:
@@ -129,7 +135,7 @@ class HttpRequest
 		std::string							getFileExtension();
 
 		bool								hasBodyContentLength();
-		void	setServerConfigs(std::vector<t_Configs> _serverConfigs);
+		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);
 		// OUTPUT
 		void	printRequest(void);
 };

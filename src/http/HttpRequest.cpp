@@ -15,7 +15,8 @@ HttpRequest::HttpRequest():
 	_state(PARSING_REQUEST_LINE), 
 	_current_pos(0),
 	_bodyParser(NULL),
-	_errorCode(0)
+	_errorCode(0),
+	_locationObj(NULL)
 {}
 
 /**
@@ -28,6 +29,8 @@ HttpRequest::~HttpRequest()
 		delete _bodyParser;
 		_bodyParser = NULL;
 	}
+	if (_locationObj)
+		_locationObj = NULL;
 }
 
 // =========================================================================
@@ -48,10 +51,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	// std::cout << partialMessage << std::endl;
+	
 	_messageBuffer += partialMessage;
-	// std::cout << _messageBuffer << std::endl;
-	// std::cout << _state << std::endl;
+	// std::cout << "[\n" << partialMessage << "\n]" << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -71,8 +73,6 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
-					// t_Location *loc = NULL;
-					// loc = availableLocation(_requestLine);
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
@@ -230,6 +230,8 @@ bool HttpRequest::parseHeaderLine()
             std::string value = line.substr(valueStart);
 			// (key = host || content-length) only one value allowed -> bad request(400).
 			addHeader(key, value);
+			if (key == "host")
+				_host = value;
 		}
 		else
 		{
@@ -239,8 +241,120 @@ bool HttpRequest::parseHeaderLine()
         _current_pos = lineEnd + 2;
     }
 	_current_pos = endOfHeaders + 4;
+
+	findLocation(); // find corresponding t_Locatio
+	if (isAllowedMethod())
+		std::cout << "\tMethod is allowed!" << std::endl;
+	else
+		std::cout << "\tMethod not allowed!" << std::endl;
+
 	return true;
 }
+
+void	HttpRequest::findLocation()
+{
+	if (PRINT_REQUEST)
+		std::cout << "HttpRequest::findLocation()" << std::endl;
+
+	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
+	t_Location	*loc;
+	t_Location	*defLoc;
+	for (size_t i = 0; i < _serverConfigs.size(); i++) {
+		if (!isListeningTo(i, _listeningInterface))
+			continue ;
+		for (size_t k = 0; k < pathParts.size(); k++) {
+			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {
+				// std::cout << pathParts[k] << " == " 
+				// 	<< _serverConfigs[i].locations[j].path << std::endl;
+				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
+					defLoc = &_serverConfigs[i].locations[j];
+				if (_serverConfigs[i].locations[j].path == pathParts[k])
+				{
+					loc = &_serverConfigs[i].locations[j];
+					std::cout << "location: " << _serverConfigs[i].locations[j].path
+						<< " => " << pathParts[k] << " => " 
+						<< _serverConfigs[i].locations[j].root << std::endl;
+				}
+			}
+		}
+	}
+	if (!loc && defLoc)
+		loc = defLoc;
+	if (loc != NULL) // print result
+		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
+	else
+		std::cout << "\t ==> location NULL" << std::endl;
+	_locationObj = loc;
+	// return loc;
+}
+
+
+bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
+{
+	std::cout << "HttpRequest::isListening()\n\tIP:PORT: " << listeningInterface << std::endl;
+	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
+	{
+		std::cout << "\t" << _serverConfigs[i].listenInterfaces[i_ip] << std::endl;
+		if (listeningInterface == _serverConfigs[i].listenInterfaces[i_ip])
+		{
+			std::cout << "isListening() ==> TRUE" << std::endl;
+			return true;
+		}
+	}
+	std::cout << "isListening() ==> FALSE" << std::endl;
+	return false;
+}
+/**
+	* @brief splits the path at every '/' and stores in vector.
+	* @param path -> the resource path.
+	* @return vector of strings with the subpaths.
+*/
+std::vector<std::string> HttpRequest::splitPath(const std::string &path)
+{
+	std::cout << "MethodExecuter::splitPath()" << std::endl;
+	std::vector<std::string>	parts;
+	std::string	temp;
+	size_t	start = 0;
+	size_t	end = 0;
+
+	for (size_t i = 0; i < path.size(); i++)
+	{
+		if (path[i] == '/' && i == 0)
+		{
+			end = i+1;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			// start = end;
+		}
+		else if ((path[i] == '/' || path[i] == '.') && i > 0)
+		{
+			end = i;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			start = end;
+		}
+		else if (i + 1 == path.size())
+		{
+			end = i+1;
+			temp = path.substr(start, end - start);
+			parts.push_back(temp);
+			break ;
+		}
+	}
+	for (size_t i = 0; i < parts.size(); i++) // print parts
+		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
+	return parts;
+}
+
+bool	HttpRequest::isAllowedMethod()
+{
+	for (size_t i = 0; i < _locationObj->allowedMethods.size(); i++) {
+		if (_requestLine.method == _locationObj->allowedMethods[i])
+			return true;
+	}
+	return false;
+}
+
 
 /**
 	* @brief Extracts the message-body and parsses into std::string.
@@ -316,27 +430,35 @@ bool	HttpRequest::unchunkBody()
 	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::unchunkBody()" << std::endl;	
 	size_t	posEnd = _messageBuffer.find("\r\n", _current_pos);
-	if (posEnd == std::string::npos)
+	if (posEnd == std::string::npos) {
+		std::cout << "\tposEnd == std::string::npos" << std::endl;
 		return false;
-
+	}
 	bool	done = false;
 	while (done == false) {
+		size_t	pos_cpy = _current_pos;
 		size_t	chunked_size = chunkedSize();
+		std::cout << "\tchunked_size = " << chunked_size << std::endl;
 		if (chunked_size == 0) {
 			done = true;
 			std::cout << "unchunking done..." << std::endl;
 			break ;
 		}
 		// Return false if incomplete chunk header
-		if (chunked_size == (size_t)-1) // signal for incomplete data
+		if (chunked_size == (size_t)-1)	 // signal for incomplete data
+		{
+			std::cout << "\tIncomplete chunk header" << std::endl;
 			return false;
-
+		}
 		std::string	chunked_data = chunkedData(chunked_size);
 
 		// If empty string AND size != 0, not enough data yet
 		if (chunked_data.empty() && chunked_size != 0)
+		{
+			_current_pos = pos_cpy;
+			std::cout << "\tNot enough data yet." << std::endl;
 			return false; // wait for more data from network
-		
+		}
 		if (chunked_data.size() > MAX_BODY_SIZE) { // total size check
 			_state = PARSING_ERROR;
 			return setErrorCode(413);
@@ -614,7 +736,7 @@ void HttpRequest::printRequest(void)
 	}
 	std::cout << "}" << std::endl;
 	std::cout << "Request-Body:\n{" << std::endl;
-	std::cout << _fullMessageBody << "\n}" << std::endl;
+	// std::cout << _fullMessageBody << "\n}" << std::endl;
 	std::cout << "====================" << std::endl;
 }
 
@@ -841,6 +963,7 @@ std::string &HttpRequest::getHost()
 	return _host;
 }
 
+void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)
 std::string	HttpRequest::getFileExtension()
 {
 	return (_fileExtension);
@@ -849,6 +972,7 @@ std::string	HttpRequest::getFileExtension()
 void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
 {
 	_serverConfigs = serverConfigs;
+	_listeningInterface = listeningInterface;
 }
 
 bool	HttpRequest::hasBodyContentLength()

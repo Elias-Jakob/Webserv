@@ -101,15 +101,19 @@ std::string AMethod::getContentType()
 
 bool	AMethod::checkCGI()
 {
-	std::cout << "Get::checkCGI()" << std::endl;
-	if (_location->cgiExtensions.size() < 1)
+	std::cout << "AMethod::checkCGI()" << std::endl;
+	if (_location->cgiExtensions.size() < 1) {
+        std::cout << "\tNo extensions in config" << std::endl;
 		return false;
-	std::string fileExt;
+    }
+    std::string fileExt;
 	size_t		pos;
 
 	pos = _resource.find_last_of('.');
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
+        std::cout << "\tNo . in _resource" << std::endl;
 		return false;
+    }
 	fileExt = _resource.substr(pos);
 	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
 	{
@@ -125,9 +129,13 @@ bool	AMethod::checkCGI()
 */
 bool	AMethod::executeCGI(const std::string &script)
 {
-	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
+	std::cout << "AMethod::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
 	HttpStatus::setStatus(601, _code, _phrase);
-	_phrase = _resource;
+	// _phrase = _resource;
+    _phrase = _location->cgiPath;
+    std::cout << _location->cgiPath << std::endl;
+    _phrase = "./" + _location->cgiPath;
+    std::cout << _phrase << std::endl;
 	return true;
 }
 
