@@ -963,13 +963,13 @@ std::string &HttpRequest::getHost()
 	return _host;
 }
 
-void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)
+
 std::string	HttpRequest::getFileExtension()
 {
 	return (_fileExtension);
 }
 
-void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
+void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)
 {
 	_serverConfigs = serverConfigs;
 	_listeningInterface = listeningInterface;
