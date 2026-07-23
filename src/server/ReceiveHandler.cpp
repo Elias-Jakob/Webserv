@@ -10,7 +10,8 @@ void	Server::handleIncoming(int clientFd)
 	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
 	bytesRecv = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (bytesRecv == -1)
-		throw std::runtime_error(std::strerror(errno));
+		return ;
+		// throw std::runtime_error(std::strerror(errno));
 	else if (bytesRecv == 0)
 	{
 		// Client closed connection
@@ -46,11 +47,7 @@ void	Server::handleIncoming(int clientFd)
 		}
 		else {
 			client.state = SENDING_RESPONSE;
-			this->epoll.ctl(clientFd, EPOLL_CTL_MOD, EPOLLIN | EPOLLOUT);
-			// epEvent.events = EPOLLIN | EPOLLOUT;
-			// epEvent.data.fd = clientFd;
-			// if (epoll_ctl(epollFd, EPOLL_CTL_MOD, clientFd, &epEvent) == -1)
-			// 	throw std::runtime_error(std::strerror(errno));
+			this->epoll.ctl(clientFd, EPOLL_CTL_MOD, EPOLLOUT); // TODO: bitwise or EPOLLIN in?
 		}
 	}
 }

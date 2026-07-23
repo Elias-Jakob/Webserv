@@ -20,14 +20,15 @@ SRC = src/http/ClientConnection.cpp \
 		src/cgi/CGIProcessLauncher.cpp \
 		src/cgi/CGIError.cpp \
 		src/cgi/ChildProcess.cpp \
-		src/cgi/CGIUtils.cpp \
 		src/utils/Epoll.cpp \
+		src/utils/cgi.cpp \
+		src/utils/utils.cpp \
 		src/main.cpp
 
 OBJDIR = obj
 INCDIR = ./inc
 OBJ = $(SRC:%.cpp=$(OBJDIR)/%.o)
-DEPS = $(OBJ:.o=:.d)
+DEPS = $(OBJ:.o=.d)
 
 CXX = c++
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -g

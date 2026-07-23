@@ -841,6 +841,11 @@ std::string &HttpRequest::getHost()
 	return _host;
 }
 
+std::string	HttpRequest::getFileExtension()
+{
+	return (_fileExtension);
+}
+
 void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs)
 {
 	_serverConfigs = serverConfigs;

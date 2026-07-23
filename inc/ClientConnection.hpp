@@ -47,11 +47,14 @@ class ClientConnection
 		bool			keep_alive;
 		time_t		inactiveTime;
 
+		std::time_t	cgiStartTime;
 		pid_t	cgiPid;
 		int	cgiIn;
 		int	cgiOut;
 		size_t	cgiWrittenBytes;
 		std::string		_listeningInterface;
+		std::string		remoteAddr;
+		bool	timeout;
 
 		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
 

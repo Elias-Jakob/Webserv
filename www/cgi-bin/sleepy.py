@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import time, os
 
-
 print("<p>")
 print(os.environ)
 print("</p>")
