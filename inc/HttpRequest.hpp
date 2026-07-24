@@ -68,6 +68,8 @@ class HttpRequest
 		std::vector<t_Configs>	_serverConfigs;
 		t_Location		*_locationObj;
 		std::string		_listeningInterface;
+		std::string		_scriptName;
+		std::string		_pathInfo;
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -96,6 +98,9 @@ class HttpRequest
 		std::vector<std::string>	splitPath(const std::string &path);
 		bool	isAllowedMethod();
 		
+		// for CGI
+		void	setScriptName(std::vector<std::string> &parts, size_t n);
+		void	setPathInfo(std::vector<std::string> &parts, size_t start);
 
 	protected:
 		// HELPERS
@@ -133,7 +138,8 @@ class HttpRequest
 		std::string							&getHost();
 		std::string							getRedirectLocation();
 		std::string							getFileExtension();
-
+		std::string							&getScriptName();
+		std::string							&getPathInfo();
 		bool								hasBodyContentLength();
 		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);
 		// OUTPUT
