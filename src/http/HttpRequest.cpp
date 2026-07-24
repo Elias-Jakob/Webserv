@@ -259,18 +259,26 @@ void	HttpRequest::findLocation()
 	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
 	t_Location	*loc;
 	t_Location	*defLoc;
+	bool		isCGI = false;
+
 	for (size_t i = 0; i < _serverConfigs.size(); i++) {
 		if (!isListeningTo(i, _listeningInterface))
 			continue ;
 		for (size_t k = 0; k < pathParts.size(); k++) {
 			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {
-				// std::cout << pathParts[k] << " == " 
-				// 	<< _serverConfigs[i].locations[j].path << std::endl;
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
 				if (_serverConfigs[i].locations[j].path == pathParts[k])
 				{
 					loc = &_serverConfigs[i].locations[j];
+					if (loc->cgi && isCGI == false) {
+						isCGI = true;
+						std::cout << "CGI location -> set PATH_INFO && SCRIPT_NAME" << std::endl;
+						setScriptName(pathParts, k + 1);
+						setPathInfo(pathParts, k + 1);
+						std::cout << "SCRIPT_NAME: "<< _scriptName << std::endl;
+						std::cout << "PATH_INFO: " << _pathInfo << std::endl;
+					}
 					std::cout << "location: " << _serverConfigs[i].locations[j].path
 						<< " => " << pathParts[k] << " => " 
 						<< _serverConfigs[i].locations[j].root << std::endl;
@@ -278,6 +286,8 @@ void	HttpRequest::findLocation()
 			}
 		}
 	}
+	if (loc && loc->cgi)
+		std::cout << "\tCGI will be executed" << std::endl;
 	if (!loc && defLoc)
 		loc = defLoc;
 	if (loc != NULL) // print result
@@ -288,6 +298,17 @@ void	HttpRequest::findLocation()
 	// return loc;
 }
 
+void	HttpRequest::setScriptName(std::vector<std::string> &parts, size_t n)
+{
+	for (size_t i = 1; i < n; i++)
+		_scriptName += parts[i];
+}
+
+void	HttpRequest::setPathInfo(std::vector<std::string> &parts, size_t start)
+{
+	for (size_t i = start; i < parts.size(); i++)
+		_pathInfo += parts[i];
+}
 
 bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
 {
@@ -304,6 +325,7 @@ bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
 	std::cout << "isListening() ==> FALSE" << std::endl;
 	return false;
 }
+
 /**
 	* @brief splits the path at every '/' and stores in vector.
 	* @param path -> the resource path.
@@ -311,7 +333,7 @@ bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
 */
 std::vector<std::string> HttpRequest::splitPath(const std::string &path)
 {
-	std::cout << "MethodExecuter::splitPath()" << std::endl;
+	std::cout << "HttpRequest::splitPath()" << std::endl;
 	std::vector<std::string>	parts;
 	std::string	temp;
 	size_t	start = 0;
@@ -796,8 +818,10 @@ void	HttpRequest::extractFileExtension()
 	size_t	posExt = _requestLine.requestURI.find('.');
 	if (posExt != std::string::npos)
 	{
-		// _fileExtension = _requestLine.requestURI.substr(posExt, _requestLine.requestURI.size() - posExt);
-		_fileExtension = _requestLine.requestURI.substr(posExt);
+		size_t	i = 0;
+		while (isalpha(_requestLine.requestURI[1 + posExt + i]))
+			i++;
+		_fileExtension = _requestLine.requestURI.substr(posExt, i + 1);
 		std::cout << "\t_fileExtension: "<< _fileExtension << std::endl;
 	}
 }
@@ -967,6 +991,16 @@ std::string &HttpRequest::getHost()
 std::string	HttpRequest::getFileExtension()
 {
 	return (_fileExtension);
+}
+
+std::string	&HttpRequest::getPathInfo()
+{
+	return _pathInfo;
+}
+
+std::string &HttpRequest::getScriptName()
+{
+	return _scriptName;
 }
 
 void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)

@@ -209,6 +209,7 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 	}
 	if (_tokens[i - 1].val == "cgi_extension")
 	{
+		loc->cgi = true;
 		size_t	j = i + 1;
 		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
 		{
