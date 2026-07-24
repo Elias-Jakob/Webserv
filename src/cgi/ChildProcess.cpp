@@ -5,9 +5,6 @@ char	**CGIProcessLauncher::createArgv(const ClientConnection &client)
 	std::string	file;
 	size_t	last_slash;
 
-	// TODO: figure out a way to determine which interpreter is needed php/python (see file extension, we already got that bit of information just not here)
-	// for now we will just assume that every cgi has a .py extension
-	
 	file = client.cgi_path;
 	last_slash = file.find_last_of("/");
 	if (last_slash != std::string::npos)
@@ -39,7 +36,7 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 													"SERVER_PORT" | "SERVER_PROTOCOL" |
 													"SERVER_SOFTWARE"
 	*/
-	// Done count = 10; total = 17
+	// Done count = 12; total = 17
 	this->envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
@@ -49,15 +46,14 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 	if (!request->getContentData().type.empty())
 		this->envs.push_back("CONTENT_TYPE=" + request->getContentData().type);
 	this->envs.push_back("REQUEST_METHOD=" + request->getMethod());
-	this->envs.push_back("SCRIPT_NAME=" + request->getURI());
+	this->envs.push_back("SCRIPT_NAME=" + request->getScriptName());
 
-	// TODO: QUERY_STRING
 	this->envs.push_back("QUERY_STRING=" + request->getRequestLine().queryStr);
-	// TODO: PATH_INFO & PATH_TRANSLATED
+	// TODO: Clarify if PATH_TRANSLATED and AUTH_TYPE are required
 	// PATH_INFO = the path that may follow after the cgi script; PATH_TRANSLATED = PATH_INFO mapped to the real filesystem path
-	this->envs.push_back("PATH_INFO=");
-	// this->envs.push_back("PATH_TRANSLATED=\"\"");
-	//
+	this->envs.push_back("PATH_INFO=" + request->getPathInfo());
+	// if (!request->getPathInfo().empty())
+	// 	this->envs.push_back("PATH_TRANSLATED=" + );
 	headers = request->getRequestHeaders();
 	if (!headers["host"].empty()) {
 		std::string	host = headers.at("host").front();
@@ -71,7 +67,7 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 		this->envs.push_back("SCRIPT_FILENAME=" + this->args.back());
 	}
 	// These are still left on the todo side:
-	// "AUTH_TYPE"    | "PATH_INFO"   | "PATH_TRANSLATED" |
+	// "AUTH_TYPE"    |               | "PATH_TRANSLATED" |
 	//                |               | "REMOTE_HOST"     |
 	// "REMOTE_IDENT" | "REMOTE_USER" |
 	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
