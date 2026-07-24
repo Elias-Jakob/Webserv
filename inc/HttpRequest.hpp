@@ -87,6 +87,7 @@ class HttpRequest
 		void	setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end);
 		void	extractFileExtension();
 		
+		bool	validBodySize(size_t contentLength);
 		// CHUNKED ENDODING
 		bool	unchunkBody(); // new
 		size_t	chunkedSize();

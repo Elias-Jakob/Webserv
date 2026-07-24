@@ -260,6 +260,10 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 		loc->cgi = true;
 		loc->cgiPath = _tokens[i + 1].val;
 	}
+	if (_tokens[i - 1].val == "client_max_body_size") {
+		loc->maxBodySize = convertStrToSize(_tokens[i + 1].val);
+		loc->sizeIsSet = true;
+	}
 	return i + 1;
 }
 
@@ -269,6 +273,8 @@ size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs) // a
 	size_t		j = i;
 	
 	tempLoc.path = _tokens[i+1].val;
+	tempLoc.sizeIsSet = false;
+	tempLoc.maxBodySize = 0;
 	tempLoc.redirect = false;
 	tempLoc.upload = false;
 	tempLoc.autoIndex = false;
@@ -367,14 +373,14 @@ void ConfigFileParser::printServers()
 void ConfigFileParser::printServer(size_t z)
 {
 	std::cout << "\n\nSERVER DATA{" << std::endl;
-	std::cout << "name: "<< _servers[z].serverName << std::endl;
-	std::cout << "max_body_size: " << _servers[z].maxBodySize << std::endl;
+	std::cout << "\tname: "<< _servers[z].serverName << std::endl;
+	std::cout << "\tmax_body_size: " << _servers[z].maxBodySize << std::endl;
 	std::map<std::string, std::vector<std::string> >::iterator itIP = _servers[z].endpoints.begin();
 	std::map<std::string, std::vector<std::string> >::iterator itIPe = _servers[z].endpoints.end();
-	std::cout << "Endpoints {\n";
+	std::cout << "\tEndpoints {\n";
 	while (itIP != itIPe)
 	{
-		std::cout << "\t[" << itIP->first << "] = ";
+		std::cout << "\t\t[" << itIP->first << "] = ";
 		for (size_t i = 0; i < itIP->second.size(); i++)
 		{
 			std::cout << itIP->second[i] << ", ";
@@ -382,27 +388,29 @@ void ConfigFileParser::printServer(size_t z)
 		std::cout << std::endl;
 		itIP++;
 	}
-	std::cout << "}" << std::endl;
+	std::cout << "\t}" << std::endl;
 
 	std::map<int, std::string>::iterator it = _servers[z].errorPages.begin();
 	std::map<int, std::string>::iterator ite = _servers[z].errorPages.end();
-	std::cout << "errorPages{\n";
+	std::cout << "\terrorPages{\n";
 	while (it != ite)
 	{
-		std::cout << "\t[" << it->first << "] = " << it->second << std::endl;
+		std::cout << "\t\t[" << it->first << "] = " << it->second << std::endl;
 		it++;
 	}
-	std::cout << "}" << std::endl;
+	std::cout << "\t}" << std::endl;
 	for (size_t i = 0; i < _servers[z].locations.size(); i++)
 	{
-		std::cout << "location {" << std::endl;
-		std::cout << "\tpath= " << _servers[z].locations[i].path << std::endl;
-		std::cout << "\troot= " << _servers[z].locations[i].root << std::endl;
+		std::cout << "\tlocation {" << std::endl;
+		std::cout << "\t\tpath= " << _servers[z].locations[i].path << std::endl;
+		std::cout << "\t\troot= " << _servers[z].locations[i].root << std::endl;
+		if (_servers[z].locations[i].sizeIsSet)
+			std::cout << "\t\tmaxBodySize= " << _servers[z].locations[i].maxBodySize << std::endl;
 		if (_servers[z].locations[i].defaultPage.size() > 0)
-			std::cout << "\tindex= " << _servers[z].locations[i].defaultPage << std::endl;
+			std::cout << "\t\tindex= " << _servers[z].locations[i].defaultPage << std::endl;
 		if (_servers[z].locations[i].allowedMethods.size() > 0)
 		{
-			std::cout << "\tmethods= ";
+			std::cout << "\t\tmethods= ";
 			for(size_t j = 0; j < _servers[z].locations[i].allowedMethods.size(); j++)
 			{
 				if (j + 1 == _servers[z].locations[i].allowedMethods.size())
@@ -413,14 +421,14 @@ void ConfigFileParser::printServer(size_t z)
 		}
 		if (_servers[z].locations[i].redirect)
 		{
-			std::cout << "\tredirectCode: " << _servers[z].locations[i].redirectCode << std::endl;
-			std::cout << "\tredirectURL: " << _servers[z].locations[i].redirectURL << std::endl;
+			std::cout << "\t\tredirectCode: " << _servers[z].locations[i].redirectCode << std::endl;
+			std::cout << "\t\tredirectURL: " << _servers[z].locations[i].redirectURL << std::endl;
 		}
 		if (_servers[z].locations[i].upload)
-			std::cout << "\tuploadStorage: " << _servers[z].locations[i].uploadStore << std::endl;
+			std::cout << "\t\tuploadStorage: " << _servers[z].locations[i].uploadStore << std::endl;
 		if (_servers[z].locations[i].upload)
 		{
-			std::cout << "\textensions = ";
+			std::cout << "\t\textensions = ";
 			for (size_t j = 0; j < _servers[z].locations[i].uploadExtensions.size(); j++)
 			{
 				if (j + 1 == _servers[z].locations[i].uploadExtensions.size())
@@ -431,7 +439,7 @@ void ConfigFileParser::printServer(size_t z)
 		}
 		if (_servers[z].locations[i].cgiExtensions.size() > 0)
 		{
-			std::cout << "\tcgiExtensions: ";
+			std::cout << "\t\tcgiExtensions: ";
 			for (size_t j = 0; j < _servers[z].locations[i].cgiExtensions.size(); j++)
 			{
 				if (j + 1 == _servers[z].locations[i].cgiExtensions.size())
@@ -441,12 +449,12 @@ void ConfigFileParser::printServer(size_t z)
 			}
 		}
 		if (_servers[z].locations[i].autoIndex)
-			std::cout << "\tautoindex: " << "on" << std::endl;
+			std::cout << "\t\tautoindex: " << "on" << std::endl;
 		if (_servers[z].locations[i].formSubmit)
-			std::cout << "\tform_output_file: " << _servers[z].locations[i].formUploadFile << std::endl;
+			std::cout << "\t\tform_output_file: " << _servers[z].locations[i].formUploadFile << std::endl;
 		if (_servers[z].locations[i].cgi)
-			std::cout << "\tcgi_path: " << _servers[z].locations[i].cgiPath << std::endl;
-		std::cout<< "}" << std::endl;		
+			std::cout << "\t\tcgi_path: " << _servers[z].locations[i].cgiPath << std::endl;
+		std::cout<< "\t}" << std::endl;		
 	}
 	std::cout << "}" << std::endl;
 }
