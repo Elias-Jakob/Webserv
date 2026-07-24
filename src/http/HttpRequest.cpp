@@ -24,13 +24,14 @@ HttpRequest::HttpRequest():
 */
 HttpRequest::~HttpRequest()
 {
+	std::cout << "HttpRequest deconstructed" << std::endl;
 	if (_bodyParser)
 	{
 		delete _bodyParser;
 		_bodyParser = NULL;
 	}
-	if (_locationObj)
-		_locationObj = NULL;
+	// if (_locationObj)
+	// 	_locationObj = NULL;
 }
 
 // =========================================================================
@@ -261,7 +262,10 @@ void	HttpRequest::findLocation()
 	t_Location	*defLoc;
 	bool		isCGI = false;
 
+	std::cout << "before loop" << std::endl;
+	std::cout << "_serverConfigs.size() = " << _serverConfigs.size() << std::endl;
 	for (size_t i = 0; i < _serverConfigs.size(); i++) {
+		std::cout << "loop start i: " << i << std::endl;
 		if (!isListeningTo(i, _listeningInterface))
 			continue ;
 		for (size_t k = 0; k < pathParts.size(); k++) {
@@ -271,7 +275,7 @@ void	HttpRequest::findLocation()
 				if (_serverConfigs[i].locations[j].path == pathParts[k])
 				{
 					loc = &_serverConfigs[i].locations[j];
-					if (loc->cgi && isCGI == false) {
+					if (loc && loc->cgi && isCGI == false) {
 						isCGI = true;
 						std::cout << "CGI location -> set PATH_INFO && SCRIPT_NAME" << std::endl;
 						setScriptName(pathParts, k + 1);
@@ -286,8 +290,6 @@ void	HttpRequest::findLocation()
 			}
 		}
 	}
-	if (loc && loc->cgi)
-		std::cout << "\tCGI will be executed" << std::endl;
 	if (!loc && defLoc)
 		loc = defLoc;
 	if (loc != NULL) // print result
@@ -296,18 +298,6 @@ void	HttpRequest::findLocation()
 		std::cout << "\t ==> location NULL" << std::endl;
 	_locationObj = loc;
 	// return loc;
-}
-
-void	HttpRequest::setScriptName(std::vector<std::string> &parts, size_t n)
-{
-	for (size_t i = 1; i < n; i++)
-		_scriptName += parts[i];
-}
-
-void	HttpRequest::setPathInfo(std::vector<std::string> &parts, size_t start)
-{
-	for (size_t i = start; i < parts.size(); i++)
-		_pathInfo += parts[i];
 }
 
 bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
@@ -326,6 +316,17 @@ bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
 	return false;
 }
 
+void	HttpRequest::setScriptName(std::vector<std::string> &parts, size_t n)
+{
+	for (size_t i = 1; i < n; i++)
+		_scriptName += parts[i];
+}
+
+void	HttpRequest::setPathInfo(std::vector<std::string> &parts, size_t start)
+{
+	for (size_t i = start; i < parts.size(); i++)
+		_pathInfo += parts[i];
+}
 /**
 	* @brief splits the path at every '/' and stores in vector.
 	* @param path -> the resource path.
@@ -400,9 +401,10 @@ bool	HttpRequest::extractBody()
     it = _headers.find("content-length"); // Get Content-Length from headers
     if (it != _headers.end() && !it->second.empty())
 	{
-		std::cout << "\tCONTENT-LENGTH HANDLING" << std::endl;
+		std::cout << "\tCONTENT-LENGTH HANDLING " << it->second[0] << std::endl;
         contentLength = atoi(it->second[0].c_str());
-        if (contentLength > MAX_BODY_SIZE)// Check body-size limit
+        // if (contentLength > MAX_BODY_SIZE)// Check body-size limit
+		if (!validBodySize(contentLength))
         {
             _state = PARSING_ERROR;
             return setErrorCode(413);
@@ -845,6 +847,17 @@ bool	HttpRequest::hasQuery(size_t *posQuery)
 	return false;
 }
 
+bool	HttpRequest::validBodySize(size_t contentLength)
+{
+	std::cout << "validBodySize -> contentLength: " << contentLength << std::endl;
+	if (contentLength > MAX_BODY_SIZE)
+		return false;
+	if (_locationObj && _locationObj->sizeIsSet
+		&& contentLength > _locationObj->maxBodySize)
+		return false;
+	// also check servers max_body_size.
+	return true;
+}
 
 /**
  * @brief Splits URI + Query and sets new request-URI.

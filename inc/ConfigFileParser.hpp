@@ -40,6 +40,8 @@ typedef struct s_Location
 {
 	std::string		path;
 	std::string		root;
+	bool			sizeIsSet;
+	size_t			maxBodySize;
 	bool			redirect;
 	std::string		redirectURL;
 	int				redirectCode;
