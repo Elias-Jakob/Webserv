@@ -394,3 +394,8 @@ std::string	ResponseBuilder::getErrorPage(std::map<int, std::string>::iterator i
 	std::cout << "errorPage = " << body << std::endl;
 	return buffer;
 }
+
+std::vector<t_Configs> ResponseBuilder::getServerConfigs()
+{
+	return _serverConfigs;
+}

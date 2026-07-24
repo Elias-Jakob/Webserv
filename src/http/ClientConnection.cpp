@@ -96,6 +96,7 @@ void ClientConnection::cleanUpClient()
 	state = READING_REQUEST;
 	delete request;
 	request = new HttpRequest();
+	request->setServerConfigs(executor->getServerConfigs(), _listeningInterface);
 	response_buffer = "";
 	bytesSent = 0;
 }
