@@ -11,7 +11,7 @@
  * @return
  * @note
  **/
-void	Server::handleNewClient(int listenFd)
+void	Server::acceptNewClient(int listenFd)
 {
 	int	fd;
 	struct sockaddr	clientAddr;
@@ -93,7 +93,7 @@ void	Server::eventLoop()
 		for (int	i = 0; i < nFds; ++i) {
 			if (std::find(this->listenSockets.begin(), this->listenSockets.end(),
 					events[i].data.fd) != this->listenSockets.end()) {
-				this->handleNewClient(events[i].data.fd);
+				this->acceptNewClient(events[i].data.fd);
 				continue;
 			}
 			if (this->clients.find(events[i].data.fd) != this->clients.end()) {
