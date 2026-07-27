@@ -27,7 +27,9 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request,
 	t_executionResult	result;
 	std::string			modifiedURI;
 
-	modifiedURI = modifyRequestURI(request, listeningInterface);
+	// modifiedURI = modifyRequestURI(request, listeningInterface);
+	std::cout << listeningInterface << std::endl;
+	modifiedURI = request->getRequestLine().requestURI;
 	method->setRequiredData(request, modifiedURI);
 
 	result.success = method->execute(); // execution
@@ -201,13 +203,14 @@ bool	MethodExecuter::isAllowedMethod(t_Location *location, const std::string &me
 	* @param path -> requested resource.
 	* @return Pointer to AMethod-Obj, or NULL.
 **/
-AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::string &path, const std::string &listeningInterface)
+AMethod	*MethodExecuter::createMethod(const std::string &methodName, t_Location *locationObj)
 {
 	std::cout << "MethodExecuter::createMethod() -> " << methodName << std::endl;
 	AMethod		*tempMethod = NULL;
 	t_Location	*location = NULL;
 
-	location = availableLocation(path, listeningInterface, methodName); // 
+	location = locationObj;
+	// location = availableLocation(path, listeningInterface, methodName); // 
 	if (!location)
 	{
 		location = &_defaultLocation;

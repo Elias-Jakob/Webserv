@@ -70,6 +70,8 @@ class HttpRequest
 		std::string		_listeningInterface;
 		std::string		_scriptName;
 		std::string		_pathInfo;
+		std::string		_pathTranslated;
+
 		HttpRequest(const HttpRequest &other);
 		HttpRequest &operator=(const HttpRequest &other);
 		
@@ -94,14 +96,19 @@ class HttpRequest
 		std::string	chunkedData(size_t chunked_size);
 
 		// SERVER LOCATION_OBJ
-		void	findLocation();
+		void	findLocation(std::vector<std::string> pathParts);
 		bool	isListeningTo(size_t i, const std::string &host);
 		std::vector<std::string>	splitPath(const std::string &path);
 		bool	isAllowedMethod();
 		
 		// for CGI
+		size_t	posOfScriptName(std::vector<std::string> &parts, std::vector<std::string> cgiExt, size_t n);
 		void	setScriptName(std::vector<std::string> &parts, size_t n);
 		void	setPathInfo(std::vector<std::string> &parts, size_t start);
+
+		// URI modify
+		void	modifyURI(std::vector<std::string> &parts);
+		void	modifyURIforCGI();
 
 	protected:
 		// HELPERS
@@ -141,6 +148,8 @@ class HttpRequest
 		std::string							getFileExtension();
 		std::string							&getScriptName();
 		std::string							&getPathInfo();
+		t_Location							*getLocationObj();
+		std::string							&getPathTranslated();
 		bool								hasBodyContentLength();
 		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);
 		// OUTPUT
