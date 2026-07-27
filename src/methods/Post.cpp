@@ -96,7 +96,7 @@ bool	Post::submitForm()
 	if (POST_PRINT)
 		std::cout << "Post::submitForm()" << std::endl;
 	std::string	formPath;
-	formPath = "." + _location->root + "/" + _location->formUploadFile;
+	formPath = "." + _location->alias + "/" + _location->formUploadFile;
 	return appendToFile(formPath);
 }
 

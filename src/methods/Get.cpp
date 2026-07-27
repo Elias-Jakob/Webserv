@@ -246,7 +246,7 @@ bool Get::isFileAccessible(const std::string &path)
 		return false;
 
 	char resolvedRoot[PATH_MAX];
-	std::string	tmpRoot = "." + _location->root;
+	std::string	tmpRoot = "." + _location->alias;
 	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
 		return false;
 

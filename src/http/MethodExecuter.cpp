@@ -68,8 +68,8 @@ bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 			std::map<std::string, std::string> tmp_locs;
 			for (size_t i_loc = 0; i_loc < _serverConfigs[i].locations.size(); i_loc++)
 			{
-				if (_serverConfigs[i].locations[i_loc].root.size() > 0)
-					tmp_locs[_serverConfigs[i].locations[i_loc].path] = _serverConfigs[i].locations[i_loc].root;
+				if (_serverConfigs[i].locations[i_loc].alias.size() > 0)
+					tmp_locs[_serverConfigs[i].locations[i_loc].path] = _serverConfigs[i].locations[i_loc].alias;
 				if (_serverConfigs[i].locations[i_loc].uploadStore.size() > 0)
 					tmp_locs[_serverConfigs[i].locations[i_loc].path] = _serverConfigs[i].locations[i_loc].uploadStore;
 			}
@@ -229,7 +229,7 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, const std::
 		}
 		else
 			return NULL;
-		std::cout << "location.root = " << location->root << std::endl;
+		std::cout << "location.alias = " << location->alias << std::endl;
 	}
 	if (location != NULL && !isAllowedMethod(location, methodName))
 		return NULL;
@@ -311,7 +311,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 					else {
 						loc = &_serverConfigs[i].locations[j];
 						std::cout << "location: " << _serverConfigs[i].locations[j].path
-							<< " => " << pathParts[k] << " => " << _serverConfigs[i].locations[j].root << std::endl;
+							<< " => " << pathParts[k] << " => " << _serverConfigs[i].locations[j].alias << std::endl;
 					}
 				}
 			}
@@ -320,7 +320,7 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 	if (!loc && defLoc)
 		loc = defLoc;
 	if (loc != NULL) // print result
-		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
+		std::cout << "\t ==> location " << loc->path << " => " << loc->alias << " {..}" << std::endl;
 	else
 		std::cout << "\t ==> location NULL" << std::endl;
 	return loc;
