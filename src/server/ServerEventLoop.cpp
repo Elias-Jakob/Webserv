@@ -76,11 +76,8 @@ void	Server::callEventHandler(const struct epoll_event &event)
 		if (event.events & EPOLLERR)
 			throw std::runtime_error("Error condition happened on the associated file descriptor");
 		if (event.data.fd == caller->fd) {
-			if (event.events & EPOLLHUP) {
-				std::cout << "Client " << caller->remoteAddr << " hung up" << std::endl;
-				this->removeClient(*caller);
-				return ;
-			}
+			if (event.events & EPOLLHUP)
+				throw std::runtime_error("Client " + caller->remoteAddr + " hung up");
 			caller->inactiveTime = std::time(NULL);
 			if (event.events & EPOLLIN)
 				this->handleIncoming(caller->fd);//*caller); // TODO:
