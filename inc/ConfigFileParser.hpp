@@ -39,7 +39,7 @@ typedef struct s_Token
 typedef struct s_Location
 {
 	std::string		path;
-	std::string		root;
+	std::string		alias; // before: root
 	bool			sizeIsSet;
 	size_t			maxBodySize;
 	bool			redirect;
@@ -62,6 +62,7 @@ typedef struct s_Configs
 {
 	size_t						maxBodySize;
 	std::string					serverName;
+	std::string					root;
 	std::vector<std::string>	listenInterfaces;
 	std::map<int, std::string>	errorPages;
 	std::vector<t_Location>		locations;
@@ -104,6 +105,10 @@ class ConfigFileParser
 
 		void	parseEndpoints(t_Configs *serverConf);
 		void	printServers();
+
+		// IPv6
+		void	parseIPv6(t_Configs *serverConfs, const std::string &listenInterface);
+		bool	isIPv6(const std::string &listenInterface);
 };
 
 #endif

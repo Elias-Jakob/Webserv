@@ -285,7 +285,7 @@ void	HttpRequest::findLocation()
 					}
 					std::cout << "location: " << _serverConfigs[i].locations[j].path
 						<< " => " << pathParts[k] << " => " 
-						<< _serverConfigs[i].locations[j].root << std::endl;
+						<< _serverConfigs[i].locations[j].alias << std::endl;
 				}
 			}
 		}
@@ -293,7 +293,7 @@ void	HttpRequest::findLocation()
 	if (!loc && defLoc)
 		loc = defLoc;
 	if (loc != NULL) // print result
-		std::cout << "\t ==> location " << loc->path << " => " << loc->root << " {..}" << std::endl;
+		std::cout << "\t ==> location " << loc->path << " => " << loc->alias << " {..}" << std::endl;
 	else
 		std::cout << "\t ==> location NULL" << std::endl;
 	_locationObj = loc;
