@@ -258,7 +258,7 @@ void	HttpRequest::findLocation()
 		std::cout << "HttpRequest::findLocation()" << std::endl;
 
 	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
-	t_Location	*loc;
+	t_Location	*loc = NULL;
 	t_Location	*defLoc = NULL;
 	bool		isCGI = false;
 

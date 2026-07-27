@@ -69,6 +69,8 @@ class Server
 		void	checkOnClients();
 		void	cgiTimeoutResponse(ClientConnection &client);
 		void	checkProcessStatus(ClientConnection &client);
+		void	callEventHandler(const struct epoll_event &event);
+		ClientConnection	*identifyEventCaller(int fd);
 };
 
 #endif // !SERVER_HPP

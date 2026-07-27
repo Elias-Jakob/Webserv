@@ -131,11 +131,13 @@ bool	AMethod::executeCGI(const std::string &script)
 {
 	std::cout << "AMethod::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
 	HttpStatus::setStatus(601, _code, _phrase);
+	_phrase = script;
 	// _phrase = _resource;
-    _phrase = _location->cgiPath;
-    std::cout << _location->cgiPath << std::endl;
-    _phrase = "./" + _location->cgiPath;
-    std::cout << _phrase << std::endl;
+	// BUG:
+    // _phrase = _location->cgiPath;
+    // std::cout << _location->cgiPath << std::endl;
+    // _phrase = "./" + _location->cgiPath;
+    // std::cout << _phrase << std::endl;
 	return true;
 }
 

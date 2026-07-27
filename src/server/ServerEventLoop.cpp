@@ -16,29 +16,36 @@ void	Server::acceptNewClient(int listenFd)
 	int	fd;
 	struct sockaddr	clientAddr;
 	socklen_t	clientAddrLen = sizeof(clientAddr);
+	ClientConnection	*client = NULL;
+	// TODO: this does not support IPv6
 
-	fd = accept(listenFd, &clientAddr, &clientAddrLen);
-	if (fd == -1)
-		throw std::runtime_error(std::strerror(errno));
-	this->clients[fd].remoteAddr = utils::addrToStr(clientAddr);
-	std::cout << "New client connected... socket file descriptor = " << fd << " ip: " << this->clients[fd].remoteAddr << std::endl;
-	// TODO: remove F_SETFD FD_CLOEXEC?
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
-		throw std::runtime_error(std::strerror(errno));
-
-	// Initialize client connection directly in map (avoid copy issues)
-	//this->clients[fd] = ClientConnection();
-	this->clients[fd].fd = fd;
-	this->clients[fd].state = READING_REQUEST;
-	this->clients[fd].request = new HttpRequest();
-	this->clients[fd].executor = &(this->methodExecuter);
-	this->clients[fd].responseBuilder = &(this->responseBuilder);
-	this->clients[fd].bytesSent = 0;
-	this->clients[fd]._listeningInterface = listenFdToInterface[listenFd];
-	this->clients[fd].request->setServerConfigs(clients[fd].executor->getServerConfigs(), listenFdToInterface[listenFd]);
-	// TODO: clean up
-	// this->clients[fd] = ClientConnection(fd);
-	this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
+	try {
+		fd = accept(listenFd, &clientAddr, &clientAddrLen);
+		if (fd == -1)
+			throw std::runtime_error(std::strerror(errno));
+		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+			throw std::runtime_error(std::strerror(errno));
+		this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
+		client = &(this->clients[fd]);
+		client->fd = fd;
+		client->state = READING_REQUEST;
+		client->request = new HttpRequest();
+		client->executor = &(this->methodExecuter);
+		client->responseBuilder = &(this->responseBuilder);
+		client->bytesSent = 0;
+		client->_listeningInterface = listenFdToInterface[listenFd];
+		client->request->setServerConfigs(client->executor->getServerConfigs(),
+			this->listenFdToInterface[listenFd]);
+		client->remoteAddr = utils::addrToStr(clientAddr);
+		std::cout << "New client " << client->remoteAddr
+			<< " connected over socket " << listenFdToInterface[listenFd] << std::endl;
+	}
+	catch (const std::runtime_error	&e) {
+		if (client) this->removeClient(*client);
+		else if (fd != -1) close(fd);
+		std::cerr << "Failed to connect new client over socket "
+			<< listenFdToInterface[listenFd] << ": " << e.what() << std::endl;
+	}
 }
 
 void	Server::removeClient(ClientConnection &client)
@@ -49,36 +56,82 @@ void	Server::removeClient(ClientConnection &client)
 	this->clients.erase(client.fd);
 }
 
+ClientConnection	*Server::identifyEventCaller(int fd)
+{
+	std::map<int, ClientConnection>::iterator	isClient = this->clients.find(fd);
+	if (isClient != this->clients.end())
+		return (&isClient->second);
+	std::map<int, ClientConnection &>::iterator	isPipe = this->cgiPipes.find(fd);
+	if (isPipe != this->cgiPipes.end())
+		return (&isPipe->second);
+	return (NULL);
+}
+
+void	Server::callEventHandler(const struct epoll_event &event)
+{
+	ClientConnection	*caller = this->identifyEventCaller(event.data.fd);
+
+	if (caller == NULL) return ;
+	try {
+		if (event.events & EPOLLERR)
+			throw std::runtime_error("Error condition happened on the associated file descriptor");
+		if (event.data.fd == caller->fd) {
+			if (event.events & EPOLLHUP) {
+				std::cout << "Client " << caller->remoteAddr << " hung up" << std::endl;
+				this->removeClient(*caller);
+				return ;
+			}
+			caller->inactiveTime = std::time(NULL);
+			if (event.events & EPOLLIN)
+				this->handleIncoming(caller->fd);//*caller); // TODO:
+			if (event.events & EPOLLOUT)
+				this->handleOutgoing(caller->fd);//*caller); // TODO:
+		}
+		else if (event.data.fd == caller->cgiIn && event.events & EPOLLOUT)
+			this->writeRequestBodyToCGI(event.data.fd);
+		else if (event.data.fd == caller->cgiOut && event.events & (EPOLLIN | EPOLLHUP))
+			this->handleCGIOutput(event.data.fd);
+	} catch (const std::runtime_error &e) {
+		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
+			<< caller->remoteAddr << std::endl;
+		this->removeClient(*caller);
+	}
+}
+
 void	Server::checkOnClients()
 {
 	std::map<int, ClientConnection>::iterator	it = this->clients.begin();
 	time_t	current = std::time(NULL);
 
 	while (it != this->clients.end()) {
-		if (it->second.cgiPid != -1)
-			this->checkProcessStatus(it->second);
-		// client timeout
-		if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
-			std::cout << "Removed inactive client after timeout... fd = " << it->first << " inactiveTime = " << current - it->second.inactiveTime << std::endl;
-			it->second.timeout = true;
-			if (it->second.cgiPid == -1) {
-				this->removeClient((it++)->second);
-				continue ;
+		try {
+			if (it->second.cgiPid != -1)
+				this->checkProcessStatus(it->second);
+			// client timeout
+			if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
+				std::cout << "Removed inactive client " << it->second.remoteAddr
+					<< " after timeout of " << current - it->second.inactiveTime << std::endl;
+				it->second.timeout = true;
+				if (it->second.cgiPid == -1) {
+					this->removeClient((it++)->second);
+					continue ;
+				}
+				this->cgiTimeoutResponse(it->second);
 			}
-			this->cgiTimeoutResponse(it->second);
+			// cgi timeout
+			else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT)
+				this->cgiTimeoutResponse(it->second);
+			it++;
+		} catch (const std::runtime_error &e) {
+			std::cerr << "Error in Server::checkOnClients: " << e.what() << "\nRemoving client "
+				<< it->second.remoteAddr << std::endl;
+			this->removeClient((it++)->second);
 		}
-		// cgi timeout
-		else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT) {
-			std::cout << "Terminating CGI process after timeout... client fd = " << it->first << std::endl;
-			this->cgiTimeoutResponse(it->second);
-		}
-		it++;
 	}
 }
 
 void	Server::eventLoop()
 {
-	// TODO: refactor.
 	int	nFds;
 	struct epoll_event	events[EPOLL_MAX_EVENTS];
 
@@ -96,23 +149,7 @@ void	Server::eventLoop()
 				this->acceptNewClient(events[i].data.fd);
 				continue;
 			}
-			if (this->clients.find(events[i].data.fd) != this->clients.end()) {
-				// TODO: not only check EPOLLHUP and EPOLLERR if its a client
-				if (events[i].events & (EPOLLHUP | EPOLLERR)) { // client was disconnected
-					this->removeClient(this->clients.at(events[i].data.fd));
-					continue;
-				}
-				this->clients.at(events[i].data.fd).inactiveTime = std::time(NULL);
-				if (events[i].events & EPOLLIN) // the client is available for read
-					this->handleIncoming(events[i].data.fd);
-				if (events[i].events & EPOLLOUT) // the client is available for write
-					this->handleOutgoing(events[i].data.fd);
-			} else if (this->cgiPipes.find(events[i].data.fd) != this->cgiPipes.end()) {
-				if (events[i].events & EPOLLOUT)
-					this->writeRequestBodyToCGI(events[i].data.fd);
-				else// if (events[i].events & EPOLLIN)
-					this->handleCGIOutput(events[i].data.fd);
-			}
+			this->callEventHandler(events[i]);
 		}
 		this->checkOnClients();
 	}
