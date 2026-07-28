@@ -12,6 +12,10 @@ ConfigFileParser::~ConfigFileParser(){}
 // Public Methods
 // =========================================================================
 
+/**
+	* @brief reading config-file. then tokenizes it and parses tokens to 
+		data-structure.
+*/
 std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 {
 	// check filename
@@ -35,6 +39,10 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 
 // =========================================================================
 // Private Methods
+// =========================================================================
+
+// =========================================================================
+// TOKENIZE
 // =========================================================================
 
 void ConfigFileParser::tokenize(const std::string &input)
@@ -94,6 +102,43 @@ void ConfigFileParser::adjustTokens()
 	}
 }
 
+bool ConfigFileParser::isValidChar(char c)
+{
+	if (c == ' ' || c == ';' || c == '\n' || c == ',' || c == '\\' || c == '\t')
+		return false;
+	if (isalpha(c))
+		return true;
+	if (c == '{' || c == '}')
+		return true;
+	if (c == '[' || c == ']')
+		return true;
+	if (c == '=' || c == '/' || c == ':' || c == '_' || c == '.' || c == '-')
+		return true;
+	if (c >= '0' && c <= '9')
+		return true;
+	return false;
+}
+
+e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
+{
+	if (tokenStr == "server")
+		return SERVER;
+	if (tokenStr == "location")
+		return LOCATION;
+	if (tokenStr == "{")
+		return BRACE_OPEN;
+	if (tokenStr == "}")
+		return BRACE_CLOSE;
+	if (tokenStr == "=")
+		return ASSIGN;
+	if (tokenStr == ",")
+		return COMMA;
+	return STR;
+}
+
+// =========================================================================
+// PARSING
+// =========================================================================
 
 /**
 	* @brief loops through tokens and creates Data-structure for server_blocks.
@@ -144,7 +189,7 @@ size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs)
 	initLocation(&location, i);
 	while (insideLocation(j)) {
 		if (_tokens[j].type == ASSIGN) {
-			j = setLocationVal(j, &location);
+			j = setLocationVariable(j, &location);
 			j--;
 		}
 		j++;
@@ -164,27 +209,18 @@ void	ConfigFileParser::initLocation(t_Location *location, size_t pos)
 	location->formSubmit = false;
 	location->cgi = false;
 }
-
-bool	ConfigFileParser::tokenIsErrorPage(size_t pos)
+bool	ConfigFileParser::insideLocation(size_t pos)
 {
-	if (pos >= 2 
-			&&_tokens[pos].type == ASSIGN
-			&& _tokens[pos - 1].type == NUMBER
-			&& _tokens[pos - 2].val == "error_page")
+	if (_tokens.size() > pos 
+		&& _tokens[pos].type != BRACE_CLOSE 
+		&& _tokens[pos].type != END_OF_FILE)
 		return true;
 	return false;
 }
 
-void	ConfigFileParser::setErrorPage(t_Configs *serverConfigs, size_t *pos)
-{
-	std::stringstream	ss(_tokens[*pos - 1].val);
-	int	errorCode;
-	ss >> errorCode;
-	serverConfigs->errorPages[errorCode] = _tokens[*pos + 1].val;
-	*pos += 1;
-}
 
-size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
+
+size_t ConfigFileParser::setLocationVariable(size_t i, t_Location *loc)
 {
 	if (i + 1 >= _tokens.size())
 		return i;
@@ -221,6 +257,19 @@ e_VarName	ConfigFileParser::getVariableName(size_t pos)
 	if (name == "client_max_body_size")
 		return BODY_SIZE;
 	return ERROR;
+}
+
+size_t	ConfigFileParser::fillVector(std::vector<std::string> *vec, size_t pos)
+{
+	size_t j = pos + 1;
+	while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR)) {
+		vec->push_back(_tokens[j].val);
+		if (j + 1 < _tokens.size() && _tokens[j + 1].type == COMMA)
+			j += 2;
+		else
+			break;
+	}
+	return j;
 }
 
 size_t	ConfigFileParser::setVariableValue(e_VarName varName, t_Location *location, size_t *pos)
@@ -272,17 +321,51 @@ size_t	ConfigFileParser::setVariableValue(e_VarName varName, t_Location *locatio
 	return *pos + 1;
 }
 
-size_t	ConfigFileParser::fillVector(std::vector<std::string> *vec, size_t pos)
+bool	ConfigFileParser::tokenIsErrorPage(size_t pos)
 {
-	size_t j = pos + 1;
-	while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR)) {
-		vec->push_back(_tokens[j].val);
-		if (j + 1 < _tokens.size() && _tokens[j + 1].type == COMMA)
-			j += 2;
-		else
-			break;
+	if (pos >= 2 
+			&&_tokens[pos].type == ASSIGN
+			&& _tokens[pos - 1].type == NUMBER
+			&& _tokens[pos - 2].val == "error_page")
+		return true;
+	return false;
+}
+
+void	ConfigFileParser::setErrorPage(t_Configs *serverConfigs, size_t *pos)
+{
+	std::stringstream	ss(_tokens[*pos - 1].val);
+	int	errorCode;
+	ss >> errorCode;
+	serverConfigs->errorPages[errorCode] = _tokens[*pos + 1].val;
+	*pos += 1;
+}
+
+bool	ConfigFileParser::checkIdentifier(const std::string identifier)
+{
+	if (identifier == "listen"
+		|| identifier == "server_name"
+		|| identifier == "error_page"
+		|| identifier == "client_max_body_size"
+		|| identifier == "root")
+		return true;
+	return false;
+}
+
+// change to set values for this->server.
+void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serverConfigs)
+{
+	if (j + 1 >= _tokens.size())
+		return ;
+	if (id == "listen") {
+		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
+		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
 	}
-	return j;
+	else if (id == "server_name")
+		serverConfigs->serverName = _tokens[j + 1].val;
+	else if (id == "client_max_body_size")
+		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
+	else if (id == "root")
+		serverConfigs->root = _tokens[j + 1].val;
 }
 
 // accepting multiple Ports on one interface map<string, vector<string>>
@@ -315,40 +398,6 @@ void	ConfigFileParser::parseEndpoints(t_Configs *serverConfs)
 	}
 }
 
-bool ConfigFileParser::isValidChar(char c)
-{
-	if (c == ' ' || c == ';' || c == '\n' || c == ',' || c == '\\' || c == '\t')
-		return false;
-	if (isalpha(c))
-		return true;
-	if (c == '{' || c == '}')
-		return true;
-	if (c == '[' || c == ']')
-		return true;
-	if (c == '=' || c == '/' || c == ':' || c == '_' || c == '.' || c == '-')
-		return true;
-	if (c >= '0' && c <= '9')
-		return true;
-	return false;
-}
-
-e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
-{
-	if (tokenStr == "server")
-		return SERVER;
-	if (tokenStr == "location")
-		return LOCATION;
-	if (tokenStr == "{")
-		return BRACE_OPEN;
-	if (tokenStr == "}")
-		return BRACE_CLOSE;
-	if (tokenStr == "=")
-		return ASSIGN;
-	if (tokenStr == ",")
-		return COMMA;
-	return STR;
-}
-
 bool ConfigFileParser::isNbr(const std::string &s)
 {
 	for (size_t i = 0; i < s.size(); i++)
@@ -373,48 +422,17 @@ bool	ConfigFileParser::isIPv6(const std::string &listenInterface)
 
 void	ConfigFileParser::parseIPv6(t_Configs *serverConfs, const std::string &listenInterface)
 {
-	// std::cout << "parseIPv6()\t" << listenInterface << std::endl;
 	size_t	start = listenInterface.find_first_of('[');
 	size_t	end = listenInterface.find_last_of(']');
-	// std::cout << "start: " << start << ", end: " << end << std::endl;
+
 	std::string	interface = listenInterface.substr(start + 1, end - (start + 1));
 	std::string	port = listenInterface.substr(end + 2);
-	
-	// std::cout << "IPV6\t(" << interface << "):(" << port << ");" << std::endl;
 
 	std::map<std::string, std::vector<std::string> >::iterator it = serverConfs->endpoints.find(interface);
 	if (it != serverConfs->endpoints.end())
 		it->second.push_back(port);
 	else
 		serverConfs->endpoints[interface].push_back(port);
-}
-
-bool	ConfigFileParser::checkIdentifier(const std::string identifier)
-{
-	if (identifier == "listen"
-		|| identifier == "server_name"
-		|| identifier == "error_page"
-		|| identifier == "client_max_body_size"
-		|| identifier == "root")
-		return true;
-	return false;
-}
-
-// change to set values for this->server.
-void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serverConfigs)
-{
-	if (j + 1 >= _tokens.size())
-		return ;
-	if (id == "listen") {
-		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
-		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
-	}
-	else if (id == "server_name")
-		serverConfigs->serverName = _tokens[j + 1].val;
-	else if (id == "client_max_body_size")
-		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
-	else if (id == "root")
-		serverConfigs->root = _tokens[j + 1].val;
 }
 
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
@@ -430,6 +448,10 @@ size_t	ConfigFileParser::convertStrToSize(const std::string value)
 		size *= 1024;
 	return size;
 }
+
+// =========================================================================
+// PRINT's
+// =========================================================================
 
 void ConfigFileParser::printServers()
 {

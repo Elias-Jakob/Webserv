@@ -104,43 +104,46 @@ class ConfigFileParser
 		std::vector<t_Token>	_tokens;
 		std::vector<t_Configs>	_servers;
 
+		// tokenize
 		void 		tokenize(const std::string &input);
 		void		adjustTokens();
-		void 		parseToDataStructure();
-		void		parseEndpoints(t_Configs *serverConf);
-
-		// tokenize
 		bool		isValidChar(char c);
 		e_TokenType	getTokenType(std::string tokenStr);
 
+		// parsing (server)
+		void 		parseToDataStructure();
+		size_t		createServer(size_t *i);
 
-		// Tokens to data-structure
-		size_t	createServer(size_t *i);
-		size_t	createLocation(size_t i, t_Configs *serverConfigs);
-
-		void	initLocation(t_Location *location, size_t pos);
-		bool	insideLocation(size_t pos);
-		size_t	setLocationVal(size_t i, t_Location *loc);
-		bool	checkIdentifier(const std::string identifier);
-		void	setValue(const std::string id, size_t j, t_Configs *serverConfigs);
+		bool		checkIdentifier(const std::string identifier);
+		void		setValue(const std::string id, size_t j, t_Configs *serverConfigs);
 		
+		bool		tokenIsErrorPage(size_t pos);
+		void		setErrorPage(t_Configs *serverConfigs, size_t *pos);
+		
+		// parsing (location)
+		size_t		createLocation(size_t i, t_Configs *serverConfigs);
+		void		initLocation(t_Location *location, size_t pos);
+		bool		insideLocation(size_t pos);
+
+		size_t		setLocationVariable(size_t i, t_Location *loc);
 		e_VarName	getVariableName(size_t pos);
 		size_t		setVariableValue(e_VarName varName, t_Location *location, size_t *pos);
 		size_t		fillVector(std::vector<std::string> *vec, size_t pos);
-		// HELPER
-		bool		tokenIsErrorPage(size_t pos);
-		void		setErrorPage(t_Configs *serverConfigs, size_t *pos);
+
+		// parsing (helpers)
+		void		parseEndpoints(t_Configs *serverConf);
+
 		bool		isNbr(const std::string &s);
 		size_t		convertStrToSize(const std::string value);
-		
-		// Prints
+
+		void		parseIPv6(t_Configs *serverConfs, const std::string &listenInterface);
+		bool		isIPv6(const std::string &listenInterface);
+
+		// print's
 		void		printServers();
 		void		printServer(size_t z);
 		std::string printTokenType(e_TokenType type);
 		void		printTokens();
-		// IPv6
-		void	parseIPv6(t_Configs *serverConfs, const std::string &listenInterface);
-		bool	isIPv6(const std::string &listenInterface);
 };
 
 #endif
