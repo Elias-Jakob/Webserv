@@ -41,13 +41,19 @@ void	Server::handleIncoming(int clientFd)
 				}
 				this->cgiLauncher.newProcess(client);
 			}
-			catch (const CGIError &e) {
-				std::cerr << "CGI Process failed: " << e.what() << std::endl;
+			catch (const std::exception &e) {
+				std::cerr << "ReceiveHandler client.cgiPid: " << client.cgiPid << std::endl;
+				// if (client.cgiPid != -1)
+				// 	client.terminateCGIProcess(&(this->cgiPipes));
+				client.response_buffer = client.responseBuilder->errorResponseViaCode(500);
+				client.state = SENDING_RESPONSE;
+				this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+				std::cerr << "CGI process failed: " << e.what() << std::endl;
 			}
 		}
 		else {
 			client.state = SENDING_RESPONSE;
-			this->epoll.ctl(clientFd, EPOLL_CTL_MOD, EPOLLOUT); // TODO: bitwise or EPOLLIN in?
+			this->epoll.ctl(clientFd, EPOLL_CTL_MOD, EPOLLOUT);
 		}
 	}
 }

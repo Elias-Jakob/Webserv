@@ -96,7 +96,7 @@ bool	Post::submitForm()
 	if (POST_PRINT)
 		std::cout << "Post::submitForm()" << std::endl;
 	std::string	formPath;
-	formPath = "." + _location->alias + "/" + _location->formUploadFile;
+	formPath = "." + _reqUri;
 	return appendToFile(formPath);
 }
 
@@ -106,7 +106,7 @@ bool	Post::submitForm()
 bool Post::appendToFile(std::string filename)
 {
 	if (POST_PRINT)
-		std::cout << "Post::appendToFile()" << std::endl;
+		std::cout << "Post::appendToFile(): " << filename << std::endl;
 	std::ofstream	output(filename.c_str());
 	if(!output.is_open())
 	{
@@ -154,7 +154,7 @@ bool	Post::uploadFile()
 		HttpStatus::setStatus(404, _code, _phrase);
 		return false;
 	}
-	std::string uploadPath = "." + _location->uploadStore + "/";
+	std::string uploadPath = "." + _reqUri + "/";//+ _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
 	if (it->second.value.size() > MAX_BODY_SIZE)
 	{

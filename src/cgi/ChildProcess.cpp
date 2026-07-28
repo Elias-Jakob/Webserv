@@ -79,31 +79,32 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 
 void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 {
-	// 1. create argv (with path to interpreter)
-	// 2. create envp
-	// 3. dup2, chdir & execve
-	char	**argv, **envp;
+	char	**argv = NULL, **envp = NULL;
 	std::string	cgiDir;
-
-	argv = this->createArgv(client);
-	envp = this->createEnvp(client);
 
 	if (client.cgi_path.find("/") != std::string::npos)
 		cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
-	
 	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
 			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
 		this->cleanUp();
-		throw std::runtime_error("CGI process failed dup2: " + std::string(std::strerror(errno)));
+		throw std::runtime_error("dup2: " + std::string(std::strerror(errno)));
 	}
 	close(this->stdinPipe[0]);
 	close(this->stdoutPipe[1]);
-	int	success = 0;
-	if (cgiDir.empty() || (success = chdir(cgiDir.c_str())) != -1)
+	try {
+		if (!cgiDir.empty() && chdir(cgiDir.c_str()) == -1)
+			throw std::runtime_error("chdir: " + std::string(std::strerror(errno)));
+		argv = this->createArgv(client);
+		envp = this->createEnvp(client);
 		execve(argv[0], argv, envp);
-	delete[] argv;
-	delete[] envp;
-	this->cleanUp();
-	std::cerr << "cgiDir: " << cgiDir << " " << success << std::endl;
-	throw std::runtime_error("CGI process failed execve: " + std::string(std::strerror(errno)));
+		throw std::runtime_error("execve: " + std::string(std::strerror(errno)));
+	}
+	catch (const std::exception &e) {
+		delete[] argv;
+		delete[] envp;
+		this->cleanUp();
+		std::cerr << "CGI process failed: " << e.what()
+			<< " (" << client.remoteAddr << ")" << std::endl;
+		throw CGIError();
+	}
 }

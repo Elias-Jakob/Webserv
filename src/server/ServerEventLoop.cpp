@@ -75,18 +75,22 @@ void	Server::callEventHandler(const struct epoll_event &event)
 	try {
 		if (event.events & EPOLLERR)
 			throw std::runtime_error("Error condition happened on the associated file descriptor");
-		else if (event.events & EPOLLHUP)
-			throw std::runtime_error("Hang up happened on the associated file descriptor");
 		if (event.data.fd == caller->fd) {
+			if (event.events & EPOLLHUP)
+				throw std::runtime_error("Hang up happened on the associated file descriptor");
 			caller->inactiveTime = std::time(NULL);
 			if (event.events & EPOLLIN)
 				this->handleIncoming(caller->fd);//*caller); // TODO:
 			if (event.events & EPOLLOUT)
 				this->handleOutgoing(caller->fd);//*caller); // TODO:
 		}
-		else if (event.data.fd == caller->cgiIn && event.events & EPOLLOUT)
-			this->writeRequestBodyToCGI(event.data.fd);
-		else if (event.data.fd == caller->cgiOut && event.events & EPOLLIN)
+		else if (event.data.fd == caller->cgiIn) {
+			if (event.events & EPOLLOUT)
+				this->writeRequestBodyToCGI(event.data.fd);
+			else if (event.events & EPOLLHUP)
+				throw std::runtime_error("Hang up happened on the associated file descriptor");
+		}
+		else if (event.data.fd == caller->cgiOut && event.events & (EPOLLIN | EPOLLHUP))
 			this->handleCGIOutput(event.data.fd);
 	} catch (const std::runtime_error &e) {
 		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "

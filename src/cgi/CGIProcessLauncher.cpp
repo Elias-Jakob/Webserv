@@ -32,16 +32,16 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 	client.cgiStartTime = std::time(NULL);
 	if (pipe(this->stdinPipe) == -1 || fcntl(this->stdinPipe[1], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1)
-		throw CGIError(std::strerror(errno));
+		throw std::runtime_error(std::strerror(errno));
 	if (pipe(this->stdoutPipe) == -1 || fcntl(this->stdoutPipe[0], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdoutPipe[0], F_SETFL, O_NONBLOCK) == -1) {
 		this->cleanUp();
-		throw CGIError(std::strerror(errno));
+		throw std::runtime_error(std::strerror(errno));
 	}
 	pid = fork();
 	if (pid < 0) {
 		this->cleanUp();
-		throw CGIError(std::strerror(errno));
+		throw std::runtime_error(std::strerror(errno));
 	}
 	else if (pid) {
 		std::cout << "Child process id = " << pid << std::endl;

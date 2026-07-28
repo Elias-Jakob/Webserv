@@ -1,16 +1,13 @@
 #ifndef SYSCALLERROR_HPP
 # define SYSCALLERROR_HPP
 
-# include <exception>
-
-class CGIError : public std::exception
+class CGIError
 {
 	public:
-		CGIError(const char *msg);
-		~CGIError() throw();
-		const char	*what() const throw();
-	private:
-		const char	*_msg;
+		CGIError();
+		CGIError(const CGIError &other);
+		~CGIError();
+		CGIError	&operator=(const CGIError &other);
 };
 
-#endif // !SYSCALLERROR_HPP
+#endif

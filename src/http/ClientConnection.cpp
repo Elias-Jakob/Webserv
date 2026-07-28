@@ -65,7 +65,7 @@ void ClientConnection::processRequest()
 	if(request->validRequest())
 	{
 		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
-		_currentMethod = executor->createMethod(request->getMethod(), request->getURI(), _listeningInterface);
+		_currentMethod = executor->createMethod(request->getMethod(), request->getLocationObj());
 		if (_currentMethod == NULL)
 			response_buffer = responseBuilder->errorResponseViaCode(405);
 		else if (request->getMethod() == "POST" && !request->hasBodyContentLength())
