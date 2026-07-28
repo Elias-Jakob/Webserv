@@ -1,2 +1,2 @@
-last_name = asdf
-user_name = asdf
+age = 25
+name = 

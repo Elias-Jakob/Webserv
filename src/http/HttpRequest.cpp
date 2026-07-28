@@ -243,29 +243,106 @@ bool HttpRequest::parseHeaderLine()
     }
 	_current_pos = endOfHeaders + 4;
 
-	findLocation(); // find corresponding t_Locatio
+	std::vector<std::string> pathParts = splitPath(_requestLine.requestURI);
+	findLocation(pathParts); // find corresponding t_Locatio
+	
+	std::cout << "LOCATION ==> " << _locationObj->path << std::endl;
 	if (isAllowedMethod())
 		std::cout << "\tMethod is allowed!" << std::endl;
 	else
 		std::cout << "\tMethod not allowed!" << std::endl;
-
+	// modify requestURI, pathInfo, scriptName, pathTranslated.
+	modifyURI(pathParts);
 	return true;
 }
 
-void	HttpRequest::findLocation()
+// in MethodExecuter, we us _rootedLocs for this
+void	HttpRequest::modifyURI(std::vector<std::string> &pathParts)
+{
+	std::cout << "MODIFY_URI()" << std::endl;
+	if (!_locationObj->cgi)
+	{
+		size_t	idx_server;
+		for (idx_server = 0; idx_server < _serverConfigs.size(); idx_server++) {
+			if (isListeningTo(idx_server, _listeningInterface))
+				break ;
+		}
+		std::string newURI;
+		if (_serverConfigs[idx_server].root.size() > 0)
+			newURI = _serverConfigs[idx_server].root;
+		for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
+			std::string part = pathParts[iUri];
+			for (size_t iLocs = 0; iLocs < _serverConfigs[idx_server].locations.size(); iLocs++) {
+				if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path) {
+					if ( _serverConfigs[idx_server].locations[iLocs].upload)
+						part = _serverConfigs[idx_server].locations[iLocs].uploadStore;
+					else
+						part = _serverConfigs[idx_server].locations[iLocs].alias;
+				}
+			}
+			newURI += part;
+		}
+		if (_locationObj->formSubmit)
+			newURI += "/" + _locationObj->formUploadFile;
+		_requestLine.requestURI = newURI;
+		std::cout << "\nmodified-URI: " << _requestLine.requestURI << "\n" << std::endl;
+	}
+	else if (_locationObj->cgi)
+		modifyURIforCGI();
+}
+
+void HttpRequest::modifyURIforCGI()
+{
+	std::vector<std::string> pathParts = splitPath(_scriptName);
+	size_t	idx_server;
+	for (idx_server = 0; idx_server < _serverConfigs.size(); idx_server++) {
+		if (isListeningTo(idx_server, _listeningInterface))
+			break ;
+	}
+	std::cout << pathParts.size() << std::endl;
+	std::string newURI;
+	if (_serverConfigs[idx_server].root.size() > 0)
+		newURI = _serverConfigs[idx_server].root;
+	for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
+		std::string part = pathParts[iUri];
+		for (size_t iLocs = 0; iLocs < _serverConfigs[idx_server].locations.size(); iLocs++) {
+			if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path)
+				part = _serverConfigs[idx_server].locations[iLocs].alias;
+		}
+		newURI += part;
+	}
+	_requestLine.requestURI = newURI;
+	_scriptName = _requestLine.requestURI;
+	// path_info
+	pathParts = splitPath(_pathInfo);
+	std::string	newPathInfo;
+	for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
+		std::string part = pathParts[iUri];
+		for (size_t iLocs = 0; iLocs < _serverConfigs[idx_server].locations.size(); iLocs++) {
+			if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path)
+				part = _serverConfigs[idx_server].locations[iLocs].alias;
+		}
+		newPathInfo += part;
+	}
+	_pathInfo = newPathInfo;
+	_pathTranslated = _serverConfigs[idx_server].root + _pathInfo;
+	std::cout << "\nSCRIPT_NAME: " << _scriptName 
+		<< "\nPATH_INFO: " << _pathInfo 
+		<< "\nPATH_TRANSLATED: " << _pathTranslated
+		<< std::endl;
+}
+
+void	HttpRequest::findLocation(std::vector<std::string> pathParts)
 {
 	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::findLocation()" << std::endl;
 
-	std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
+	// std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
 	t_Location	*loc;
 	t_Location	*defLoc;
 	bool		isCGI = false;
 
-	std::cout << "before loop" << std::endl;
-	std::cout << "_serverConfigs.size() = " << _serverConfigs.size() << std::endl;
 	for (size_t i = 0; i < _serverConfigs.size(); i++) {
-		std::cout << "loop start i: " << i << std::endl;
 		if (!isListeningTo(i, _listeningInterface))
 			continue ;
 		for (size_t k = 0; k < pathParts.size(); k++) {
@@ -277,11 +354,14 @@ void	HttpRequest::findLocation()
 					loc = &_serverConfigs[i].locations[j];
 					if (loc && loc->cgi && isCGI == false) {
 						isCGI = true;
-						std::cout << "CGI location -> set PATH_INFO && SCRIPT_NAME" << std::endl;
-						setScriptName(pathParts, k + 1);
-						setPathInfo(pathParts, k + 1);
+						size_t posScript = posOfScriptName(pathParts, loc->cgiExtensions, k + 1);
+						setScriptName(pathParts, posScript);
+						setPathInfo(pathParts, posScript);
+						// setPathTranslated
 						std::cout << "SCRIPT_NAME: "<< _scriptName << std::endl;
 						std::cout << "PATH_INFO: " << _pathInfo << std::endl;
+						_locationObj = loc;
+						return ;
 					}
 					std::cout << "location: " << _serverConfigs[i].locations[j].path
 						<< " => " << pathParts[k] << " => " 
@@ -291,14 +371,30 @@ void	HttpRequest::findLocation()
 		}
 	}
 	if (!loc && defLoc)
-		loc = defLoc;
-	if (loc != NULL) // print result
-		std::cout << "\t ==> location " << loc->path << " => " << loc->alias << " {..}" << std::endl;
-	else
-		std::cout << "\t ==> location NULL" << std::endl;
+		_locationObj = defLoc;
 	_locationObj = loc;
 	// return loc;
 }
+
+size_t	HttpRequest::posOfScriptName(std::vector<std::string> &parts, std::vector<std::string> cgiExt, size_t n)
+{
+	size_t idx_scrpt = 0;
+	bool	found = false;
+	size_t	idx_found = 0;
+	while (idx_scrpt < parts.size()) {
+		for (size_t i = 0; i < cgiExt.size(); i++) {
+			if (parts[idx_scrpt] == cgiExt[i] && found == false) {
+				found = true;
+				idx_found = idx_scrpt;
+			}
+		}
+		idx_scrpt++;
+	}
+	if (found)
+		return idx_found + 1;
+	return n;
+}
+
 
 bool	HttpRequest::isListeningTo(size_t i, const std::string &listeningInterface)
 {
@@ -760,7 +856,10 @@ void HttpRequest::printRequest(void)
 	}
 	std::cout << "}" << std::endl;
 	std::cout << "Request-Body:\n{" << std::endl;
-	// std::cout << _fullMessageBody << "\n}" << std::endl;
+	// std::cout.write(_fullMessageBody.c_str(), 100);
+	if (_fullMessageBody.size() < 100)
+		std::cout << _fullMessageBody;
+	std::cout << "\n}" << std::endl;
 	std::cout << "====================" << std::endl;
 }
 
@@ -1014,6 +1113,16 @@ std::string	&HttpRequest::getPathInfo()
 std::string &HttpRequest::getScriptName()
 {
 	return _scriptName;
+}
+
+std::string &HttpRequest::getPathTranslated()
+{
+	return _pathTranslated;
+}
+
+t_Location	*HttpRequest::getLocationObj()
+{
+	return _locationObj;
 }
 
 void	HttpRequest::setServerConfigs(std::vector<t_Configs> serverConfigs, const std::string &listeningInterface)

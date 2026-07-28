@@ -27,7 +27,7 @@ class MethodExecuter
 		~MethodExecuter();
 
 		bool				isImplementedMethod(const std::string &methodName);
-		AMethod				*createMethod(const std::string &methodName, const std::string &path, const std::string &listeningInterface);
+		AMethod				*createMethod(const std::string &methodName, t_Location *locationObj);
 		t_executionResult	execute(AMethod *method, HttpRequest *request, const std::string &listeningInterface);
 		bool				setConfig(std::vector<t_Configs> serverConfigs);
 		t_Location			*availableLocation(const std::string &path, const std::string &listeningInterface, const std::string &methodName);
