@@ -1,9 +1,21 @@
 #include "ConfigFileParser.hpp"
 
+// =========================================================================
+// Constructors & Destructor
+// =========================================================================
+
 ConfigFileParser::ConfigFileParser(){}
 
 ConfigFileParser::~ConfigFileParser(){}
 
+// =========================================================================
+// Public Methods
+// =========================================================================
+
+/**
+	* @brief reading config-file. then tokenizes it and parses tokens to 
+		data-structure.
+*/
 std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 {
 	// check filename
@@ -19,12 +31,19 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 	}
 
 	tokenize(str);
-	adjustTokens();
 	parseToDataStructure();
 	if (PRINT_SERVER_CONFIG)
 		printServers();
 	return (_servers);
 }
+
+// =========================================================================
+// Private Methods
+// =========================================================================
+
+// =========================================================================
+// TOKENIZE
+// =========================================================================
 
 void ConfigFileParser::tokenize(const std::string &input)
 {
@@ -33,7 +52,7 @@ void ConfigFileParser::tokenize(const std::string &input)
 	size_t end = 0;
 	bool	inToken = false;
 	for (size_t i = 0; i < input.size(); i++) {
-		if (isValidChar(input[i])) {
+		if (isValidChar(input[i])) { // token start
 			if (!inToken) {
 				start = i;
 				inToken = true;
@@ -61,6 +80,25 @@ void ConfigFileParser::tokenize(const std::string &input)
 		tok.val = input.substr(start, input.size() - start);
 		tok.type = getTokenType(tok.val);
 		_tokens.push_back(tok);
+	}
+	adjustTokens();
+}
+
+void ConfigFileParser::adjustTokens()
+{
+	for (size_t i = 0; i < _tokens.size(); i++)
+	{
+		if (_tokens[i].type == ASSIGN && i > 0 && i + 1 < _tokens.size())
+		{
+			if (_tokens[i - 1].type == STR && isNbr(_tokens[i -1].val))
+				_tokens[i - 1].type = NUMBER;
+			else if (_tokens[i - 1].type == STR)
+				_tokens[i - 1].type = IDENTIFIER;
+			if (_tokens[i + 1].type == STR)
+				_tokens[i + 1].type = VALUE;
+		}
+		if (_tokens[i].type == LOCATION && i + 1 < _tokens.size())
+			_tokens[i + 1].type = PATH_LOCATION;
 	}
 }
 
@@ -98,84 +136,42 @@ e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
 	return STR;
 }
 
+// =========================================================================
+// PARSING
+// =========================================================================
 
-
-void ConfigFileParser::adjustTokens()
-{
-	for (size_t i = 0; i < _tokens.size(); i++)
-	{
-		if (_tokens[i].type == ASSIGN && i > 0 && i + 1 < _tokens.size())
-		{
-			if (_tokens[i - 1].type == STR && isNbr(_tokens[i -1].val))
-				_tokens[i - 1].type = NUMBER;
-			else if (_tokens[i - 1].type == STR)
-				_tokens[i - 1].type = IDENTIFIER;
-			if (_tokens[i + 1].type == STR)
-				_tokens[i + 1].type = VALUE;
-		}
-		if (_tokens[i].type == LOCATION && i + 1 < _tokens.size())
-			_tokens[i + 1].type = PATH_LOCATION;
-	}
-}
-
-bool ConfigFileParser::isNbr(const std::string &s)
-{
-	for (size_t i = 0; i < s.size(); i++)
-	{
-		if (s[i] < '0' || s[i] > '9')
-			return false;
-	}
-	return true;
-}
-
-
-// ==================================================
-// PARSE ////////////////////////////////////////////
-// ==================================================
-
+/**
+	* @brief loops through tokens and creates Data-structure for server_blocks.
+ */
 void ConfigFileParser::parseToDataStructure()
 {
-	for (size_t i = 0; i < _tokens.size(); i++)
-	{
-		if (_tokens[i].type == SERVER)
-		{
-			std::cout << i << std::endl;
+	for (size_t i = 0; i < _tokens.size(); i++) {
+		if (_tokens[i].type == SERVER) {
 			createServer(&i);
 		}
 	}
 }
 
+/**
+	* @brief
+*/
 size_t ConfigFileParser::createServer(size_t *i)
 {
-	size_t	j;
+	size_t		j;
 	t_Configs	serverConfigs;
+
 	*i += 1;
-	for (j = *i; j < _tokens.size(); j++)
-	{
-		if (j >= 2 
-			&&_tokens[j].type == ASSIGN
-			&& _tokens[j - 1].type == NUMBER
-			&& _tokens[j - 2].val == "error_page")
-		{
-			std::stringstream	ss(_tokens[j - 1].val);
-			int	errorCode;
-			ss >> errorCode;
-			serverConfigs.errorPages[errorCode] = _tokens[j + 1].val;
-			j += 1;
-		}
-		else if (_tokens[j].type == ASSIGN)
-		{
-			if (checkIdentifier(_tokens[j-1].val))
-				setValue(_tokens[j-1].val, j, &serverConfigs);
-		}
+	for (j = *i; j < _tokens.size(); j++) {
+		if (tokenIsErrorPage(j))
+			setErrorPage(&serverConfigs, &j);
+		else if (_tokens[j].type == ASSIGN 
+					&& checkIdentifier(_tokens[j - 1].val))
+				setValue(_tokens[j - 1].val, j, &serverConfigs);
 		else if (_tokens[j].type == LOCATION)
-		{
-			// std::cout << _tokens[j+1].val << std::endl;
 			j += createLocation(j, &serverConfigs);
-		}
 		else if (_tokens[j].type == SERVER || _tokens[j].type == BRACE_CLOSE)
 		{
-			std::cout << "SERVER TOKEN" << std::endl;
+			std::cout << "SERVER_BLOCK END" << std::endl;
 			break ;
 		}
 	}
@@ -185,110 +181,191 @@ size_t ConfigFileParser::createServer(size_t *i)
 	return j;
 }
 
-size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
+size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs)
 {
-	if (i + 1 >= _tokens.size())
-		return i;
-	if (_tokens[i - 1].val == "alias")
-		loc->alias = _tokens[i + 1].val;
-	if (_tokens[i - 1].val == "accepted_methods")
-	{
-		size_t	j = i + 1;
-		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
-		{
-			loc->allowedMethods.push_back(_tokens[j].val);
-			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
-				j += 2;
-			else
-				break;
-		}
-		return j;
-	}
-	if (_tokens[i - 1].val == "cgi_extension")
-	{
-		loc->cgi = true;
-		size_t	j = i + 1;
-		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
-		{
-			loc->cgiExtensions.push_back(_tokens[j].val);
-			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
-				j += 2;
-			else
-				break;
-		}
-		return j;
-	}
-	if (_tokens[i - 1].val == "upload_enable" && _tokens[i+1].val == "on")
-		loc->upload = true;
-	if (_tokens[i - 1].val == "upload_store")
-		loc->uploadStore = _tokens[i + 1].val;
-	if (_tokens[i -1].val == "upload_extensions")
-	{
-		size_t	j = i + 1;
-		while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR))
-		{
-			loc->uploadExtensions.push_back(_tokens[j].val);
-			if (j + 1 < _tokens.size() && _tokens[j+1].type == COMMA)
-				j += 2;
-			else
-				break;
-		}
-		return j;
-	}
-	if (_tokens[i -1].val == "index")
-		loc->defaultPage = _tokens[i+1].val;
-	if (_tokens[i -1].val == "return")
-	{
-		loc->redirect = true;
-		loc->redirectCode = std::atoi(_tokens[i+1].val.c_str());
-		if (i+2 < _tokens.size())
-			loc->redirectURL = _tokens[i + 2].val;
-		return i + 2;
-	}
-	if (_tokens[i - 1].val == "autoindex" && _tokens[i + 1].val == "on")
-		loc->autoIndex = true;
-	if (_tokens[i - 1].val == "form_output_file")
-	{
-		loc->formSubmit = true;
-		loc->formUploadFile = _tokens[i + 1].val;
-	}
-	if (_tokens[i - 1].val == "cgi_path")
-	{
-		loc->cgi = true;
-		loc->cgiPath = _tokens[i + 1].val;
-	}
-	if (_tokens[i - 1].val == "client_max_body_size") {
-		loc->maxBodySize = convertStrToSize(_tokens[i + 1].val);
-		loc->sizeIsSet = true;
-	}
-	return i + 1;
-}
-
-size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs) // add serverConfigs.
-{
-	t_Location	tempLoc;
+	t_Location	location;
 	size_t		j = i;
 	
-	tempLoc.path = _tokens[i+1].val;
-	tempLoc.sizeIsSet = false;
-	tempLoc.maxBodySize = 0;
-	tempLoc.redirect = false;
-	tempLoc.upload = false;
-	tempLoc.autoIndex = false;
-	tempLoc.formSubmit = false;
-	tempLoc.cgi = false;
-	while (_tokens.size() > j && _tokens[j].type != BRACE_CLOSE && _tokens[j].type != END_OF_FILE)
-	{
-		if (_tokens[j].type == ASSIGN)
-		{
-			j = setLocationVal(j, &tempLoc);
+	initLocation(&location, i);
+	while (insideLocation(j)) {
+		if (_tokens[j].type == ASSIGN) {
+			j = setLocationVariable(j, &location);
 			j--;
 		}
 		j++;
 	}
-	serverConfigs->locations.push_back(tempLoc);
-	_configs.locations.push_back(tempLoc);
+	serverConfigs->locations.push_back(location);
 	return (j - i);
+}
+
+void	ConfigFileParser::initLocation(t_Location *location, size_t pos)
+{
+	location->path = _tokens[pos+1].val;
+	location->sizeIsSet = false;
+	location->maxBodySize = 0;
+	location->redirect = false;
+	location->upload = false;
+	location->autoIndex = false;
+	location->formSubmit = false;
+	location->cgi = false;
+}
+bool	ConfigFileParser::insideLocation(size_t pos)
+{
+	if (_tokens.size() > pos 
+		&& _tokens[pos].type != BRACE_CLOSE 
+		&& _tokens[pos].type != END_OF_FILE)
+		return true;
+	return false;
+}
+
+
+
+size_t ConfigFileParser::setLocationVariable(size_t i, t_Location *loc)
+{
+	if (i + 1 >= _tokens.size())
+		return i;
+	
+	e_VarName	variableName = getVariableName(i);
+	return setVariableValue(variableName, loc, &i);
+}
+
+e_VarName	ConfigFileParser::getVariableName(size_t pos)
+{
+	std::string	name = _tokens[pos - 1].val;
+	if (name == "alias")
+		return ALIAS;
+	if (name == "accepted_methods")
+		return METHODS;
+	if (name == "cgi_extension")
+		return CGI_EXT;
+	if (name == "upload_enable" && _tokens[pos + 1].val == "on")
+		return UPLOAD_ENABLE;
+	if (name == "upload_extensions")
+		return UPLOAD_EXT;
+	if (name == "upload_store")
+		return UPLOAD_STORE;
+	if (name == "index")
+		return INDEX;
+	if (name == "return")
+		return RETURN;
+	if (name == "autoindex")
+		return AUTOINDEX;
+	if (name == "form_output_file")
+		return FORM_FILE;
+	if (name == "cgi_path")
+		return CGI_PATH;
+	if (name == "client_max_body_size")
+		return BODY_SIZE;
+	return ERROR;
+}
+
+size_t	ConfigFileParser::fillVector(std::vector<std::string> *vec, size_t pos)
+{
+	size_t j = pos + 1;
+	while (j < _tokens.size() && (_tokens[j].type == VALUE || _tokens[j].type == STR)) {
+		vec->push_back(_tokens[j].val);
+		if (j + 1 < _tokens.size() && _tokens[j + 1].type == COMMA)
+			j += 2;
+		else
+			break;
+	}
+	return j;
+}
+
+size_t	ConfigFileParser::setVariableValue(e_VarName varName, t_Location *location, size_t *pos)
+{
+	switch (varName) {
+		case ALIAS: location->alias = _tokens[*pos + 1].val;
+			break;
+		case METHODS:
+			return fillVector(&location->allowedMethods, *pos);
+		case CGI_EXT:
+			location->cgi = true;
+			return fillVector(&location->cgiExtensions, *pos);
+		case UPLOAD_EXT:
+			return fillVector(&location->uploadExtensions, *pos);
+		case UPLOAD_ENABLE:
+			location->upload = true;
+			break;
+		case UPLOAD_STORE:
+			location->uploadStore = _tokens[*pos + 1].val;
+			break ;
+		case INDEX:
+			location->defaultPage = _tokens[*pos + 1].val;
+			break ;
+		case AUTOINDEX:
+			location->autoIndex = true;
+			break ;
+		case FORM_FILE:
+			location->formSubmit = true;
+			location->formUploadFile = _tokens[*pos + 1].val;
+			break ;
+		case CGI_PATH:
+			location->cgi = true;
+			location->cgiPath = _tokens[*pos + 1].val;
+			break ;
+		case BODY_SIZE:
+			location->sizeIsSet = true;
+			location->maxBodySize = convertStrToSize(_tokens[*pos + 1].val);
+			break ;
+		case RETURN:
+			location->redirect = true;
+			location->redirectCode = std::atoi(_tokens[*pos + 1].val.c_str());
+			if (*pos + 2 < _tokens.size())
+				location->redirectURL = _tokens[*pos + 2].val;
+			return *pos + 2;
+		case ERROR:
+			std::cout << "ERROR " << _tokens[*pos -1].val << std::endl;
+			return *pos + 1;
+	}
+	return *pos + 1;
+}
+
+bool	ConfigFileParser::tokenIsErrorPage(size_t pos)
+{
+	if (pos >= 2 
+			&&_tokens[pos].type == ASSIGN
+			&& _tokens[pos - 1].type == NUMBER
+			&& _tokens[pos - 2].val == "error_page")
+		return true;
+	return false;
+}
+
+void	ConfigFileParser::setErrorPage(t_Configs *serverConfigs, size_t *pos)
+{
+	std::stringstream	ss(_tokens[*pos - 1].val);
+	int	errorCode;
+	ss >> errorCode;
+	serverConfigs->errorPages[errorCode] = _tokens[*pos + 1].val;
+	*pos += 1;
+}
+
+bool	ConfigFileParser::checkIdentifier(const std::string identifier)
+{
+	if (identifier == "listen"
+		|| identifier == "server_name"
+		|| identifier == "error_page"
+		|| identifier == "client_max_body_size"
+		|| identifier == "root")
+		return true;
+	return false;
+}
+
+// change to set values for this->server.
+void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serverConfigs)
+{
+	if (j + 1 >= _tokens.size())
+		return ;
+	if (id == "listen") {
+		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
+		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
+	}
+	else if (id == "server_name")
+		serverConfigs->serverName = _tokens[j + 1].val;
+	else if (id == "client_max_body_size")
+		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
+	else if (id == "root")
+		serverConfigs->root = _tokens[j + 1].val;
 }
 
 // accepting multiple Ports on one interface map<string, vector<string>>
@@ -321,6 +398,16 @@ void	ConfigFileParser::parseEndpoints(t_Configs *serverConfs)
 	}
 }
 
+bool ConfigFileParser::isNbr(const std::string &s)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		if (s[i] < '0' || s[i] > '9')
+			return false;
+	}
+	return true;
+}
+
 bool	ConfigFileParser::isIPv6(const std::string &listenInterface)
 {
 	size_t count = 0;
@@ -335,48 +422,17 @@ bool	ConfigFileParser::isIPv6(const std::string &listenInterface)
 
 void	ConfigFileParser::parseIPv6(t_Configs *serverConfs, const std::string &listenInterface)
 {
-	// std::cout << "parseIPv6()\t" << listenInterface << std::endl;
 	size_t	start = listenInterface.find_first_of('[');
 	size_t	end = listenInterface.find_last_of(']');
-	// std::cout << "start: " << start << ", end: " << end << std::endl;
+
 	std::string	interface = listenInterface.substr(start + 1, end - (start + 1));
 	std::string	port = listenInterface.substr(end + 2);
-	
-	// std::cout << "IPV6\t(" << interface << "):(" << port << ");" << std::endl;
 
 	std::map<std::string, std::vector<std::string> >::iterator it = serverConfs->endpoints.find(interface);
 	if (it != serverConfs->endpoints.end())
 		it->second.push_back(port);
 	else
 		serverConfs->endpoints[interface].push_back(port);
-}
-
-bool	ConfigFileParser::checkIdentifier(const std::string identifier)
-{
-	if (identifier == "listen"
-		|| identifier == "server_name"
-		|| identifier == "error_page"
-		|| identifier == "client_max_body_size"
-		|| identifier == "root")
-		return true;
-	return false;
-}
-
-// change to set values for this->server.
-void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serverConfigs)
-{
-	if (j + 1 >= _tokens.size())
-		return ;
-	if (id == "listen") {
-		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
-		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
-	}
-	else if (id == "server_name")
-		serverConfigs->serverName = _tokens[j + 1].val;
-	else if (id == "client_max_body_size")
-		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
-	else if (id == "root")
-		serverConfigs->root = _tokens[j + 1].val;
 }
 
 size_t	ConfigFileParser::convertStrToSize(const std::string value)
@@ -392,6 +448,10 @@ size_t	ConfigFileParser::convertStrToSize(const std::string value)
 		size *= 1024;
 	return size;
 }
+
+// =========================================================================
+// PRINT's
+// =========================================================================
 
 void ConfigFileParser::printServers()
 {

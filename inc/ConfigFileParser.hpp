@@ -1,16 +1,17 @@
 #ifndef CONFIGFILEPARSER_HPP
 # define CONFIGFILEPARSER_HPP
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <sstream>
+# include "print_controls.hpp"
+
+# include <iostream>
+# include <fstream>
+# include <vector>
+# include <map>
+# include <algorithm>
+# include <sstream>
 # include <stdexcept>
 # include <cerrno>
 # include <cstring>
-# include "print_controls.hpp"
 
 enum e_TokenType
 {
@@ -28,6 +29,23 @@ enum e_TokenType
 	END_OF_FILE
 };
 
+enum	e_VarName
+{
+	ALIAS,
+	METHODS,
+	CGI_EXT,
+	UPLOAD_ENABLE,
+	UPLOAD_STORE,
+	UPLOAD_EXT,
+	INDEX,
+	RETURN,
+	AUTOINDEX,
+	FORM_FILE,
+	CGI_PATH,
+	BODY_SIZE,
+	ERROR
+};
+
 typedef std::map<std::string, std::vector<std::string> >	t_MultiStrMap;
 
 typedef struct s_Token
@@ -39,7 +57,7 @@ typedef struct s_Token
 typedef struct s_Location
 {
 	std::string		path;
-	std::string		alias; // before: root
+	std::string		alias;
 	bool			sizeIsSet;
 	size_t			maxBodySize;
 	bool			redirect;
@@ -47,7 +65,7 @@ typedef struct s_Location
 	int				redirectCode;
 	bool			upload;
 	std::string		uploadStore;
-	bool			autoIndex; // directory listing
+	bool			autoIndex;
 	std::string		defaultPage;
 	bool			formSubmit;
 	std::string		formUploadFile;
@@ -55,7 +73,7 @@ typedef struct s_Location
 	std::string		cgiPath;
 	std::vector<std::string>	allowedMethods;
 	std::vector<std::string>	cgiExtensions;
-	std::vector<std::string>	uploadExtensions; // .txt, .pdf, .jpg, ...
+	std::vector<std::string>	uploadExtensions;
 }				t_Location;
 
 typedef struct s_Configs
@@ -66,10 +84,14 @@ typedef struct s_Configs
 	std::vector<std::string>	listenInterfaces;
 	std::map<int, std::string>	errorPages;
 	std::vector<t_Location>		locations;
-
-	t_MultiStrMap	endpoints;
+	t_MultiStrMap				endpoints;
 }	t_Configs;
 
+/**
+  * @class ConfigFileParser
+  * @brief receives the file, reads it and parses it into data-structure
+		for later use.
+ */
 class ConfigFileParser
 {
 	public:
@@ -77,38 +99,51 @@ class ConfigFileParser
 		~ConfigFileParser();
 
 		std::vector<t_Configs>	&parseFile(const std::string &filePath);
+
 	private:
-		// TOKENIZATION
 		std::vector<t_Token>	_tokens;
-		
+		std::vector<t_Configs>	_servers;
+
+		// tokenize
 		void 		tokenize(const std::string &input);
+		void		adjustTokens();
 		bool		isValidChar(char c);
 		e_TokenType	getTokenType(std::string tokenStr);
-		std::string printTokenType(e_TokenType type);
-		void		adjustTokens();
-		void		printTokens();
-		bool		isNbr(const std::string &s);
 
-		// PARSING
-		t_Configs	_configs;
-		std::vector<t_Configs>	_servers;
-		void 	parseToDataStructure();
-		size_t	createServer(size_t *i);
-		// size_t	createLocation(size_t i);
-		bool	checkIdentifier(const std::string identifier);
-		void	setValue(const std::string id, size_t j, t_Configs *serverConfigs);
-		void	printServer(size_t z);
-		size_t	convertStrToSize(const std::string value);
+		// parsing (server)
+		void 		parseToDataStructure();
+		size_t		createServer(size_t *i);
+
+		bool		checkIdentifier(const std::string identifier);
+		void		setValue(const std::string id, size_t j, t_Configs *serverConfigs);
 		
-		size_t	createLocation(size_t i, t_Configs *serverConfigs);
-		size_t	setLocationVal(size_t i, t_Location *loc);
+		bool		tokenIsErrorPage(size_t pos);
+		void		setErrorPage(t_Configs *serverConfigs, size_t *pos);
+		
+		// parsing (location)
+		size_t		createLocation(size_t i, t_Configs *serverConfigs);
+		void		initLocation(t_Location *location, size_t pos);
+		bool		insideLocation(size_t pos);
 
-		void	parseEndpoints(t_Configs *serverConf);
-		void	printServers();
+		size_t		setLocationVariable(size_t i, t_Location *loc);
+		e_VarName	getVariableName(size_t pos);
+		size_t		setVariableValue(e_VarName varName, t_Location *location, size_t *pos);
+		size_t		fillVector(std::vector<std::string> *vec, size_t pos);
 
-		// IPv6
-		void	parseIPv6(t_Configs *serverConfs, const std::string &listenInterface);
-		bool	isIPv6(const std::string &listenInterface);
+		// parsing (helpers)
+		void		parseEndpoints(t_Configs *serverConf);
+
+		bool		isNbr(const std::string &s);
+		size_t		convertStrToSize(const std::string value);
+
+		void		parseIPv6(t_Configs *serverConfs, const std::string &listenInterface);
+		bool		isIPv6(const std::string &listenInterface);
+
+		// print's
+		void		printServers();
+		void		printServer(size_t z);
+		std::string printTokenType(e_TokenType type);
+		void		printTokens();
 };
 
 #endif
