@@ -246,7 +246,7 @@ bool HttpRequest::parseHeaderLine()
 	std::vector<std::string> pathParts = splitPath(_requestLine.requestURI);
 	findLocation(pathParts); // find corresponding t_Locatio
 	
-	std::cout << "LOCATION ==> " << _locationObj->alias << std::endl;
+	std::cout << "LOCATION ==> " << _locationObj->path << std::endl;
 	if (isAllowedMethod())
 		std::cout << "\tMethod is allowed!" << std::endl;
 	else
@@ -273,11 +273,17 @@ void	HttpRequest::modifyURI(std::vector<std::string> &pathParts)
 		for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
 			std::string part = pathParts[iUri];
 			for (size_t iLocs = 0; iLocs < _serverConfigs[idx_server].locations.size(); iLocs++) {
-				if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path)
-					part = _serverConfigs[idx_server].locations[iLocs].alias;
+				if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path) {
+					if ( _serverConfigs[idx_server].locations[iLocs].upload)
+						part = _serverConfigs[idx_server].locations[iLocs].uploadStore;
+					else
+						part = _serverConfigs[idx_server].locations[iLocs].alias;
+				}
 			}
 			newURI += part;
 		}
+		if (_locationObj->formSubmit)
+			newURI += "/" + _locationObj->formUploadFile;
 		_requestLine.requestURI = newURI;
 		std::cout << "\nmodified-URI: " << _requestLine.requestURI << "\n" << std::endl;
 	}
@@ -850,7 +856,10 @@ void HttpRequest::printRequest(void)
 	}
 	std::cout << "}" << std::endl;
 	std::cout << "Request-Body:\n{" << std::endl;
-	// std::cout << _fullMessageBody << "\n}" << std::endl;
+	// std::cout.write(_fullMessageBody.c_str(), 100);
+	if (_fullMessageBody.size() < 100)
+		std::cout << _fullMessageBody;
+	std::cout << "\n}" << std::endl;
 	std::cout << "====================" << std::endl;
 }
 

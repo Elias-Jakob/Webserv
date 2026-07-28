@@ -218,7 +218,7 @@ size_t ConfigFileParser::setLocationVal(size_t i, t_Location *loc)
 		}
 		return j;
 	}
-	if (_tokens[i - 1].val == "upload_enable")
+	if (_tokens[i - 1].val == "upload_enable" && _tokens[i+1].val == "on")
 		loc->upload = true;
 	if (_tokens[i - 1].val == "upload_store")
 		loc->uploadStore = _tokens[i + 1].val;

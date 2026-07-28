@@ -9,7 +9,7 @@
 // METHODS
 # define METHOD_PRINT			0
 # define DELETE_PRINT			0
-# define POST_PRINT				0
+# define POST_PRINT				1
 # define GET_PRINT				1
 
 // PARSER
