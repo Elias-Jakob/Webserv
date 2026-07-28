@@ -337,9 +337,8 @@ void	HttpRequest::findLocation(std::vector<std::string> pathParts)
 	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::findLocation()" << std::endl;
 
-	// std::vector<std::string>	pathParts = splitPath(_requestLine.requestURI);
-	t_Location	*loc;
-	t_Location	*defLoc;
+	t_Location	*loc = NULL;
+	t_Location	*defLoc = NULL;
 	bool		isCGI = false;
 
 	for (size_t i = 0; i < _serverConfigs.size(); i++) {
@@ -467,6 +466,8 @@ std::vector<std::string> HttpRequest::splitPath(const std::string &path)
 
 bool	HttpRequest::isAllowedMethod()
 {
+	if (!_locationObj)
+		return (false);
 	for (size_t i = 0; i < _locationObj->allowedMethods.size(); i++) {
 		if (_requestLine.method == _locationObj->allowedMethods[i])
 			return true;

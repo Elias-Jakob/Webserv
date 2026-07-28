@@ -1,8 +1,5 @@
 # include "CGIError.hpp"
 
-CGIError::CGIError(const char *msg) : _msg(msg) {}
+CGIError::CGIError() {}
 
-CGIError::~CGIError() throw() {}
-
-const char	*CGIError::what() const throw()
-{ return (this->_msg); }
+CGIError::~CGIError() {}

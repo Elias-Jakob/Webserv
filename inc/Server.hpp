@@ -46,28 +46,31 @@ class Server
 		Server	&operator=(const Server &other);
 
 		std::vector<t_Configs>	&configs;
+		Epoll	epoll;
+		CGIProcessLauncher	cgiLauncher;
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
+		struct addrinfo	addrHints;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
 		std::map<int, ClientConnection&>	cgiPipes;
-		Epoll	epoll;
-		CGIProcessLauncher	cgiLauncher;
 		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
 		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
 
-		void	setupSocketAddr(struct addrinfo *res, int &fd);
-		bool	initListenSockets();
+		int		setupSocketAddr(const char *interface, const char *port);
+		void	initListenSocket(std::vector<t_Configs>::iterator &conf);
 		void	eventLoop();
-		void	handleNewClient(int listenFd);
+		void	acceptNewClient(int listenFd);
 		void	handleIncoming(int);
 		void	handleOutgoing(int);
 		void	handleCGIOutput(int fd);
 		void	writeRequestBodyToCGI(int fd);
 		void	removeClient(ClientConnection &client);
-		void	checkTimeouts();
+		void	checkOnClients();
 		void	cgiTimeoutResponse(ClientConnection &client);
-		void	awaitCGIProcesses();
+		void	checkProcessStatus(ClientConnection &client);
+		void	callEventHandler(const struct epoll_event &event);
+		ClientConnection	*identifyEventCaller(int fd);
 };
 
 #endif // !SERVER_HPP
