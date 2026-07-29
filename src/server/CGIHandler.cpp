@@ -1,43 +1,38 @@
 # include "Server.hpp"
 
-void	Server::writeRequestBodyToCGI(int fd)
+void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 {
-	ClientConnection	&caller = this->cgiPipes.at(fd);
 	ssize_t	writtenBytes;
 	std::string	requestBody = caller.request->getRequestBody();
 	
 	if (!caller.request->getRequestBody().empty()) {
-		// TODO: handle the write (e.g. what should be done if the pipe is full and -1 is returned because the pipes fd is set to NONBLOCK)
-		writtenBytes = write(fd, requestBody.c_str(), requestBody.size());
+		writtenBytes = write(caller.cgiIn, requestBody.c_str(), requestBody.size());
 		if (writtenBytes == -1)
 			return ;
-			// throw std::runtime_error("failed while writing to cgi pipe: " + std::string(std::strerror(errno)));
 		caller.cgiWrittenBytes += writtenBytes;
 		if (caller.cgiWrittenBytes < requestBody.size())
 			return ;
 	}
-	close(fd);
-	this->cgiPipes.erase(fd);
+	close(caller.cgiIn);
+	this->cgiPipes.erase(caller.cgiIn);
 	caller.cgiIn = -1;
 }
 
-void	Server::handleCGIOutput(int fd)
+void	Server::handleCGIOutput(ClientConnection &caller)
 {
 	char buf[1024] = { 0 };
 	ssize_t	readBytes;
-	ClientConnection	&caller = this->cgiPipes.at(fd);
 
-	readBytes = read(fd, buf, sizeof(buf) - 1);
-	if (readBytes == -1) // handle
+	readBytes = read(caller.cgiOut, buf, sizeof(buf) - 1);
+	if (readBytes == -1)
 		return ;
-		// throw std::runtime_error(std::strerror(errno));
 	else if (readBytes > 0)
 		caller.response_buffer.append(buf);
 	else {
 		if (caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
-		close(fd);
-		this->cgiPipes.erase(fd);
+		close(caller.cgiOut);
+		this->cgiPipes.erase(caller.cgiOut);
 		caller.cgiOut = -1;
 	}
 }

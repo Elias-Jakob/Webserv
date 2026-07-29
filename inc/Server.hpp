@@ -61,10 +61,10 @@ class Server
 		void	initListenSocket(std::vector<t_Configs>::iterator &conf);
 		void	eventLoop();
 		void	acceptNewClient(int listenFd);
-		void	handleIncoming(int);
-		void	handleOutgoing(int);
-		void	handleCGIOutput(int fd);
-		void	writeRequestBodyToCGI(int fd);
+		void	handleIncoming(ClientConnection &caller);
+		void	handleOutgoing(ClientConnection &caller);
+		void	handleCGIOutput(ClientConnection &caller);
+		void	writeRequestBodyToCGI(ClientConnection &caller);
 		void	removeClient(ClientConnection &client);
 		void	checkOnClients();
 		void	cgiTimeoutResponse(ClientConnection &client);
