@@ -1,59 +1,54 @@
 # include "Server.hpp"
 
-void	Server::handleIncoming(int clientFd)
+void	Server::handleIncoming(ClientConnection &caller)
 {
-	ClientConnection	&client = this->clients.at(clientFd);
 	ssize_t	bytesRecv;
-	char buffer[4096];
-	// struct epoll_event	epEvent;
+	char	buffer[4096] = { 0 };
 
-	std::cout << "ClientRead() for fd: " << clientFd << std::endl;
-	bytesRecv = recv(clientFd, buffer, sizeof(buffer), 0);
+	std::cout << "ClientRead() for fd: " << caller.fd << std::endl;
+	bytesRecv = recv(caller.fd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRecv == -1)
 		return ;
-		// throw std::runtime_error(std::strerror(errno));
 	else if (bytesRecv == 0)
 	{
-		// Client closed connection
 		std::cout << "Client closed connection" << std::endl;
-		this->removeClient(client);
+		this->removeClient(caller);
 		return;
 	}
-	std::cout << "Received " << bytesRecv << " bytes from " << clientFd << std::endl;
-	if (client.request == NULL)// Check if request pointer is valid
-	{
-		std::cerr << "ERROR: request pointer is NULL!" << std::endl;
-		this->removeClient(client);
-		return;
-	}
+	std::cout << "Received " << bytesRecv << " bytes from " << caller.fd << std::endl;
+	// WARNING: redundant?
+	// if (caller.request == NULL)// Check if request pointer is valid
+	// {
+	// 	std::cerr << "ERROR: request pointer is NULL!" << std::endl;
+	// 	this->removeClient(caller);
+	// 	return;
+	// }
 	// Parse request - use string constructor with length to avoid buffer overflow
-	std::string request_data(buffer, bytesRecv);
-	client.request->parseRequest(request_data);
-	if (client.request->parsingComplete())
-	{
-		client.state = PROCESSING;
-		client.processRequest();
-		if (client.state == CGI_PROCESSING) {
+	caller.request->parseRequest(std::string(buffer));
+	if (caller.request->parsingComplete()) {
+		caller.state = PROCESSING;
+		caller.processRequest();
+		if (caller.state == CGI_PROCESSING) {
 			try {
-				if (client.cgiPid != -1) {
-					client.terminateCGIProcess(&(this->cgiPipes));
+				if (caller.cgiPid != -1) {
+					caller.terminateCGIProcess(&(this->cgiPipes));
 					std::cout << "Re-request CGI: Interupting/Terminating previouse CGI process" << std::endl;
 				}
-				this->cgiLauncher.newProcess(client);
+				this->cgiLauncher.newProcess(caller);
 			}
 			catch (const std::exception &e) {
-				std::cerr << "ReceiveHandler client.cgiPid: " << client.cgiPid << std::endl;
-				// if (client.cgiPid != -1)
-				// 	client.terminateCGIProcess(&(this->cgiPipes));
-				client.response_buffer = client.responseBuilder->errorResponseViaCode(500);
-				client.state = SENDING_RESPONSE;
-				this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+				if (caller.cgiPid != -1)
+					std::cerr << "ReceiveHandler caller.cgiPid: " << caller.cgiPid << std::endl;
+				// 	caller.terminateCGIProcess(&(this->cgiPipes));
+				caller.response_buffer = caller.responseBuilder->errorResponseViaCode(500);
+				caller.state = SENDING_RESPONSE;
+				this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 				std::cerr << "CGI process failed: " << e.what() << std::endl;
 			}
 		}
 		else {
-			client.state = SENDING_RESPONSE;
-			this->epoll.ctl(clientFd, EPOLL_CTL_MOD, EPOLLOUT);
+			caller.state = SENDING_RESPONSE;
+			this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 		}
 	}
 }

@@ -80,18 +80,18 @@ void	Server::callEventHandler(const struct epoll_event &event)
 				throw std::runtime_error("Hang up happened on the associated file descriptor");
 			caller->inactiveTime = std::time(NULL);
 			if (event.events & EPOLLIN)
-				this->handleIncoming(caller->fd);//*caller); // TODO:
+				this->handleIncoming(*caller);
 			if (event.events & EPOLLOUT)
-				this->handleOutgoing(caller->fd);//*caller); // TODO:
+				this->handleOutgoing(*caller);
 		}
 		else if (event.data.fd == caller->cgiIn) {
 			if (event.events & EPOLLOUT)
-				this->writeRequestBodyToCGI(event.data.fd);
+				this->writeRequestBodyToCGI(*caller);
 			else if (event.events & EPOLLHUP)
 				throw std::runtime_error("Hang up happened on the associated file descriptor");
 		}
 		else if (event.data.fd == caller->cgiOut && event.events & (EPOLLIN | EPOLLHUP))
-			this->handleCGIOutput(event.data.fd);
+			this->handleCGIOutput(*caller);
 	} catch (const std::runtime_error &e) {
 		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
