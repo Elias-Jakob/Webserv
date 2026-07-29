@@ -30,10 +30,10 @@ void	CGIProcessLauncher::cleanUp(bool closeAll)// = true)
 void	CGIProcessLauncher::newProcess(ClientConnection &client)
 {
 	client.cgiStartTime = std::time(NULL);
-	if (pipe(this->stdinPipe) == -1 || fcntl(this->stdinPipe[1], F_SETFD, FD_CLOEXEC) == -1 ||
-			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1)
-		throw std::runtime_error(std::strerror(errno));
-	if (pipe(this->stdoutPipe) == -1 || fcntl(this->stdoutPipe[0], F_SETFD, FD_CLOEXEC) == -1 ||
+	if (pipe(this->stdinPipe) == -1 || pipe(this->stdoutPipe) == -1 ||
+			fcntl(this->stdinPipe[1], F_SETFD, FD_CLOEXEC) == -1 ||
+			fcntl(this->stdinPipe[1], F_SETFL, O_NONBLOCK) == -1 ||
+			fcntl(this->stdoutPipe[0], F_SETFD, FD_CLOEXEC) == -1 ||
 			fcntl(this->stdoutPipe[0], F_SETFL, O_NONBLOCK) == -1) {
 		this->cleanUp();
 		throw std::runtime_error(std::strerror(errno));

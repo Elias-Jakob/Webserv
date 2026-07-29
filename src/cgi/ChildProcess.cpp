@@ -47,13 +47,10 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 		this->envs.push_back("CONTENT_TYPE=" + request->getContentData().type);
 	this->envs.push_back("REQUEST_METHOD=" + request->getMethod());
 	this->envs.push_back("SCRIPT_NAME=" + request->getScriptName());
-
 	this->envs.push_back("QUERY_STRING=" + request->getRequestLine().queryStr);
-	// TODO: Clarify if PATH_TRANSLATED and AUTH_TYPE are required
-	// PATH_INFO = the path that may follow after the cgi script; PATH_TRANSLATED = PATH_INFO mapped to the real filesystem path
 	this->envs.push_back("PATH_INFO=" + request->getPathInfo());
-	// if (!request->getPathInfo().empty())
-	// 	this->envs.push_back("PATH_TRANSLATED=" + );
+	if (!request->getPathInfo().empty())
+		this->envs.push_back("PATH_TRANSLATED=" + request->getPathTranslated());
 	headers = request->getRequestHeaders();
 	if (!headers["host"].empty()) {
 		std::string	host = headers.at("host").front();
@@ -66,11 +63,6 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 		this->envs.push_back("REDIRECT_STATUS=200");
 		this->envs.push_back("SCRIPT_FILENAME=" + this->args.back());
 	}
-	// These are still left on the todo side:
-	// "AUTH_TYPE"    |               | "PATH_TRANSLATED" |
-	//                |               | "REMOTE_HOST"     |
-	// "REMOTE_IDENT" | "REMOTE_USER" |
-	// TODO: REMOTE_ADDR in order to provide this info i would need to store the client's addr_info after accept
 	this->envs.push_back("REMOTE_ADDR=" + client.remoteAddr);
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)
 		this->envs.push_back(cgi::toMetaFormat(it->first) + "=" + cgi::strJoin(it->second));
