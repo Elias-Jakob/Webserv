@@ -24,7 +24,7 @@ void	Server::handleIncoming(ClientConnection &caller)
 	// 	return;
 	// }
 	// Parse request - use string constructor with length to avoid buffer overflow
-	caller.request->parseRequest(std::string(buffer));
+	caller.request->parseRequest(std::string(buffer), bytesRecv);
 	if (caller.request->parsingComplete()) {
 		caller.state = PROCESSING;
 		caller.processRequest();

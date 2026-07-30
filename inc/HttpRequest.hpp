@@ -111,6 +111,11 @@ class HttpRequest
 		void	modifyURI(std::vector<std::string> &parts);
 		void	modifyURIforCGI();
 		bool	validURI();
+		bool	decodeURI();
+
+		bool	validURIchar(char c);
+		bool 	validURIstr(std::string &URI);
+
 	protected:
 		// HELPERS
 		bool	parseRequestLine();
@@ -128,7 +133,7 @@ class HttpRequest
 		~HttpRequest();
 
 		// METHODS
-		bool	parseRequest(const std::string &partialMessage);
+		bool	parseRequest(const std::string &partialMessage, size_t bytesRecv);
 		bool 	parsingComplete();
 		bool	keepConnectionAlive();
 		bool 	validRequest();
