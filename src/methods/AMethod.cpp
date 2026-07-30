@@ -129,7 +129,12 @@ bool	AMethod::checkCGI()
 */
 bool	AMethod::executeCGI(const std::string &script)
 {
-	std::cout << "AMethod::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
+    struct stat resourceInfo;
+    if (stat(script.c_str(), &resourceInfo) != 0)
+    {
+        HttpStatus::setStatus(404, _code, _phrase);
+        return false;
+    }
 	HttpStatus::setStatus(601, _code, _phrase);
 	_phrase = script;
 	// _phrase = _resource;
