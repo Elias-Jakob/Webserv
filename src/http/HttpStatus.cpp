@@ -25,7 +25,7 @@ std::map<int, std::string> HttpStatus::initStatusMap()
 	phrases[413] = "Payload Too Large";
 	phrases[414] = "URI Too Long";
 	phrases[415] = "Unsupported Media Type";
-
+	phrases[431] = "Bad Request(too many headers)";
 	// 5xx Server Errors
 	phrases[500] = "Internal Server Error";
 	phrases[501] = "Not Implemented";

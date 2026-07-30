@@ -12,6 +12,23 @@ implement the encoding (URL-decode)
 */
 bool FormParser::parse(std::string &str)
 {
+	std::cout << "FormParser::parse()\n\tstr: " << str << std::endl;
+	if (_contentData.subtype == "octet-stream") {
+		std::cout << "\toctet" << std::endl;
+		s_FormField field;
+		std::string value = str;
+		urlDecode(value);
+		field.value = value;
+		_result[""] = field;
+		
+		std::map<std::string, s_FormField>::iterator it = _result.begin();
+		std::map<std::string, s_FormField>::iterator ite = _result.end();
+		while (it != ite) {
+			std::cout << "it->first: " << it->first << " -> "<< it->second.value << std::endl;
+			it++;
+		}
+	}
+	else {
 	std::vector<std::string> splittedStrings;
 	size_t	start = 0;
 	size_t	end = 0;
@@ -41,6 +58,7 @@ bool FormParser::parse(std::string &str)
 			field.value = value;
 			_result[key] = field;
 		}
+	}
 	}
 	return true;
 }

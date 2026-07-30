@@ -2,6 +2,7 @@
 # define STRUCTS_H
 # include <iostream>
 # include <map>
+
 typedef struct s_FormField
 {
 	std::string	value;

@@ -54,7 +54,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
 	
 	_messageBuffer += partialMessage;
-	// std::cout << "[\n" << partialMessage << "\n]" << std::endl;
+	std::cout << "[\n" << partialMessage << "\n]" << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -77,15 +77,28 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					if (createBodyParser())
 					{
 						_bodyParser->setContentData(_contentData);
+						std::cout << "body: " << _fullMessageBody << std::endl;
 						_bodyParser->parse(_fullMessageBody);
 						_parsedMessageBody = _bodyParser->getResult();
 						if (_parsedMessageBody.size() > 0)
 							std::cout << "_parsedBody returned something..." << std::endl;
 					}
-					else
-					{
+					else {
+						if (_fullMessageBody.size() >0) {
+							std::map<std::string, s_FormField> res;
+							s_FormField	body;
+							body.value = _fullMessageBody;
+							body.filename = "a";
+							res["-"] = body;
+							_parsedMessageBody = res;
+							_state = PARSING_COMPLETE;
+						}
+						// if no content-type, just give the body
+						// std::map<std::string, s_FormField>	result;
+						// _parsedMessageBody 
 						std::cout << "Error: BodyParsing" << std::endl;
 						_state = PARSING_ERROR;
+						
 					}
 				}
 				if (PRINT_REQUEST)
@@ -152,13 +165,12 @@ bool	HttpRequest::parseRequestLine()
 		return setErrorCode(414);
     }
     size_t posSP1 = reqLine.find(' '); // Find first space (after METHOD)
-	// std::cout << "SP1: " << posSP1 << std::endl;
     if (posSP1 == std::string::npos)
     {
         _state = PARSING_ERROR;
         return setErrorCode(400);
     }
-    size_t posSP2 = reqLine.find(' ', posSP1 + 1); // Find second space (after URI)
+    size_t posSP2 = reqLine.find_last_of(' '); // Find second space (after URI)
     if (posSP2 == std::string::npos)
     {
         _state = PARSING_ERROR;
@@ -167,10 +179,41 @@ bool	HttpRequest::parseRequestLine()
 	_requestLine.method = reqLine.substr(0, posSP1);
 	_requestLine.requestURI = reqLine.substr(posSP1 + 1, posSP2 - posSP1 - 1);
 	_requestLine.version = reqLine.substr(posSP2 + 1);
-
+	if (_requestLine.method.size() < 1 || _requestLine.requestURI.size() < 1 || _requestLine.version.size() < 1)
+	{
+		_state = PARSING_ERROR;
+		return setErrorCode(400);
+	}
 	size_t	posQuery = 0; // Query
 	if (hasQuery(&posQuery))
 		handleQuery(posQuery);
+	// validate URI
+	if (!validURI()) {
+		_state = PARSING_ERROR;
+		return false;
+	}	
+	// validate METHOD
+	for (size_t i = 0; i < _requestLine.method.size(); i++) {
+		if (_requestLine.method[i] < 'A' || _requestLine.method[i] > 'Z')
+		{
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
+		}
+	}
+	// validate Http-version
+	size_t pos_version;
+	pos_version = _requestLine.version.find("HTTP/");
+	if (pos_version == std::string::npos) {
+		_state = PARSING_ERROR;
+		return setErrorCode(400);
+	}
+	else if ((_requestLine.version[5] < '0' || _requestLine.version[5] > '9')
+			|| (_requestLine.version[7] < '0' || _requestLine.version[7] > '9' )
+			|| (_requestLine.version[6] != '.'))
+	{
+		_state = PARSING_ERROR;
+		return setErrorCode(400);
+	}
 
 	extractFileExtension();
 	_current_pos = posCRLF + 2;  // Skip \r\n
@@ -186,6 +229,35 @@ bool	HttpRequest::parseRequestLine()
 	return true;
 }
 
+bool validURIchars(std::string &URI)
+{
+	for (size_t i = 0; i < URI.size(); i++) {
+		if ((URI[i] < 'A' || URI[i] > 'Z')
+			&& (URI[i] < 'a' || URI[i] > 'z')
+			&& (URI[i] < '0' || URI[i] > '9')
+			&& (URI[i] != '/' && URI[i] != '.' && URI[i] != '_'))
+		return false;
+	}
+	return true;
+}
+
+bool	HttpRequest::validURI()
+{
+	std::cout << "HttpRequest::validURI()" << std::endl;
+	if (_requestLine.requestURI.size() > MAX_URI_LENGTH) {
+		return setErrorCode(414);
+	}
+	if (!validURIchars(_requestLine.requestURI))
+		return setErrorCode(400);
+	size_t pos = 0;
+	pos = _requestLine.requestURI.find("//");
+	if (pos != std::string::npos)
+		return setErrorCode(400);
+	pos = _requestLine.requestURI.find("..");
+	if (pos != std::string::npos)
+		return setErrorCode(400);
+	return true;
+}
 
 
 /**
@@ -213,15 +285,15 @@ bool HttpRequest::parseHeaderLine()
         if (_headers.size() >= MAX_HEADERS)
         {
             _state = PARSING_ERROR;
-            return false;
+            return setErrorCode(431);
         }
         if (line.size() > MAX_HEADER_LENGTH)
         {
             _state = PARSING_ERROR;
-            return false;
+            return setErrorCode(400);
         }
         size_t colonPos = line.find(':'); // find delimiter for key":"value
-        if (colonPos != std::string::npos)
+        if (colonPos != std::string::npos && colonPos != 0)
         {
             std::string key = line.substr(0, colonPos);
 			toLowerCase(key); // header-field to lowercase
@@ -229,6 +301,15 @@ bool HttpRequest::parseHeaderLine()
             while (valueStart < line.size() && line[valueStart] == ' ')
                 valueStart++;
             std::string value = line.substr(valueStart);
+			// check for unallowed chars in header-name and value
+			for (size_t i = 0; i < key.size(); i++) {
+				if (!isalpha(key[i]) && key[i] != '-') {
+					_state = PARSING_ERROR;
+					return setErrorCode(400);
+				}
+			}
+			if (key.size() > MAX_HEADER_NAME_LENGTH || value.size() > MAX_HEADER_VALUE_LENGTH)
+				return setErrorCode(400);
 			// (key = host || content-length) only one value allowed -> bad request(400).
 			addHeader(key, value);
 			if (key == "host")
@@ -272,15 +353,19 @@ void	HttpRequest::modifyURI(std::vector<std::string> &pathParts)
 			newURI = _serverConfigs[idx_server].root;
 		for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
 			std::string part = pathParts[iUri];
+			std::cout << "part: " << part << std::endl;
 			for (size_t iLocs = 0; iLocs < _serverConfigs[idx_server].locations.size(); iLocs++) {
 				if (pathParts[iUri] == _serverConfigs[idx_server].locations[iLocs].path) {
 					if ( _serverConfigs[idx_server].locations[iLocs].upload)
 						part = _serverConfigs[idx_server].locations[iLocs].uploadStore;
-					else
+					else if (_serverConfigs[idx_server].locations[iLocs].alias.size() > 0)
 						part = _serverConfigs[idx_server].locations[iLocs].alias;
+					else if (_serverConfigs[idx_server].locations[iLocs].redirect)
+						part = _serverConfigs[idx_server].locations[iLocs].redirectURL;
 				}
 			}
 			newURI += part;
+			std::cout << "newURI: " << newURI << std::endl;
 		}
 		if (_locationObj->formSubmit)
 			newURI += "/" + _locationObj->formUploadFile;
@@ -422,6 +507,7 @@ void	HttpRequest::setPathInfo(std::vector<std::string> &parts, size_t start)
 	for (size_t i = start; i < parts.size(); i++)
 		_pathInfo += parts[i];
 }
+
 /**
 	* @brief splits the path at every '/' and stores in vector.
 	* @param path -> the resource path.
@@ -487,18 +573,27 @@ bool	HttpRequest::extractBody()
 	if (PRINT_REQUEST)
 		std::cout << "HttpRequest::extractBody()" << std::endl;
 	std::cout << "_messageBuffer.size() = " << _messageBuffer.size() << std::endl;
-	std::cout << "_current_pos = " << _current_pos << std::endl;
-	std::cout << "First bytes at _current_pos:";
-	for (size_t i = _current_pos; i < _current_pos + 10 && i < _messageBuffer.size(); i++)
-	    std::cout << _messageBuffer[i];
-	std::cout << std::endl;
     size_t contentLength = 0;
 
     std::map<std::string, std::vector<std::string> >::iterator it;
     it = _headers.find("content-length"); // Get Content-Length from headers
     if (it != _headers.end() && !it->second.empty())
 	{
+		if (_headers.find("transfer-encoding") != _headers.end()) {
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
+		}
 		std::cout << "\tCONTENT-LENGTH HANDLING " << it->second[0] << std::endl;
+		if (it->second.size() > 1) {
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
+		}
+		for (size_t i = 0; i < it->second[0].size(); i++) {
+			if (it->second[0][i] < '0' || it ->second[0][i] > '9') {
+				_state = PARSING_ERROR;
+				return setErrorCode(400);
+			}
+		}
         contentLength = atoi(it->second[0].c_str());
         // if (contentLength > MAX_BODY_SIZE)// Check body-size limit
 		if (!validBodySize(contentLength))
@@ -510,11 +605,14 @@ bool	HttpRequest::extractBody()
 	else {
 		std::cout << "\tIN ELSE" << std::endl;
 		it = _headers.find("transfer-encoding");
-		if (it != _headers.end() && !it->second.empty() 
-			&& it->second[0] == "chunked")
+		if (it != _headers.end())
 		{
+			if (!it->second.empty() && it->second[0] == "chunked") {
 				std::cout << "=====\tCHUNKED TRANSFER HANDLING" << std::endl;
 				return unchunkBody();
+			}
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
 		}
 	}
 	// REMOVE to avoid 411 if method is not allowed!
@@ -535,7 +633,9 @@ bool	HttpRequest::extractBody()
     }
     if (contentLength > 0)
     {
-        _fullMessageBody = _messageBuffer.substr(_current_pos, contentLength);// Extract body
+        // _fullMessageBody = _messageBuffer.substr(_current_pos, contentLength);// Extract body
+        _fullMessageBody = _messageBuffer.substr(_current_pos);// Extract body
+		// std::cout << _fullMessageBody << std::endl;
         _current_pos += contentLength;
     }
     else
@@ -622,6 +722,14 @@ size_t	HttpRequest::chunkedSize()
 		return (size_t)-1; // Signal: incomplete chunk header, need more data
 
 	std::string sizeStr = _messageBuffer.substr(_current_pos, posEndSize - _current_pos);
+	for (size_t i = 0; i < sizeStr.size(); i++) {
+		if ((sizeStr[i] < '0' || sizeStr[i] > '9') && (sizeStr[i]< 'a' || sizeStr[i] > 'f'))
+		{
+			_state = PARSING_ERROR;
+			setErrorCode(400);
+			return 0;
+		}
+	}
 	size_t chunked_size = strtol(sizeStr.c_str(), NULL, 16);
 
 	_current_pos = posEndSize + 2;
@@ -638,6 +746,8 @@ size_t	HttpRequest::chunkedSize()
 		subtype: "..."
 		boundary: "----geekboundary...."
 */
+// TODO empty content-type, but body is there
+// "application/octet-stream"
 std::string HttpRequest::parseContentType(std::vector<std::string> value)
 {
 	if (PRINT_REQUEST)
@@ -685,8 +795,15 @@ bool HttpRequest::createBodyParser()
 		std::cout << "HttpRequest::createBodyParser()" << std::endl;
 	std::map<std::string, std::vector<std::string> >::iterator it;
 	it = _headers.find("content-type");
-	if (it == _headers.end())
+	if (it == _headers.end()) {
+		if (_fullMessageBody.size() > 0) { // application/octet-stream
+			_contentData.type = "application";
+			_contentData.subtype = "octet-stream";
+			return false;
+		}
+		std::cerr << "\tErr: content-type is not found!" << std::endl;
 		return false;
+	}
 	parseContentType(_headers["content-type"]);
 	if (_contentData.type == "multipart")
 	{
@@ -739,7 +856,7 @@ bool HttpRequest::validRequest()
 		return false;
 	if (!isImplementedMethod())
 	{
-		_errorCode = 501;
+		_errorCode = 405; // actually 501 Not implemented???
 		return false;
 	}
 	if (!isHttpVersionSupported())
@@ -762,17 +879,39 @@ bool HttpRequest::validRequest()
 	}
 	else {
 		_host = it->second[0];
+		for (size_t i = 0; i < _host.size(); i++) {
+			if (!isalnum(_host[i]) && _host[i] != '.' && _host[i] != '/' && _host[i] != ':')
+			{
+				_errorCode = 400;
+				return false;
+			}
+		}
+		size_t posSemi;
+		posSemi = _host.find_last_of(':');
+		if (posSemi != std::string::npos) {
+			for (size_t i = posSemi + 1; i < _host.size(); i++) {
+				if (_host[i] < '0' || _host[i] > '9')
+				{
+					_errorCode = 400;
+					return false;
+				}
+			}
+		}
 	}
-	// REMOVE to avoid 411 if not allowed Method
-	// if (_requestLine.method == "POST")
-	// {
-	// 	it = _headers.find("content-length");
-	// 	if (it == _headers.end() || (it != _headers.end() && it->second[0] == "0"))
-	// 	{
-	// 		_errorCode = 411;
-	// 		return false;
-	// 	}
-	// }
+//	REMOVE to avoid 411 if not allowed Method
+	if (_requestLine.method == "POST")
+	{
+		it = _headers.find("content-length");
+		if (it != _headers.end() && it->second[0] == "0" && _fullMessageBody.size() == 0) {
+			_errorCode = 200;
+			return false;
+		}
+		it = _headers.find("content-type");
+		if (it != _headers.end() && _fullMessageBody.size() == 0) {
+			_errorCode = 400;
+			return false;
+		}
+	}
 	if (_errorCode != 0)
 	{
 		std::cout << "\t==> FALSE" << std::endl;
