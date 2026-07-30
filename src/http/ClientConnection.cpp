@@ -126,7 +126,7 @@ void	ClientConnection::executeRequest()
 	t_executionResult result = executor->execute(_currentMethod, request, _listeningInterface);
 	result.HttpVersion = request->getRequestLine().version;
 	std::cout << "==========* EXECUTED METHOD *==========\n" << std::endl;
-	if (result.statusCode == "301") // REDIRECTION
+	if (result.statusCode == "301" || result.statusCode == "302") // REDIRECTION
 		response_buffer = responseBuilder->redirectResponse(&result, _currentMethod->getRedirectURL());
 	else
 	{

@@ -85,6 +85,8 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
  */
 std::string	ResponseBuilder::errorResponse(HttpRequest *request, const std::string &listeningInterface)
 {
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::errorResponse()" << std::endl;
 	int	errorCode = request->getErrorCode();
 	std::string	codeStr;
 	std::string phrase;
@@ -127,6 +129,8 @@ std::string	ResponseBuilder::errorResponseViaCode(int errorCode)
  */
 std::string ResponseBuilder::errorResponseViaResult(t_executionResult result, const std::string &listeningInterface)
 {
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::errorResponseViaResult()" << std::endl;
 	int	errorCode = atoi(result.statusCode.c_str());
 	std::string	codeStr;
 	std::string phrase;
@@ -248,6 +252,7 @@ std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 	headers += "Date: " + getHttpDate() + "\r\n";
 	headers += "Server: webserv/1.0\r\n";
 	headers += "Content-Length: " + ss.str() + "\r\n";
+	headers += "Content-Type: text/html\r\n";
 	// check if Connection should be closed.
 	headers += "Connection: close\r\n";
 	headers += "\r\n";
@@ -376,7 +381,7 @@ std::string	ResponseBuilder::buildBody(int errorCode,
 std::string	ResponseBuilder::getErrorPage(std::map<int, std::string>::iterator itErrorPage)
 {
 	std::cout << "ResponseBuilder::getErrorPage()" << std::endl;
-	std::string pagePath = "./www" + itErrorPage->second;
+	std::string pagePath = "." + itErrorPage->second;
 	std::cout << "\tPath to error_page (" << pagePath << ")" << std::endl;
 	struct stat	fileInfo;
 	if (stat(pagePath.c_str(), &fileInfo) != 0)
