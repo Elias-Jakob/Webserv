@@ -130,6 +130,8 @@ bool	HttpRequest::keepConnectionAlive()
 		if (it->second[0] == "keep-alive")
 			return true;
 	}
+	if (_requestLine.version == "HTTP/1.1")
+		return (true);
 	return false;
 }
 
@@ -235,7 +237,7 @@ bool validURIchars(std::string &URI)
 		if ((URI[i] < 'A' || URI[i] > 'Z')
 			&& (URI[i] < 'a' || URI[i] > 'z')
 			&& (URI[i] < '0' || URI[i] > '9')
-			&& (URI[i] != '/' && URI[i] != '.' && URI[i] != '_'))
+			&& (URI[i] != '/' && URI[i] != '.' && URI[i] != '_' && URI[i] != '-'))
 		return false;
 	}
 	return true;

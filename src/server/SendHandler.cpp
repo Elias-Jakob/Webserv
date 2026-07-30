@@ -6,7 +6,7 @@ void	Server::handleOutgoing(ClientConnection &caller)
 
 	std::cout << "Send gets called here" << std::endl;
 	sentBytes = send(caller.fd, caller.response_buffer.c_str() + caller.bytesSent,
-		caller.response_buffer.size(), 0);
+		caller.response_buffer.size() - caller.bytesSent, 0);
 	if (sentBytes == -1)
 		return ;
 	caller.bytesSent += sentBytes;
