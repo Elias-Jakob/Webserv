@@ -4,6 +4,7 @@
 # include <iostream>
 # include <map>
 # include <vector>
+# include <sys/stat.h>
 
 # include "structs.h"
 # include "HttpStatus.hpp"

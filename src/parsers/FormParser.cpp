@@ -82,26 +82,16 @@ void FormParser::urlDecode(std::string &data)
 {
     std::string result;
 
-    for (size_t i = 0; i < data.length(); ++i)
-	{
+    for (size_t i = 0; i < data.length(); ++i) {
         if (data[i] == '+')
-		{
             result += ' ';
-        }
-		else if (data[i] == '%' && i + 2 < data.length())
-		{
+		else if (data[i] == '%' && i + 2 < data.length()) {
 			std::string hex = data.substr(i + 1, 2);
 			result += (char)std::strtol(hex.c_str(), NULL, 16);
-			// std::string hex = data.substr(data[i+1], data[i+2]);
-			// std::cout << "hex" << hex << std::endl;
-			// char *end;
-			// result += std::strtod(hex.c_str(), &end);
             i += 2;
         }
 		else
-		{
             result += data[i];
-        }
     }
     data = result;
 }

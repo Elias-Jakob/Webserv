@@ -30,8 +30,6 @@ HttpRequest::~HttpRequest()
 		delete _bodyParser;
 		_bodyParser = NULL;
 	}
-	// if (_locationObj)
-	// 	_locationObj = NULL;
 }
 
 // =========================================================================
@@ -46,15 +44,19 @@ HttpRequest::~HttpRequest()
 	*  true and _state set to PARSING_ERROR if an error while parsing occured.
 	* 	false when parsing is completed.
 */
-bool	HttpRequest::parseRequest(const std::string &partialMessage)
+bool	HttpRequest::parseRequest(const std::string &partialMessage, size_t bytesRecv)
 {
 	std::cout << "\33[33m==========\n" 
 		<< "HTTP_REQUEST received...\n" << std::endl;
 	std::cout << "==========* PARSING REQUEST *==========" << std::endl;
 	std::cout << "HttpRequest::parseRequest()" << std::endl;
-	
+
+	if (partialMessage.size() != bytesRecv) {
+		_state = PARSING_ERROR;
+		return setErrorCode(400);
+	}
 	_messageBuffer += partialMessage;
-	std::cout << "[\n" << partialMessage << "\n]" << std::endl;
+	// std::cout << "[\n" << partialMessage << "\n]" << std::endl;
 	while (_state != PARSING_COMPLETE && _state != PARSING_ERROR)
 	{
 		switch (_state)
@@ -74,8 +76,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 					return true;
 				if (_requestLine.method == "POST") // PARSING BODY
 				{
-					if (createBodyParser())
-					{
+					if (createBodyParser()) {
 						_bodyParser->setContentData(_contentData);
 						std::cout << "body: " << _fullMessageBody << std::endl;
 						_bodyParser->parse(_fullMessageBody);
@@ -83,7 +84,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 						if (_parsedMessageBody.size() > 0)
 							std::cout << "_parsedBody returned something..." << std::endl;
 					}
-					else {
+					else { // no content-type to create bodyParser but message-body present
 						if (_fullMessageBody.size() >0) {
 							std::map<std::string, s_FormField> res;
 							s_FormField	body;
@@ -93,12 +94,8 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage)
 							_parsedMessageBody = res;
 							_state = PARSING_COMPLETE;
 						}
-						// if no content-type, just give the body
-						// std::map<std::string, s_FormField>	result;
-						// _parsedMessageBody 
 						std::cout << "Error: BodyParsing" << std::endl;
 						_state = PARSING_ERROR;
-						
 					}
 				}
 				if (PRINT_REQUEST)
@@ -158,8 +155,18 @@ bool	HttpRequest::parseRequestLine()
         _current_pos += 2;
 	}
     size_t posCRLF = _messageBuffer.find("\r\n", _current_pos); // Find end of request line
-    if (posCRLF == std::string::npos)
+    if (posCRLF == std::string::npos){
+		if ((_messageBuffer.find("\n", _current_pos)) != std::string::npos) {
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
+		}
+		size_t posCR = _messageBuffer.find("\r", _current_pos);
+		if (posCR != std::string::npos && posCR != _messageBuffer.size() -1) {
+			_state = PARSING_ERROR;
+			return setErrorCode(400);
+		}
 		return false;
+	}
 	std::string reqLine = _messageBuffer.substr(_current_pos, posCRLF - _current_pos);
     if (reqLine.size() > MAX_REQUEST_LINE_LENGTH) // Check max length
     {
@@ -193,7 +200,11 @@ bool	HttpRequest::parseRequestLine()
 	if (!validURI()) {
 		_state = PARSING_ERROR;
 		return false;
-	}	
+	}
+	if (!decodeURI()) {
+		_state = PARSING_ERROR;
+		return setErrorCode(400);
+	}
 	// validate METHOD
 	for (size_t i = 0; i < _requestLine.method.size(); i++) {
 		if (_requestLine.method[i] < 'A' || _requestLine.method[i] > 'Z')
@@ -231,14 +242,48 @@ bool	HttpRequest::parseRequestLine()
 	return true;
 }
 
-bool validURIchars(std::string &URI)
+bool HttpRequest::decodeURI()
+{
+	std::cout << "HttpRequest::decodeURI()" << std::endl;
+	size_t posPercent = _requestLine.requestURI.find('%');
+	if (posPercent == std::string::npos)
+		return true;
+	else {
+		std::cout << "\turi: " << _requestLine.requestURI << std::endl;
+		size_t pos = 0;
+		std::string newUri;
+		while ((posPercent = _requestLine.requestURI.find('%', pos)) != std::string::npos) {
+			newUri += _requestLine.requestURI.substr(pos, posPercent - pos);
+			std::string hex = _requestLine.requestURI.substr(posPercent + 1, 2);
+			char c = (char) std::strtol(hex.c_str(), NULL, 16);
+			std::cout << "\tdecoded char: (" << c << ")" << std::endl;
+			if (c < 32 || c > 127) // valid character in URI?
+				return false;
+			newUri += c;
+			std::cout << "\tcur_URI: " << newUri << std::endl;
+			pos = posPercent + 3;
+		}
+		newUri += _requestLine.requestURI.substr(pos);
+		_requestLine.requestURI = newUri;
+	}
+	return true;
+}
+
+bool HttpRequest::validURIchar(char c)
+{
+	if ((c < 'A' || c > 'Z')
+			&& (c < 'a' || c > 'z')
+			&& (c < '0' || c > '9')
+			&& (c != '/' && c != '.' && c != '_' && c != '%' && c != '-'))
+		return false;
+	return true;
+}
+
+bool HttpRequest::validURIstr(std::string &URI)
 {
 	for (size_t i = 0; i < URI.size(); i++) {
-		if ((URI[i] < 'A' || URI[i] > 'Z')
-			&& (URI[i] < 'a' || URI[i] > 'z')
-			&& (URI[i] < '0' || URI[i] > '9')
-			&& (URI[i] != '/' && URI[i] != '.' && URI[i] != '_' && URI[i] != '-'))
-		return false;
+		if (!validURIchar(URI[i]))
+			return false;
 	}
 	return true;
 }
@@ -249,7 +294,7 @@ bool	HttpRequest::validURI()
 	if (_requestLine.requestURI.size() > MAX_URI_LENGTH) {
 		return setErrorCode(414);
 	}
-	if (!validURIchars(_requestLine.requestURI))
+	if (!validURIstr(_requestLine.requestURI))
 		return setErrorCode(400);
 	size_t pos = 0;
 	pos = _requestLine.requestURI.find("//");
@@ -459,7 +504,6 @@ void	HttpRequest::findLocation(std::vector<std::string> pathParts)
 	if (!loc && defLoc)
 		_locationObj = defLoc;
 	_locationObj = loc;
-	// return loc;
 }
 
 size_t	HttpRequest::posOfScriptName(std::vector<std::string> &parts, std::vector<std::string> cgiExt, size_t n)

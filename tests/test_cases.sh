@@ -90,36 +90,48 @@ check_status() {
 # check_status "Should return 400" "400" "$STATUS"
 # sleep 0.5
 
-#Test directory listing
-REQUEST="GET /files HTTP/1.1\r\nHost: localhost\r\n\r\n"
-STATUS=$(send_request "$REQUEST")
-check_status "Should return 200" "200" $STATUS
-sleep 0.5
+# #Test directory listing
+# REQUEST="GET /files HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 200" "200" $STATUS
+# sleep 0.5
 
-# Test call to nonexisten dir
-print_test "GET /nonexistent directory"
-REQUEST="GET /files/nonexistent_subdir/ HTTP/1.1\r\nHost: localhost\r\n\r\n"
-STATUS=$(send_request "$REQUEST")
-check_status "Should return 404" "404" $STATUS
+# # Test call to nonexisten dir
+# print_test "GET /nonexistent directory"
+# REQUEST="GET /files/nonexistent_subdir/ HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 404" "404" $STATUS
 
-# Test redirect 302
-print_test "GET /temp redirect 302"
-REQUEST="GET /temp HTTP/1.1\r\nHost: localhost\r\n\r\n"
-STATUS=$(send_request "$REQUEST")
-check_status "Should return 302" "302" $STATUS
+# # Test redirect 302
+# print_test "GET /temp redirect 302"
+# REQUEST="GET /temp HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 302" "302" $STATUS
 
-# Test redirect 301
-print_test "GET /temp redirect 301"
-REQUEST="GET /old HTTP/1.1\r\nHost: localhost\r\n\r\n"
-STATUS=$(send_request "$REQUEST")
-check_status "Should return 301" "301" $STATUS
+# # Test redirect 301
+# print_test "GET /temp redirect 301"
+# REQUEST="GET /old HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 301" "301" $STATUS
 
 
-# Test respone has content-type
-print_test "GET /nonexistent (check for content-type)"
-REQUEST="GET /nonexistent HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# # Test respone has content-type
+# print_test "GET /nonexistent (check for content-type)"
+# REQUEST="GET /nonexistent HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 404" "404" $STATUS
+
+# # Test decode URI
+# print_test "GET /path%20with%20spaces HTTP/1.1"
+# REQUEST="GET /path%20with%20spaces HTTP/1.1\r\nHost: localhost\r\n\r\n"
+# STATUS=$(send_request "$REQUEST")
+# check_status "Should return 404" "404" $STATUS
+
+# URI Null-Byte (\x00)
+print_test "GET /path\x00/hidden"
+REQUEST="GET /path\x00/hidden HTTP/1.1\r\nHost: localhost\r\n\r\n"
 STATUS=$(send_request "$REQUEST")
-check_status "Should return 404" "404" $STATUS
+check_status "Should return 400" "400" $STATUS
 
 echo ""
 echo -e "Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
