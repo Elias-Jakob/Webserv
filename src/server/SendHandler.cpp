@@ -4,7 +4,9 @@ void	Server::handleOutgoing(ClientConnection &caller)
 {
 	ssize_t	sentBytes;
 
-	sentBytes = send(caller.fd, caller.response_buffer.c_str(), caller.response_buffer.size(), 0);
+	std::cout << "Send gets called here" << std::endl;
+	sentBytes = send(caller.fd, caller.response_buffer.c_str() + caller.bytesSent,
+		caller.response_buffer.size() - caller.bytesSent, 0);
 	if (sentBytes == -1)
 		return ;
 	caller.bytesSent += sentBytes;
@@ -23,5 +25,3 @@ void	Server::handleOutgoing(ClientConnection &caller)
 	caller.cleanUpClient();
 	this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLIN);
 }
-
-

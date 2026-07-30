@@ -51,17 +51,23 @@ void	Server::cgiTimeoutResponse(ClientConnection &client)
 void	Server::checkProcessStatus(ClientConnection &client)
 {
 	int status;
+	pid_t	pid = waitpid(client.cgiPid, &status, WNOHANG);
 
-	if (waitpid(client.cgiPid, &status, WNOHANG) > 0) {
+	if (pid == 0)
+		return ;
+	if (pid > 0) {
 		if (WIFEXITED(status)) {
 			client.response_buffer = (WEXITSTATUS(status) != 0) ?
 				this->responseBuilder.errorResponseViaCode(500) :
 				this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
 		} else if (WIFSIGNALED(status))
 			client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
-		client.state = SENDING_RESPONSE;
-		this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
-		client.cgiPid = -1;
 	}
+	else {
+		std::cerr << "Error: waitpid failed: " << std::strerror(errno) << std::endl;
+		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+	}
+	client.state = SENDING_RESPONSE;
+	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
+	client.cgiPid = -1;
 }
-

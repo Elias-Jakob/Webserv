@@ -6,6 +6,7 @@ void	Server::handleIncoming(ClientConnection &caller)
 	char	buffer[4096] = { 0 };
 
 	std::cout << "ClientRead() for fd: " << caller.fd << std::endl;
+	caller.state = READING_REQUEST;
 	bytesRecv = recv(caller.fd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRecv == -1)
 		return ;

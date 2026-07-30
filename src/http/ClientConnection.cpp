@@ -13,7 +13,7 @@
 */
 ClientConnection::ClientConnection() : 
 	fd(-1),
-	state(READING_REQUEST),
+	state(IDLE),
 	bytesSent(0),
 	request(NULL),
 	_currentMethod(NULL),
@@ -93,7 +93,7 @@ void ClientConnection::processRequest()
 */
 void ClientConnection::cleanUpClient()
 {
-	state = READING_REQUEST;
+	state = IDLE;
 	delete request;
 	request = new HttpRequest();
 	request->setServerConfigs(executor->getServerConfigs(), _listeningInterface);

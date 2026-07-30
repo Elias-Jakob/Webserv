@@ -28,7 +28,6 @@ void	Server::acceptNewClient(int listenFd)
 		this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
 		client = &(this->clients[fd]);
 		client->fd = fd;
-		client->state = READING_REQUEST;
 		client->request = new HttpRequest();
 		client->executor = &(this->methodExecuter);
 		client->responseBuilder = &(this->responseBuilder);
@@ -114,10 +113,15 @@ void	Server::checkOnClients()
 					<< " after timeout of " << current - it->second.inactiveTime << std::endl;
 				it->second.timeout = true;
 				if (it->second.cgiPid == -1) {
-					this->removeClient((it++)->second);
-					continue ;
-				}
-				this->cgiTimeoutResponse(it->second);
+					if (it->second.state == IDLE) {
+						this->removeClient((it++)->second);
+						continue ;
+					}
+					std::cout << "This happend" << std::endl;
+					it->second.response_buffer = it->second.responseBuilder->errorResponseViaCode(400);
+					this->epoll.ctl(it->second.fd, EPOLL_CTL_MOD, EPOLLOUT);
+				} else
+					this->cgiTimeoutResponse(it->second);
 			}
 			// cgi timeout
 			else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT)

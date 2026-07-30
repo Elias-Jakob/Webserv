@@ -12,6 +12,7 @@
 
 enum ConnectionState
 {
+	IDLE,
 	READING_REQUEST,
 	PROCESSING,
 	SENDING_RESPONSE,

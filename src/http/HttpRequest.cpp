@@ -127,6 +127,8 @@ bool	HttpRequest::keepConnectionAlive()
 		if (it->second[0] == "keep-alive")
 			return true;
 	}
+	if (_requestLine.version == "HTTP/1.1")
+		return (true);
 	return false;
 }
 
