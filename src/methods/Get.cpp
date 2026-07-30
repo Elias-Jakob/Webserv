@@ -308,36 +308,3 @@ std::string	Get::convertTimeToHttpDate(time_t time)
 	return std::string(buf);
 }
 
-// /**
-// */
-// bool	Get::checkCGI()
-// {
-// 	std::cout << "Get::checkCGI()" << std::endl;
-// 	if (_location->cgiExtensions.size() < 1)
-// 		return false;
-// 	std::string fileExt;
-// 	size_t		pos;
-
-// 	pos = _resource.find_last_of('.');
-// 	if (pos == std::string::npos)
-// 		return false;
-// 	fileExt = _resource.substr(pos);
-// 	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
-// 	{
-// 		if (_location->cgiExtensions[i] == fileExt)
-// 		{
-// 			return executeCGI(_resource);
-// 		}
-// 	}
-// 	return false;
-// }
-
-// /**
-// */
-// bool	Get::executeCGI(const std::string &script)
-// {
-// 	std::cout << "Get::executeCGI()\n\texecution for " << script << " would happen here" << std::endl;
-// 	HttpStatus::setStatus(601, _code, _phrase);
-// 	_phrase = _resource;
-// 	return true;
-// }

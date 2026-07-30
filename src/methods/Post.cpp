@@ -47,11 +47,11 @@ bool Post::execute()
 		return false;
 	if (!isUploadLocation() && !isSubmitLocation())
 		return false;
-	if (_contentData.type == "application") // submit
+	if (_contentData.type == "application" && isSubmitLocation()) // submit
 	{
 		return submitForm();
 	}
-	else if (_contentData.type == "multipart") // upload
+	else if (_contentData.type == "multipart" || isUploadLocation()) // upload
 	{
 		return (uploadFile());
 	}
@@ -72,6 +72,7 @@ bool	Post::isValidContentType()
 			<< "] [" << _contentData.subtype << "]" << std::endl;
 	if (_contentData.type.empty())
 	{
+		std::cout << "Error: _contentData.type is empty"<< std::endl;
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
@@ -79,6 +80,11 @@ bool	Post::isValidContentType()
 	{
 		if (_contentData.subtype == "x-www-form-urlencoded")
 			return true;
+		if (_contentData.subtype == "octet-stream") // empty content-type && body
+		{ 
+			std::cout << "post octet-stream" << std::endl;
+			return true;
+		}
 	}
 	if (_contentData.type == "multipart")
 	{
@@ -97,6 +103,8 @@ bool	Post::submitForm()
 		std::cout << "Post::submitForm()" << std::endl;
 	std::string	formPath;
 	formPath = "." + _reqUri;
+	if (_location->defaultPage.size() > 0)
+		formPath += "/" + _location->defaultPage;
 	return appendToFile(formPath);
 }
 
@@ -115,8 +123,11 @@ bool Post::appendToFile(std::string filename)
 	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
 	std::map<std::string, s_FormField>::iterator ite = _parsedBody.end();
+	if (it == ite)
+		std::cout << "WARNING: it = ite" << std::endl;
 	while (it != ite)
-	{
+	{	std::cout << "write to file" << std::endl;
+		output << "hey" << std::endl;
 		output << it->first << " = " << it->second.value << std::endl;
 		it++;
 	}
@@ -142,12 +153,13 @@ bool	Post::uploadFile()
 	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
 	std::string	recvFilename = it->second.filename;
-	if (!isFileNameValid(recvFilename))
-	{
-		if (POST_PRINT)
-			std::cout << "\t invalid File" << std::endl;
-		return false;
-	}
+	std::cout << "uploadFile:filename = " << recvFilename << std::endl;
+	// if (!isFileNameValid(recvFilename)) // commented out, because of application/octet-stream.
+	// {
+	// 	if (POST_PRINT)
+	// 		std::cout << "\t invalid File" << std::endl;
+	// 	return false;
+	// }
 	std::string filename = generateRandomFilename(recvFilename);
 	if (_location->uploadStore.size() == 0)
 	{
@@ -156,6 +168,8 @@ bool	Post::uploadFile()
 	}
 	std::string uploadPath = "." + _reqUri + "/";//+ _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
+	std::cout << "\tuploadPath = " << uploadPath
+		<< "\n\tfullPath =" << fullPath << std::endl;
 	if (it->second.value.size() > MAX_BODY_SIZE)
 	{
 		HttpStatus::setStatus(413, _code, _phrase);
@@ -190,11 +204,17 @@ bool	Post::isFileNameValid(const std::string &filename)
 	start = filename.find_first_of('.', 0);
 	if (start == std::string::npos) // no file extension
 	{
+		if (_location->uploadExtensions.size() == 0) // binary file POST
+		{
+			std::cout << "WARNING: no fileExtension && no uploadExtensions configured" << std::endl;
+			return true;
+		}
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
 	std::string	extension;
 	extension = filename.substr(start, filename.size() - start);
+	std::cout << "Post::isFileNameValid()\n\textension: " << extension << std::endl;
 	for (size_t i = 0; i < _location->uploadExtensions.size(); i++)
 	{
 		if (extension == _location->uploadExtensions[i])

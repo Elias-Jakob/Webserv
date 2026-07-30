@@ -194,21 +194,25 @@ static std::map<std::string, std::map<std::string, std::string> > parseHeaders(c
 bool MultipartParser::parse(std::string &body)
 {
 	if (MULTIPART_PRINT)
-		std::cout << "MultipartParser::parse()" << std::endl;
+		std::cout << "MultipartParser::parse()\n\t body:" << body.size() << std::endl;
 	std::string fullBoundary = "--" + _contentData.boundary;
 	size_t partStart = body.find(fullBoundary);
 	if (!findFirstBoundary(body, &partStart, fullBoundary))
 		return false;
-	
+	bool	leave = false;
 	while (partStart < body.length()) // Process each part
 	{
-		std::cout <<"ppp" << std::endl;
 		s_extractedData	data;
 		size_t			nextBoundary;
-		if (!extractHeadersAndContent(data, body, partStart, fullBoundary, &nextBoundary))
-			break ;
+		if (!extractHeadersAndContent(data, body, partStart, fullBoundary, &nextBoundary)) {
+			std::cout << "break" << std::endl;
+			// break ;
+			leave = true;
+		}
 		if (data.headers.count("Content-Disposition") > 0)
 			createFormField(data);
+		if (leave == true)
+			break;
 		partStart = nextBoundary + 2 + fullBoundary.length(); // move to next part
 		if (partStart + 2 <= body.length() && body.substr(partStart, 2) == "--") // Check if this is the final boundary (ends with --)
 			break ;
@@ -265,9 +269,19 @@ bool	MultipartParser::extractHeadersAndContent(
 	data.headers = parseHeaders(rawHeaders);
 
 	contentStart = headersEnd + 4;
+	// std::cout << "rest: " << body.substr(contentStart - 4) << std::endl;
+	// std::cout << "fullBoundary: " << fullBoundary << std::endl;
 	*nextBoundary = body.find("\r\n" + fullBoundary, contentStart);
-	if (*nextBoundary == std::string::npos)
+	if (*nextBoundary == std::string::npos) {
+		// std::cout << "no Boundary found" << std::endl;
+		*nextBoundary = body.find(fullBoundary, contentStart);
+		// std::cout << "start: " << contentStart << std::endl;
+		// data.content = body.substr(contentStart, *nextBoundary - contentStart);
+		data.content = body.substr(contentStart);
+		// std::cout << *nextBoundary << " - " << contentStart << std::endl;
+		// std::cout << "data.content: " << data.content << std::endl;
 		return false;
+	}
 	data.content = body.substr(contentStart, *nextBoundary - contentStart);
 	return true;
 }
@@ -288,6 +302,7 @@ bool	MultipartParser::createFormField(t_extractedData &data)
 	{
 		fieldName = disposition["name"];
 		field.value = data.content;
+		// std::cout << "file_content: " << data.content << std::endl;
 		field.filename = disposition.count("filename") > 0 ? disposition["filename"] : "";
 		field.isFile = !field.filename.empty();
 		if (data.headers.count("Content-Type") > 0)

@@ -63,6 +63,8 @@ class ClientConnection
 	private:
 		void	executeRequest();
 		void	deleteMethod();
+		// ClientConnection(const ClientConnection &other);
+		// ClientConnection	&operator=(const ClientConnection &other);
 };
 
 #endif

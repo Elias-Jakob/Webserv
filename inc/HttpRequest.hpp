@@ -60,6 +60,7 @@ class HttpRequest
 		t_RequestLine	_requestLine;
 		std::map<std::string, std::vector<std::string> >	_headers;
 		std::map<std::string, s_FormField> _parsedMessageBody;
+		
 		// ERROR
 		int				_errorCode;
 		std::string		_fileExtension;
@@ -109,7 +110,7 @@ class HttpRequest
 		// URI modify
 		void	modifyURI(std::vector<std::string> &parts);
 		void	modifyURIforCGI();
-
+		bool	validURI();
 	protected:
 		// HELPERS
 		bool	parseRequestLine();

@@ -14,7 +14,7 @@
 
 // PARSER
 # define BODYPARSER_PRINT		0
-# define MULTIPART_PRINT		0
+# define MULTIPART_PRINT		1
 
 // Method builder
 # define BUILDER_PRINT			1
