@@ -15,31 +15,10 @@
 # include "structs.h"
 # include "print_controls.hpp"
 # include "ConfigFileParser.hpp"
-// # include "MethodExecuter.hpp"
 
-typedef struct	s_query
-{
-	std::string	key;
-	std::string	value;
-}				t_query;
-
-typedef struct s_RequestLine
-{
-	std::string				method;
-	std::string 			requestURI;
-	std::string				version;
-	std::string				queryStr;
-	std::vector<t_query>	query;
-}				t_RequestLine;
-
-enum e_parsingState
-{
-	PARSING_REQUEST_LINE,
-	PARSING_HEADERS,
-	PARSING_BODY,
-	PARSING_COMPLETE,
-	PARSING_ERROR
-};
+# include "RequestLineParser.hpp"
+# include "RequestHeadsParser.hpp"
+# include "RequestBodyParser.hpp"
 
 /**
 	* @class HttpRequest // HttpRequestParser
@@ -48,86 +27,6 @@ enum e_parsingState
 */
 class HttpRequest
 {
-	private:
-		e_parsingState	_state;
-		size_t			_current_pos;
-		std::string		_messageBuffer;
-		std::string		_fullMessageBody;
-
-		ABodyParser		*_bodyParser;
-		t_ContentData	_contentData;
-		// PARSED DATA
-		t_RequestLine	_requestLine;
-		std::map<std::string, std::vector<std::string> >	_headers;
-		std::map<std::string, s_FormField> _parsedMessageBody;
-		
-		// ERROR
-		int				_errorCode;
-		std::string		_fileExtension;
-		std::string		_host;
-		// SERVER CONFIGURATIONS
-		std::vector<t_Configs>	_serverConfigs;
-		t_Location		*_locationObj;
-		std::string		_listeningInterface;
-		std::string		_scriptName;
-		std::string		_pathInfo;
-		std::string		_pathTranslated;
-
-		HttpRequest(const HttpRequest &other);
-		HttpRequest &operator=(const HttpRequest &other);
-		
-		bool	setErrorCode(int code);
-		bool	isImplementedMethod();
-		bool	isHttpVersionSupported();
-		bool	foundEndOfRequest();
-		void	addHeader(const std::string &key, const std::string &value);
-		bool	isValidURI(const std::string &uri);
-		std::string	toLowerCase(std::string &str);
-
-		bool	hasQuery(size_t	*posQuery);
-		void	handleQuery(size_t posQuery);
-		void	setQueryPairs(const std::string &queryStr);
-		void	setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end);
-		void	extractFileExtension();
-		
-		bool	validBodySize(size_t contentLength);
-		// CHUNKED ENDODING
-		bool	unchunkBody(); // new
-		size_t	chunkedSize();
-		std::string	chunkedData(size_t chunked_size);
-
-		// SERVER LOCATION_OBJ
-		void	findLocation(std::vector<std::string> pathParts);
-		bool	isListeningTo(size_t i, const std::string &host);
-		std::vector<std::string>	splitPath(const std::string &path);
-		bool	isAllowedMethod();
-		
-		// for CGI
-		size_t	posOfScriptName(std::vector<std::string> &parts, std::vector<std::string> cgiExt, size_t n);
-		void	setScriptName(std::vector<std::string> &parts, size_t n);
-		void	setPathInfo(std::vector<std::string> &parts, size_t start);
-
-		// URI modify
-		void	modifyURI(std::vector<std::string> &parts);
-		void	modifyURIforCGI();
-		bool	validURI();
-		bool	decodeURI();
-
-		bool	validURIchar(char c);
-		bool 	validURIstr(std::string &URI);
-
-	protected:
-		// HELPERS
-		bool	parseRequestLine();
-		bool	parseHeaderLine();
-		bool	extractBody();
-		bool	createBodyParser();
-
-		// BODY PARSING
-		std::string	parseContentType(std::vector<std::string> value);
-		ABodyParser *createMultiParser();
-		ABodyParser *createFormParser();
-
 	public:
 		HttpRequest();
 		~HttpRequest();
@@ -137,6 +36,7 @@ class HttpRequest
 		bool 	parsingComplete();
 		bool	keepConnectionAlive();
 		bool 	validRequest();
+		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);
 
 		// GETTERS
 		s_RequestLine						&getRequestLine();
@@ -157,9 +57,33 @@ class HttpRequest
 		t_Location							*getLocationObj();
 		std::string							&getPathTranslated();
 		bool								hasBodyContentLength();
-		void	setServerConfigs(std::vector<t_Configs> _serverConfigs, const std::string &listeningInterface);
+		
 		// OUTPUT
 		void	printRequest(void);
+
+	private:
+		t_RequestData		data;
+		RequestLineParser	*requestLineParser;
+		RequestHeadsParser	*requestHeadsParser;
+		RequestBodyParser	*requestBodyParser;
+		ABodyParser			*_bodyParser;
+
+		HttpRequest(const HttpRequest &other);
+		HttpRequest &operator=(const HttpRequest &other);
+
+		// CHECKS
+		bool	isImplementedMethod();
+		bool	isHttpVersionSupported();
+		bool	isValidURI(const std::string &uri);
+		bool	isValidHost();
+		bool	isValidPostRequest();
+		bool	isAllowedMethod();
+
+		// HELPER
+		void	adjustCurrentPos(size_t pos);
+		void	setCurrentPos(size_t pos);
+		bool	setErrorCode(int code);
+		bool	foundEndOfRequest();
 };
 
 #endif

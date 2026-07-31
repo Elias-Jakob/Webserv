@@ -1,5 +1,8 @@
 SRC = src/http/ClientConnection.cpp \
 		src/http/HttpRequest.cpp \
+		src/http/RequestLineParser.cpp \
+		src/http/RequestHeadsParser.cpp \
+		src/http/RequestBodyParser.cpp \
 		src/http/HttpStatus.cpp \
 		src/http/MethodExecuter.cpp \
 		src/http/ResponseBuilder.cpp \
