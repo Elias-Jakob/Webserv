@@ -3,6 +3,8 @@
 # include <iostream>
 # include <map>
 
+#include "ConfigFileParser.hpp"
+
 typedef struct s_FormField
 {
 	std::string	value;
@@ -53,5 +55,58 @@ typedef struct s_executionResult
 	std::string	lastModified;
 	std::string	etag;
 }				t_executionResult;
+
+typedef struct	s_query
+{
+	std::string	key;
+	std::string	value;
+}				t_query;
+
+typedef struct s_RequestLine
+{
+	std::string				method;
+	std::string 			requestURI;
+	std::string				version;
+	std::string				queryStr;
+	std::vector<t_query>	query;
+}				t_RequestLine;
+
+enum e_parsingState
+{
+	PARSING_REQUEST_LINE,
+	PARSING_HEADERS,
+	PARSING_BODY,
+	PARSING_COMPLETE,
+	PARSING_ERROR
+};
+
+typedef struct	s_RequestData
+{
+		// t_RequestData	_data;
+		e_parsingState	_state;
+		size_t			_current_pos;
+		std::string		_messageBuffer;
+		std::string		_fullMessageBody;
+
+		// ABodyParser		*_bodyParser;
+		t_ContentData	_contentData;
+		// PARSED DATA
+		t_RequestLine	_requestLine;
+		std::map<std::string, std::vector<std::string> >	_headers;
+		std::map<std::string, s_FormField> _parsedMessageBody;
+
+		// ERROR
+		int				_errorCode;
+		std::string		_fileExtension;
+		std::string		_host;
+		// SERVER CONFIGURATIONS
+		std::vector<t_Configs>	_serverConfigs;
+		t_Location		*_locationObj;
+		std::string		_listeningInterface;
+		std::string		_scriptName;
+		std::string		_pathInfo;
+		std::string		_pathTranslated;
+}				t_RequestData;
+
 
 #endif
