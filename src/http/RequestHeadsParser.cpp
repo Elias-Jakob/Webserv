@@ -127,8 +127,7 @@ void	RequestHeadsParser::addHeader(const std::string &key, const std::string &va
 	it = data->_headers.find(key);
 	if (it == data->_headers.end())
            data->_headers[key] = splitHeaderValByComma(value);
-	else
-	{
+	else {
 		if (key == "host" || key == "content-length")
 			setErrorCode(400);
 		std::vector<std::string>	temp;
@@ -220,21 +219,27 @@ void	RequestHeadsParser::modifyURI(std::vector<std::string> &pathParts)
 			if (pathParts[iUri] == data->_serverConfigs[idx_server].root)
 				continue ;
 			std::string part = pathParts[iUri];
-			std::cout << "part: " << part << std::endl;
 			for (size_t iLocs = 0; iLocs < data->_serverConfigs[idx_server].locations.size(); iLocs++) {
 				if (pathParts[iUri] == data->_serverConfigs[idx_server].locations[iLocs].path) {
 					if (data->_serverConfigs[idx_server].locations[iLocs].upload)
 						part = data->_serverConfigs[idx_server].locations[iLocs].uploadStore;
 					else if (data->_serverConfigs[idx_server].locations[iLocs].alias.size() > 0)
 						part = data->_serverConfigs[idx_server].locations[iLocs].alias;
-					else if (data->_serverConfigs[idx_server].locations[iLocs].redirect)
-						part = data->_serverConfigs[idx_server].locations[iLocs].redirectURL;
+					else if (data->_serverConfigs[idx_server].locations[iLocs].redirect) {
+						newURI = data->_serverConfigs[idx_server].locations[iLocs].redirectURL;
+						part = "";
+						break ;
+					}
 				}
 			}
 			newURI += part;
 		}
 		if (data->_locationObj->formSubmit)
 			newURI += "/" + data->_locationObj->formUploadFile;
+		if (DEBUG_PRINT) {
+			std::cout << "URI:\t\t" << data->_requestLine.requestURI << std::endl;
+			std::cout << "mod-URI:\t" << newURI << std::endl;
+		}
 		data->_requestLine.requestURI = newURI;
 	}
 	else if (data->_locationObj->cgi)

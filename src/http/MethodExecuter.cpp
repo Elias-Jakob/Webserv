@@ -405,6 +405,9 @@ void	MethodExecuter::setDefaultLocation()
 {
 	_defaultLocation.autoIndex = false;
 	_defaultLocation.redirect = false;
+	_defaultLocation.cgi = false;
+	_defaultLocation.sizeIsSet = false;
+	_defaultLocation.upload = false;
 	_defaultLocation.allowedMethods.push_back("GET");
 }
 

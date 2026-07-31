@@ -63,6 +63,7 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage, size_t bytesRe
 		return setErrorCode(400);
 	}
 	data._messageBuffer += partialMessage;
+	std::cout << "Request: \n" << partialMessage << std::endl;
 	while (data._state != PARSING_COMPLETE && data._state != PARSING_ERROR) {
 		switch (data._state) {
 			case PARSING_REQUEST_LINE:
@@ -108,7 +109,7 @@ bool	HttpRequest::keepConnectionAlive()
 		if (it->second[0] == "keep-alive")
 			return true;
 	}
-	if (_requestLine.version == "HTTP/1.1")
+	if (data._requestLine.version == "HTTP/1.1")
 		return (true);
 	return false;
 }
@@ -122,8 +123,8 @@ bool HttpRequest::validRequest()
 		return setErrorCode(405);
 	if (!isHttpVersionSupported())
 		return setErrorCode(505);
-	if (!isValidURI(data._requestLine.requestURI))
-		return setErrorCode(403);
+	// if (!isValidURI(data._requestLine.requestURI))
+	// 	return setErrorCode(403);
 	if (!isValidHost())
 		return false;
 	if (!isValidPostRequest())
@@ -268,13 +269,13 @@ bool	HttpRequest::isValidPostRequest()
 /**
 	* @brief checks for path traversal (../../etc/passwd)
 */
-bool	HttpRequest::isValidURI(const std::string &uri)
-{
-	if (uri.find("..") != std::string::npos
-		|| uri.find("//") != std::string::npos)
-		return false;
-	return true;
-}
+// bool	HttpRequest::isValidURI(const std::string &uri)
+// {
+// 	if (uri.find("..") != std::string::npos
+// 		|| uri.find("//") != std::string::npos)
+// 		return false;
+// 	return true;
+// }
 
 // =========================================================================
 // Getters & Setters

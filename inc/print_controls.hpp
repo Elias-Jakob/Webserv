@@ -20,4 +20,6 @@
 // Method builder
 # define BUILDER_PRINT			1
 
+// DEBUG
+# define DEBUG_PRINT			0
 #endif
