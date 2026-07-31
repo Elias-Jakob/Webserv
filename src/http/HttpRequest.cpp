@@ -124,11 +124,10 @@ bool	HttpRequest::keepConnectionAlive()
 	it = _headers.find("connection");
 	if (it != _headers.end() && !it->second.empty())
 	{
-		if (it->second[0] == "keep-alive")
+		if (it->second[0] == "keep-alive" ||
+				(it->second[0] != "close" && _requestLine.version == "HTTP/1.1"))
 			return true;
 	}
-	if (_requestLine.version == "HTTP/1.1")
-		return (true);
 	return false;
 }
 

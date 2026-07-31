@@ -4,7 +4,9 @@ void	Server::handleOutgoing(ClientConnection &caller)
 {
 	ssize_t	sentBytes;
 
-	std::cout << "Send gets called here" << std::endl;
+	if (caller.state != SENDING_RESPONSE)
+		return ;
+	std::cout << "Send gets called here client: " << caller.remoteAddr << std::endl;
 	sentBytes = send(caller.fd, caller.response_buffer.c_str() + caller.bytesSent,
 		caller.response_buffer.size() - caller.bytesSent, 0);
 	if (sentBytes == -1)

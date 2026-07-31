@@ -36,7 +36,7 @@ ClientConnection::ClientConnection() :
 */
 ClientConnection::~ClientConnection()
 {
-	std::cout << "ClientConnection destroyed, cleaning up..." << std::endl;
+	std::cout << "ClientConnection destroyed, cleaning up..." << this->remoteAddr << std::endl;
 	std::cout << "==========================================\n"
 		<< "===========================================" << std::endl;
 	if (request)

@@ -5,7 +5,9 @@ void	Server::handleIncoming(ClientConnection &caller)
 	ssize_t	bytesRecv;
 	char	buffer[4096] = { 0 };
 
-	std::cout << "ClientRead() for fd: " << caller.fd << std::endl;
+	if (caller.state != IDLE && caller.state != READING_REQUEST)
+		return ;
+	std::cout << "ClientRead() for: " << caller.remoteAddr << std::endl;
 	caller.state = READING_REQUEST;
 	bytesRecv = recv(caller.fd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesRecv == -1)
@@ -16,7 +18,7 @@ void	Server::handleIncoming(ClientConnection &caller)
 		this->removeClient(caller);
 		return;
 	}
-	std::cout << "Received " << bytesRecv << " bytes from " << caller.fd << std::endl;
+	std::cout << "Received " << bytesRecv << " bytes from " << caller.remoteAddr << std::endl;
 	// WARNING: redundant?
 	// if (caller.request == NULL)// Check if request pointer is valid
 	// {

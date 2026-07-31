@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os, sys
 
-print("Status: 200 OK")
-print("Content-Type: text/html\r\n")
+print("Status: 200 OK\r")
+print("Content-Type: text/html\r\n\r")
 print("<h1>CGI Test Erfolgreich!</h1>")
 print(f"<p>Query String: {os.environ.get('QUERY_STRING', '')}</p>")
 

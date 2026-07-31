@@ -67,6 +67,16 @@ void	Server::checkProcessStatus(ClientConnection &client)
 		std::cerr << "Error: waitpid failed: " << std::strerror(errno) << std::endl;
 		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 	}
+	if (client.cgiIn != -1) {
+		close(client.cgiIn);
+		this->cgiPipes.erase(client.cgiIn);
+		client.cgiIn = -1;
+	}
+	if (client.cgiOut != -1) {
+		close(client.cgiOut);
+		this->cgiPipes.erase(client.cgiOut);
+		client.cgiOut = -1;
+	}
 	client.state = SENDING_RESPONSE;
 	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
 	client.cgiPid = -1;

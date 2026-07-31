@@ -36,7 +36,7 @@ void	Server::acceptNewClient(int listenFd)
 		client->request->setServerConfigs(client->executor->getServerConfigs(),
 			this->listenFdToInterface[listenFd]);
 		client->remoteAddr = utils::addrToStr(clientAddr);
-		std::cout << "New client " << client->remoteAddr
+		std::cout << "New client " << client->fd << " " << client->remoteAddr
 			<< " connected over socket " << listenFdToInterface[listenFd] << std::endl;
 	}
 	catch (const std::runtime_error	&e) {
@@ -49,6 +49,7 @@ void	Server::acceptNewClient(int listenFd)
 
 void	Server::removeClient(ClientConnection &client)
 {
+	std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
 	if (client.cgiPid != -1)
 		client.terminateCGIProcess(&(this->cgiPipes));
 	close(client.fd);
@@ -70,13 +71,25 @@ void	Server::callEventHandler(const struct epoll_event &event)
 {
 	ClientConnection	*caller = this->identifyEventCaller(event.data.fd);
 
+	// TODO: left off here... add fd ignore list
 	if (caller == NULL) return ;
 	try {
-		if (event.events & EPOLLERR)
-			throw std::runtime_error("Error condition happened on the associated file descriptor");
+		if (event.events & EPOLLERR && event.data.fd == caller->fd) {
+			int err = 0;
+			socklen_t len = sizeof(err);
+
+			std::cerr << "hello" << std::endl;
+			if (getsockopt(caller->fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0)
+			{
+				std::cerr << "fd " << caller->fd
+									<< " error: " << strerror(err)
+									<< " (" << err << ")\n";
+			}
+			throw std::runtime_error("Error condition happened on the associated file descriptor" + caller->remoteAddr);
+		}
 		if (event.data.fd == caller->fd) {
-			if (event.events & EPOLLHUP)
-				throw std::runtime_error("Hang up happened on the associated file descriptor");
+			// if (event.events & EPOLLHUP)
+			// 	throw std::runtime_error("Hang up happened on the associated file descriptor" + caller->remoteAddr);
 			caller->inactiveTime = std::time(NULL);
 			if (event.events & EPOLLIN)
 				this->handleIncoming(*caller);
@@ -86,14 +99,15 @@ void	Server::callEventHandler(const struct epoll_event &event)
 		else if (event.data.fd == caller->cgiIn) {
 			if (event.events & EPOLLOUT)
 				this->writeRequestBodyToCGI(*caller);
-			else if (event.events & EPOLLHUP)
-				throw std::runtime_error("Hang up happened on the associated file descriptor");
+			// else if (event.events & EPOLLHUP)
+			// 	throw std::runtime_error("Hang up happened on the associated file descriptor (pipe)" + caller->remoteAddr);
 		}
 		else if (event.data.fd == caller->cgiOut && event.events & (EPOLLIN | EPOLLHUP))
 			this->handleCGIOutput(*caller);
 	} catch (const std::runtime_error &e) {
-		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
+		std::cout << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
+		std::cout << "Coming from callEventHandler catch..." << std::endl;
 		this->removeClient(*caller);
 	}
 }
@@ -117,7 +131,6 @@ void	Server::checkOnClients()
 						this->removeClient((it++)->second);
 						continue ;
 					}
-					std::cout << "This happend" << std::endl;
 					it->second.response_buffer = it->second.responseBuilder->errorResponseViaCode(400);
 					this->epoll.ctl(it->second.fd, EPOLL_CTL_MOD, EPOLLOUT);
 				} else
