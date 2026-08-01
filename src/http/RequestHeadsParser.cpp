@@ -31,7 +31,6 @@ bool RequestHeadsParser::parseHeaderLine()
 		std::string line = extractHeader(&lineEnd);
         if (line.empty())
             break;
-		// isHeaderToLong(line.size())
         if (data->_headers.size() >= MAX_HEADERS)
             return setErrorCode(431);
 		if (line.size() > MAX_HEADER_LENGTH || !setHeaderPair(line))
@@ -39,7 +38,15 @@ bool RequestHeadsParser::parseHeaderLine()
 		setCurrentPos(lineEnd + 2);
     }
 	setCurrentPos(endOfHeaders + 4);
-
+	// test-cookie
+	std::map<std::string, std::vector<std::string> >::iterator it = data->_headers.find("cookie");
+	if (it != data->_headers.end()) {
+		std::cout << "\nFOUND COOKIE: " << it->second[0] << std::endl;
+	}
+	else {
+		std::cout << "\nNO COOKIE FOUND\n" << std::endl;
+	}
+	// test end;
 	std::vector<std::string> pathParts = splitPath(data->_requestLine.requestURI);
 	findLocation(pathParts); // find corresponding t_Locatio
 	modifyURI(pathParts);

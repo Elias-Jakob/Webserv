@@ -31,6 +31,7 @@ void	Server::acceptNewClient(int listenFd)
 		client->request = new HttpRequest();
 		client->executor = &(this->methodExecuter);
 		client->responseBuilder = &(this->responseBuilder);
+		client->sessionManager = &(this->sessionManager);
 		client->bytesSent = 0;
 		client->_listeningInterface = listenFdToInterface[listenFd];
 		client->request->setServerConfigs(client->executor->getServerConfigs(),

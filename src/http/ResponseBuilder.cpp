@@ -29,6 +29,17 @@ std::string ResponseBuilder::response(t_executionResult result)
 	return response;
 }
 
+// For cookie & session-management.
+std::string ResponseBuilder::response(t_executionResult result, const std::string &cookieHead)
+{
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::formatResponse()" << result.statusCode << std::endl;
+	std::string statusLine = buildStatusLine(&result);
+	std::string messageHeaders = buildResponseHeaders(result, cookieHead);
+	std::string response = buildFullResponse(statusLine, messageHeaders, result.body);
+	return response;
+}
+
 /**
 	* @brief Builds the response if a Redirect is needed.
 */
@@ -213,6 +224,38 @@ std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 		messageHeaders+= "Connection: keep-alive\r\n";
 	else
 		messageHeaders += "Connection: close\r\n";
+	// messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
+	// if (result.lastModified.size() > 0)
+	// 	messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
+	// if (result.etag.size() > 0)
+	// 	messageHeaders += "ETag: " + result.etag + "\r\n";
+	messageHeaders += "\r\n";
+	return messageHeaders;
+}
+
+// For cookie &session-management
+std::string	ResponseBuilder::buildResponseHeaders(t_executionResult &result, const std::string &cookieHead)
+{
+	if (BUILDER_PRINT)
+		std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
+	std::string	messageHeaders;
+	std::stringstream	ss;
+
+	ss << result.body.size();
+	if (result.contentType.size() > 0)
+		messageHeaders = "Content-Type: " + result.contentType + "\r\n";
+	messageHeaders += "Content-Length: " + ss.str() + "\r\n";
+	messageHeaders += "Cache-Control: no-cache, no-store, must-revalidate\r\n";
+	std::string	date = getHttpDate();
+	if (!date.empty())
+		messageHeaders += "Date: " + getHttpDate() + "\r\n";
+	messageHeaders += "Server: webserv/1.0\r\n";
+	if (result.keep_alive)
+		messageHeaders+= "Connection: keep-alive\r\n";
+	else
+		messageHeaders += "Connection: close\r\n";
+	messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
+	messageHeaders += cookieHead; // cookie-header
 	// if (result.lastModified.size() > 0)
 	// 	messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
 	// if (result.etag.size() > 0)

@@ -19,6 +19,7 @@ ClientConnection::ClientConnection() :
 	_currentMethod(NULL),
 	executor(NULL),
 	responseBuilder(NULL),
+	sessionManager(NULL),
 	keep_alive(false),
 	inactiveTime(std::time(NULL)),
 	cgiStartTime(0),
@@ -61,10 +62,40 @@ ClientConnection::~ClientConnection()
 void ClientConnection::processRequest()
 {
 	std::cout << "ClientConnection::processRequest()" << std::endl;
-	std::cout << "\t" << request->getErrorCode() << std::endl;
+	std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
+  // SESSION HANDLING START
+	std::cout << YELLOW << "SESSIONS_SIZE = " << sessionManager->sessionsSize() << RESET << std::endl;
+	// check for COOKIE-HEADER
+	std::map<std::string, std::vector<std::string> > heads = request->getRequestHeaders();
+	std::map<std::string, std::vector<std::string> >::iterator it =  heads.find("cookie");
+	std::string	cookie;
+	if (it != heads.end()) {
+		cookie = sessionManager->extractCookie(it->second);
+		std::cout << YELLOW << "sent from Client: " << cookie << RESET << std::endl;
+		if (!cookie.empty() && sessionManager->isValidCookie(cookie))
+			std::cout << GREEN << "got valid COOKIE: " << cookie << RESET << std::endl;
+		else {
+			std::cout << RED << "Need to create COOKIE" << RESET << std::endl;
+			std::string	newCookie;
+			newCookie = sessionManager->createNewSession();
+			this->sendCookie = true;
+			this->cookieHeader = sessionManager->createSessionHeaderForResponse(newCookie);
+			std::cout << GREEN << "new created COOKIE: " << newCookie << RESET << std::endl;
+		}
+	}
+	else {
+		std::cout << RED << "No COOKIE need to create one" << RESET <<std::endl;
+		std::string newCookie;
+		newCookie = sessionManager->createNewSession();
+		this->sendCookie = true;
+		this->cookieHeader = sessionManager->createSessionHeaderForResponse(newCookie);
+		std::cout << GREEN << "new created COOKIE: " << newCookie << RESET << std::endl;
+		// cookie createCookie();
+		// sessionsSize();
+	}
+  // SESSION HANDLING END
 	if(request->validRequest())
 	{
-		std::cout << "==========* PARSED REQUEST *==========\n" << std::endl;
 		_currentMethod = executor->createMethod(request->getMethod(), request->getLocationObj());
 		if (_currentMethod == NULL)
 			response_buffer = responseBuilder->errorResponseViaCode(405);
@@ -72,10 +103,6 @@ void ClientConnection::processRequest()
 			response_buffer = responseBuilder->errorResponseViaCode(411);
 		else
 			executeRequest();
-		// if (_currentMethod != NULL)
-			// executeRequest();
-		// else
-			// response_buffer = responseBuilder->errorResponseViaCode(405);
 	}
 	else
 	{
@@ -142,8 +169,12 @@ void	ClientConnection::executeRequest()
 		}
 		else if (!result.success)
 			response_buffer = responseBuilder->errorResponseViaResult(result, _listeningInterface);
-		else
-			response_buffer = responseBuilder->response(result);
+		else {
+			if (this->sendCookie)
+				response_buffer = responseBuilder->response(result, this->cookieHeader);
+			else
+				response_buffer = responseBuilder->response(result);
+		}
 	}
 }
 
