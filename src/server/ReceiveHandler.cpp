@@ -16,17 +16,9 @@ void	Server::handleIncoming(ClientConnection &caller)
 	{
 		std::cout << "Client closed connection" << std::endl;
 		this->removeClient(caller);
-		return;
+		return ;
 	}
 	std::cout << "Received " << bytesRecv << " bytes from " << caller.remoteAddr << std::endl;
-	// WARNING: redundant?
-	// if (caller.request == NULL)// Check if request pointer is valid
-	// {
-	// 	std::cerr << "ERROR: request pointer is NULL!" << std::endl;
-	// 	this->removeClient(caller);
-	// 	return;
-	// }
-	// Parse request - use string constructor with length to avoid buffer overflow
 	caller.request->parseRequest(std::string(buffer), bytesRecv);
 	if (caller.request->parsingComplete()) {
 		caller.state = PROCESSING;
@@ -40,9 +32,6 @@ void	Server::handleIncoming(ClientConnection &caller)
 				this->cgiLauncher.newProcess(caller);
 			}
 			catch (const std::exception &e) {
-				if (caller.cgiPid != -1)
-					std::cerr << "ReceiveHandler caller.cgiPid: " << caller.cgiPid << std::endl;
-				// 	caller.terminateCGIProcess(&(this->cgiPipes));
 				caller.response_buffer = caller.responseBuilder->errorResponseViaCode(500);
 				caller.state = SENDING_RESPONSE;
 				this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);

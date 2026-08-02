@@ -14,6 +14,7 @@ void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 			return ;
 	}
 	close(caller.cgiIn);
+	this->justRemovedFds.insert(caller.cgiIn);
 	this->cgiPipes.erase(caller.cgiIn);
 	caller.cgiIn = -1;
 }
@@ -32,6 +33,7 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 		if (caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 		close(caller.cgiOut);
+		this->justRemovedFds.insert(caller.cgiOut);
 		this->cgiPipes.erase(caller.cgiOut);
 		caller.cgiOut = -1;
 	}
@@ -39,6 +41,8 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 
 void	Server::cgiTimeoutResponse(ClientConnection &client)
 {
+	this->justRemovedFds.insert(client.cgiIn);
+	this->justRemovedFds.insert(client.cgiOut);
 	client.terminateCGIProcess(&(this->cgiPipes));
 	client.response_buffer = client.responseBuilder->errorResponseViaCode(504);
 	client.state = SENDING_RESPONSE;
@@ -67,17 +71,19 @@ void	Server::checkProcessStatus(ClientConnection &client)
 		std::cerr << "Error: waitpid failed: " << std::strerror(errno) << std::endl;
 		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 	}
+	client.cgiPid = -1;
 	if (client.cgiIn != -1) {
+		this->justRemovedFds.insert(client.cgiIn);
 		close(client.cgiIn);
 		this->cgiPipes.erase(client.cgiIn);
 		client.cgiIn = -1;
 	}
 	if (client.cgiOut != -1) {
+		this->justRemovedFds.insert(client.cgiOut);
 		close(client.cgiOut);
 		this->cgiPipes.erase(client.cgiOut);
 		client.cgiOut = -1;
 	}
 	client.state = SENDING_RESPONSE;
 	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
-	client.cgiPid = -1;
 }

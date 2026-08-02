@@ -17,7 +17,6 @@ void	Server::acceptNewClient(int listenFd)
 	struct sockaddr	clientAddr;
 	socklen_t	clientAddrLen = sizeof(clientAddr);
 	ClientConnection	*client = NULL;
-	// TODO: this does not support IPv6
 
 	try {
 		fd = accept(listenFd, &clientAddr, &clientAddrLen);
@@ -25,8 +24,8 @@ void	Server::acceptNewClient(int listenFd)
 			throw std::runtime_error(std::strerror(errno));
 		if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1 || fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
 			throw std::runtime_error(std::strerror(errno));
-		this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
 		client = &(this->clients[fd]);
+		this->epoll.ctl(fd, EPOLL_CTL_ADD, EPOLLIN);
 		client->fd = fd;
 		client->request = new HttpRequest();
 		client->executor = &(this->methodExecuter);
@@ -50,8 +49,12 @@ void	Server::acceptNewClient(int listenFd)
 void	Server::removeClient(ClientConnection &client)
 {
 	std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
-	if (client.cgiPid != -1)
+	this->justRemovedFds.insert(client.fd);
+	if (client.cgiPid != -1) {
 		client.terminateCGIProcess(&(this->cgiPipes));
+		if (client.cgiIn) this->justRemovedFds.insert(client.cgiIn);
+		if (client.cgiOut) this->justRemovedFds.insert(client.cgiOut);
+	}
 	close(client.fd);
 	this->clients.erase(client.fd);
 }
@@ -71,41 +74,31 @@ void	Server::callEventHandler(const struct epoll_event &event)
 {
 	ClientConnection	*caller = this->identifyEventCaller(event.data.fd);
 
-	// TODO: left off here... add fd ignore list
 	if (caller == NULL) return ;
 	try {
-		if (event.events & EPOLLERR && event.data.fd == caller->fd) {
-			int err = 0;
-			socklen_t len = sizeof(err);
-
-			std::cerr << "hello" << std::endl;
-			if (getsockopt(caller->fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0)
-			{
-				std::cerr << "fd " << caller->fd
-									<< " error: " << strerror(err)
-									<< " (" << err << ")\n";
-			}
-			throw std::runtime_error("Error condition happened on the associated file descriptor" + caller->remoteAddr);
-		}
+		if (event.events & EPOLLERR)
+			throw std::runtime_error("Error condition happened on the associated file descriptor");
 		if (event.data.fd == caller->fd) {
-			// if (event.events & EPOLLHUP)
-			// 	throw std::runtime_error("Hang up happened on the associated file descriptor" + caller->remoteAddr);
 			caller->inactiveTime = std::time(NULL);
 			if (event.events & EPOLLIN)
 				this->handleIncoming(*caller);
 			if (event.events & EPOLLOUT)
 				this->handleOutgoing(*caller);
+			if (event.events & EPOLLHUP)
+				std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
+					<< " state=" << caller->state << " EPOLLIN = " << (event.events & EPOLLIN) << " EPOLLOUT = " << (event.events & EPOLLOUT) << std::endl;
+			// if (!(event.events & (EPOLLIN | EPOLLOUT)) && event.events & EPOLLHUP) {
+			// 	throw std::runtime_error("Hang up happened on the associated file descriptor" + caller->remoteAddr);
+			// 		std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
+			// 			<< " state=" << caller->state << std::endl;
+			// }
 		}
-		else if (event.data.fd == caller->cgiIn) {
-			if (event.events & EPOLLOUT)
-				this->writeRequestBodyToCGI(*caller);
-			// else if (event.events & EPOLLHUP)
-			// 	throw std::runtime_error("Hang up happened on the associated file descriptor (pipe)" + caller->remoteAddr);
-		}
+		else if (event.data.fd == caller->cgiIn && event.events & EPOLLOUT)
+			this->writeRequestBodyToCGI(*caller);
 		else if (event.data.fd == caller->cgiOut && event.events & (EPOLLIN | EPOLLHUP))
 			this->handleCGIOutput(*caller);
 	} catch (const std::runtime_error &e) {
-		std::cout << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
+		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
 		std::cout << "Coming from callEventHandler catch..." << std::endl;
 		this->removeClient(*caller);
@@ -162,6 +155,10 @@ void	Server::eventLoop()
 			throw std::runtime_error(std::strerror(errno));
 		}
 		for (int	i = 0; i < nFds; ++i) {
+			if (this->justRemovedFds.count(events[i].data.fd)) {
+				std::cerr << "Almost called a just removed fd" << std::endl;
+				continue;
+			}
 			if (std::find(this->listenSockets.begin(), this->listenSockets.end(),
 					events[i].data.fd) != this->listenSockets.end()) {
 				this->acceptNewClient(events[i].data.fd);
@@ -170,5 +167,6 @@ void	Server::eventLoop()
 			this->callEventHandler(events[i]);
 		}
 		this->checkOnClients();
+		this->justRemovedFds.clear();
 	}
 }

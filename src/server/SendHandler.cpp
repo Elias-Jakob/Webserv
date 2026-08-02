@@ -13,7 +13,7 @@ void	Server::handleOutgoing(ClientConnection &caller)
 		return ;
 	caller.bytesSent += sentBytes;
 	if (caller.bytesSent < caller.response_buffer.size())
-		return;
+		return ;
 	if (PRINT_RESPONSE)
 		std::cout << "Response (size = " << caller.response_buffer.size() << "): "
 			<< caller.response_buffer << std::endl;
@@ -22,7 +22,7 @@ void	Server::handleOutgoing(ClientConnection &caller)
 		std::cout << ((caller.timeout) ? "Timeout: close caller connection" :
 			"Client connection is not set to keep-alive, closing socket...") << std::endl;
 		this->removeClient(caller);
-		return;
+		return ;
 	}
 	caller.cleanUpClient();
 	this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLIN);

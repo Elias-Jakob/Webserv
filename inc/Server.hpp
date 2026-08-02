@@ -14,6 +14,7 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <set>
 # include <stdexcept>
 # include <cerrno>
 # include <cstring> // std::strerror
@@ -56,6 +57,7 @@ class Server
 		std::map<int, ClientConnection&>	cgiPipes;
 		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
 		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
+		std::set<int>	justRemovedFds;
 
 		int		setupSocketAddr(const char *interface, const char *port);
 		void	initListenSocket(std::vector<t_Configs>::iterator &conf);
