@@ -39,8 +39,8 @@ import time
 HOST = "127.0.0.1"
 PORT = 8080
 HOST_HEADER_VALUE = "meinewebsite.com"
-CGI_ECHO = "/cgi-bin/cgi_echo.py"
-UPLOAD_PATH = "/upload"
+CGI_ECHO = "/cgi-bin/script.py"
+UPLOAD_PATH = "/submit"
 
 CONNECT_TIMEOUT = 3.0
 READ_TIMEOUT = 10.0  # generous margin under load -- cgi_echo.py itself is not slow

@@ -30,12 +30,21 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 	else if (readBytes > 0)
 		caller.response_buffer.append(buf);
 	else {
-		if (caller.response_buffer.empty())
-			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+		caller.response_buffer = (caller.response_buffer.empty())
+			? this->responseBuilder.errorResponseViaCode(500)
+			: this->responseBuilder.cgiResponse(caller.response_buffer, caller.keep_alive);
 		close(caller.cgiOut);
 		this->justRemovedFds.insert(caller.cgiOut);
 		this->cgiPipes.erase(caller.cgiOut);
 		caller.cgiOut = -1;
+		// if (caller.cgiIn != -1) {
+		// 	this->justRemovedFds.insert(caller.cgiIn);
+		// 	close(caller.cgiIn);
+		// 	this->cgiPipes.erase(caller.cgiIn);
+		// 	caller.cgiIn = -1;
+		// }
+		caller.state = SENDING_RESPONSE;
+		this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 	}
 }
 
@@ -54,36 +63,39 @@ void	Server::cgiTimeoutResponse(ClientConnection &client)
 */
 void	Server::checkProcessStatus(ClientConnection &client)
 {
-	int status;
+	int status, error = 0;
 	pid_t	pid = waitpid(client.cgiPid, &status, WNOHANG);
 
 	if (pid == 0)
 		return ;
 	if (pid > 0) {
-		if (WIFEXITED(status)) {
-			client.response_buffer = (WEXITSTATUS(status) != 0) ?
-				this->responseBuilder.errorResponseViaCode(500) :
-				this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
-		} else if (WIFSIGNALED(status))
-			client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+		if (!WIFEXITED(status) && !WIFSIGNALED(status))
+			return ;
+		// if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+		// 	this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+			error = 500;
 	}
 	else {
 		std::cerr << "Error: waitpid failed: " << std::strerror(errno) << std::endl;
-		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+		error = 500;
 	}
 	client.cgiPid = -1;
-	if (client.cgiIn != -1) {
-		this->justRemovedFds.insert(client.cgiIn);
-		close(client.cgiIn);
-		this->cgiPipes.erase(client.cgiIn);
-		client.cgiIn = -1;
+	if (error) {
+		// if (client.cgiIn != -1) {
+		// 	this->justRemovedFds.insert(client.cgiIn);
+		// 	close(client.cgiIn);
+		// 	this->cgiPipes.erase(client.cgiIn);
+		// 	client.cgiIn = -1;
+		// }
+		// if (client.cgiOut != -1) {
+		// 	this->justRemovedFds.insert(client.cgiOut);
+		// 	close(client.cgiOut);
+		// 	this->cgiPipes.erase(client.cgiOut);
+		// 	client.cgiOut = -1;
+		// }
+		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+		client.state = SENDING_RESPONSE;
+		this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
 	}
-	if (client.cgiOut != -1) {
-		this->justRemovedFds.insert(client.cgiOut);
-		close(client.cgiOut);
-		this->cgiPipes.erase(client.cgiOut);
-		client.cgiOut = -1;
-	}
-	client.state = SENDING_RESPONSE;
-	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);
 }

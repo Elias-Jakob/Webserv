@@ -23,17 +23,17 @@ import socket
 import threading
 
 # ---- die zwei angeforderten Konstanten ----
-THREAD_COUNT = 40
-REQUESTS_PER_THREAD = 2000
+THREAD_COUNT = 1000
+REQUESTS_PER_THREAD = 100
 
-STOP_ON_FAILURE = False  # False = nach einem Fehler einfach weiterlaufen lassen
+STOP_ON_FAILURE = True  # False = nach einem Fehler einfach weiterlaufen lassen
 SUCCESS_STATUS = 200  # Achtung: ein erfolgreicher Upload liefert bei vielen
 # Implementierungen 201 Created statt 200 -- ggf. anpassen
 
 HOST = "127.0.0.1"
 PORT = 8080
 HOST_HEADER = "meinewebsite.com"
-TIMEOUT = 10
+TIMEOUT = 60
 
 stop_flag = threading.Event()
 lock = threading.Lock()
@@ -75,6 +75,9 @@ def read_response(sock):
         if not chunk:
             break
         rest += chunk
+    if (length == 0 or len(rest) == 0):
+        print("Received response with content-length = 0");
+        # stop_flag.set()
     return head + b"\r\n\r\n" + rest[:length]
 
 
@@ -107,7 +110,7 @@ def build_steps():
 
 def worker(thread_id):
     global ok_count, fail_count
-    keep_alive = thread_id % 2 == 0  # Haelfte der Threads keep-alive, Haelfte frisch
+    keep_alive = thread_id % 2 == 0
     sock = None
     port = "no port available"
 

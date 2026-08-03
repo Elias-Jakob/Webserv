@@ -54,7 +54,7 @@ class Server
 		struct addrinfo	addrHints;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		std::map<int, ClientConnection&>	cgiPipes;
+		std::map<int, int>	cgiPipes;
 		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
 		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
 		std::set<int>	justRemovedFds;

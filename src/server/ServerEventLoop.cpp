@@ -51,9 +51,9 @@ void	Server::removeClient(ClientConnection &client)
 	std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
 	this->justRemovedFds.insert(client.fd);
 	if (client.cgiPid != -1) {
+		if (client.cgiIn != -1) this->justRemovedFds.insert(client.cgiIn);
+		if (client.cgiOut != -1) this->justRemovedFds.insert(client.cgiOut);
 		client.terminateCGIProcess(&(this->cgiPipes));
-		if (client.cgiIn) this->justRemovedFds.insert(client.cgiIn);
-		if (client.cgiOut) this->justRemovedFds.insert(client.cgiOut);
 	}
 	close(client.fd);
 	this->clients.erase(client.fd);
@@ -61,12 +61,15 @@ void	Server::removeClient(ClientConnection &client)
 
 ClientConnection	*Server::identifyEventCaller(int fd)
 {
-	std::map<int, ClientConnection>::iterator	isClient = this->clients.find(fd);
-	if (isClient != this->clients.end())
-		return (&isClient->second);
-	std::map<int, ClientConnection &>::iterator	isPipe = this->cgiPipes.find(fd);
-	if (isPipe != this->cgiPipes.end())
-		return (&isPipe->second);
+	std::map<int, ClientConnection>::iterator	caller = this->clients.find(fd);
+	if (caller != this->clients.end())
+		return (&caller->second);
+	std::map<int, int>::iterator	isPipe = this->cgiPipes.find(fd);
+	if (isPipe == this->cgiPipes.end())
+		return (NULL);
+	caller = this->clients.find(isPipe->second);
+	if (caller != this->clients.end())
+		return (&caller->second);
 	return (NULL);
 }
 
@@ -80,13 +83,17 @@ void	Server::callEventHandler(const struct epoll_event &event)
 			throw std::runtime_error("Error condition happened on the associated file descriptor");
 		if (event.data.fd == caller->fd) {
 			caller->inactiveTime = std::time(NULL);
-			if (event.events & EPOLLIN)
+			if (event.events & EPOLLIN) {
 				this->handleIncoming(*caller);
-			if (event.events & EPOLLOUT)
+				return;
+			}
+			if (event.events & EPOLLOUT){// && !this->justRemovedFds.count(event.data.fd))
 				this->handleOutgoing(*caller);
-			if (event.events & EPOLLHUP)
-				std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
-					<< " state=" << caller->state << " EPOLLIN = " << (event.events & EPOLLIN) << " EPOLLOUT = " << (event.events & EPOLLOUT) << std::endl;
+				return;
+			}
+			// if (event.events & EPOLLHUP)
+			// 	std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
+			// << " state=" << caller->state << " EPOLLIN = " << (event.events & EPOLLIN) << " EPOLLOUT = " << (event.events & EPOLLOUT) << std::endl;
 			// if (!(event.events & (EPOLLIN | EPOLLOUT)) && event.events & EPOLLHUP) {
 			// 	throw std::runtime_error("Hang up happened on the associated file descriptor" + caller->remoteAddr);
 			// 		std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
@@ -101,7 +108,8 @@ void	Server::callEventHandler(const struct epoll_event &event)
 		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
 		std::cout << "Coming from callEventHandler catch..." << std::endl;
-		this->removeClient(*caller);
+		if (!this->justRemovedFds.count(event.data.fd))
+			this->removeClient(*caller);
 	}
 }
 
@@ -125,6 +133,7 @@ void	Server::checkOnClients()
 						continue ;
 					}
 					it->second.response_buffer = it->second.responseBuilder->errorResponseViaCode(400);
+					it->second.state = SENDING_RESPONSE;
 					this->epoll.ctl(it->second.fd, EPOLL_CTL_MOD, EPOLLOUT);
 				} else
 					this->cgiTimeoutResponse(it->second);
@@ -155,10 +164,8 @@ void	Server::eventLoop()
 			throw std::runtime_error(std::strerror(errno));
 		}
 		for (int	i = 0; i < nFds; ++i) {
-			if (this->justRemovedFds.count(events[i].data.fd)) {
-				std::cerr << "Almost called a just removed fd" << std::endl;
+			if (this->justRemovedFds.count(events[i].data.fd))
 				continue;
-			}
 			if (std::find(this->listenSockets.begin(), this->listenSockets.end(),
 					events[i].data.fd) != this->listenSockets.end()) {
 				this->acceptNewClient(events[i].data.fd);

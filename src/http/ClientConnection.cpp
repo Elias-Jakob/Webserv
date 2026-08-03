@@ -101,7 +101,7 @@ void ClientConnection::cleanUpClient()
 	bytesSent = 0;
 }
 
-void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes)
+void	ClientConnection::terminateCGIProcess(std::map<int, int> *cgiPipes)
 {
 	int	status;
 	
