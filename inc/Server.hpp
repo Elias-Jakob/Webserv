@@ -8,6 +8,7 @@
 # include "MethodExecuter.hpp"
 # include "CGIProcessLauncher.hpp"
 # include "CGIError.hpp"
+# include "SessionManager.hpp"
 
 // CPP
 # include <iostream>
@@ -50,6 +51,7 @@ class Server
 		CGIProcessLauncher	cgiLauncher;
 		MethodExecuter	methodExecuter;
 		ResponseBuilder	responseBuilder;
+		SessionManager	sessionManager; // for cookie & session-management
 		struct addrinfo	addrHints;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;

@@ -26,6 +26,10 @@ class ResponseBuilder
 		~ResponseBuilder();
 
 		std::string response(t_executionResult result);
+		
+		// for cookie & session-management
+		std::string response(t_executionResult result, const std::string &cookieHead);
+		
 		std::string errorResponse(HttpRequest *request, const std::string &listeningInterface);
 		std::string	errorResponseViaCode(int errorCode);
 		std::string	errorResponseViaResult(t_executionResult result, const std::string &listeningInterface);
@@ -44,6 +48,10 @@ class ResponseBuilder
 		std::string	setErrorStatusLine(int errorCode);
 		
 		std::string buildStatusLine(t_executionResult *result);
+		
+		// for cookie & session-management
+		std::string	buildResponseHeaders(t_executionResult &result, const std::string &cookieHead);
+		
 		std::string buildResponseHeaders(t_executionResult &result);
 		std::string generateErrorPage(const std::string &code, 
 										const std::string &phrase);

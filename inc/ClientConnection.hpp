@@ -1,12 +1,13 @@
 #ifndef CLIENT_CONNECTION_HPP
 # define CLIENT_CONNECTION_HPP
-# include <ctime>
 
 # include "HttpRequest.hpp"
 # include "MethodExecuter.hpp"
 # include "ResponseBuilder.hpp"
-# include "structs.h"
+# include "SessionManager.hpp"
 
+# include <ctime>
+# include "structs.h"
 # include <sys/wait.h>
 # include <signal.h>
 
@@ -41,12 +42,16 @@ class ClientConnection
 		std::string		request_buffer;
 		std::string		response_buffer;
 		size_t			bytesSent;
-		HttpRequest*	request;
+		HttpRequest		*request;
 		AMethod			*_currentMethod;
-		MethodExecuter*	executor;
+		MethodExecuter	*executor;
 		ResponseBuilder	*responseBuilder;
+		SessionManager	*sessionManager;
 		bool			keep_alive;
-		time_t		inactiveTime;
+		time_t			inactiveTime;
+		
+		bool			sendCookie; // for session-management
+		std::string		cookieHeader; // for session-management
 
 		std::time_t	cgiStartTime;
 		pid_t	cgiPid;
