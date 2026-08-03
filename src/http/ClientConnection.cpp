@@ -45,7 +45,7 @@ ClientConnection::~ClientConnection()
 		request = NULL;
 	}
 	if (this->fd != -1) close(this->fd);
-	if (this->cgiPid) {
+	if (this->cgiPid != -1) {
 		kill(this->cgiPid, SIGKILL);
 		waitpid(this->cgiPid, NULL, 0);
 	}

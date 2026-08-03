@@ -6,8 +6,10 @@ void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 	std::string	requestBody = caller.request->getRequestBody();
 	
 	if (!caller.request->getRequestBody().empty()) {
-		writtenBytes = write(caller.cgiIn, requestBody.c_str() + caller.cgiWrittenBytes,
-			requestBody.size() - caller.cgiWrittenBytes);
+		// writtenBytes = write(caller.cgiIn, requestBody.c_str() + caller.cgiWrittenBytes,
+		// 	requestBody.size() - caller.cgiWrittenBytes);
+		writtenBytes = write(caller.cgiIn, requestBody.c_str(),
+			requestBody.size());
 		if (writtenBytes == -1)
 			return ;
 		caller.cgiWrittenBytes += writtenBytes;
