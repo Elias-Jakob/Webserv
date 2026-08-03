@@ -6,7 +6,8 @@ void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 	std::string	requestBody = caller.request->getRequestBody();
 	
 	if (!caller.request->getRequestBody().empty()) {
-		writtenBytes = write(caller.cgiIn, requestBody.c_str(), requestBody.size());
+		writtenBytes = write(caller.cgiIn, requestBody.c_str() + caller.cgiWrittenBytes,
+			requestBody.size() - caller.cgiWrittenBytes);
 		if (writtenBytes == -1)
 			return ;
 		caller.cgiWrittenBytes += writtenBytes;
@@ -21,14 +22,14 @@ void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 
 void	Server::handleCGIOutput(ClientConnection &caller)
 {
-	char buf[1024] = { 0 };
+	char		buffer[RECV_BUFFER_SIZE] = { 0 };
 	ssize_t	readBytes;
 
-	readBytes = read(caller.cgiOut, buf, sizeof(buf) - 1);
+	readBytes = read(caller.cgiOut, buffer, sizeof(buffer));
 	if (readBytes == -1)
 		return ;
 	else if (readBytes > 0)
-		caller.response_buffer.append(buf);
+		caller.response_buffer.append(buffer, readBytes);
 	else {
 		caller.response_buffer = (caller.response_buffer.empty())
 			? this->responseBuilder.errorResponseViaCode(500)
@@ -48,11 +49,31 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 	}
 }
 
+void	Server::terminateClientCGI(ClientConnection &client)
+{
+	int	status;
+	
+	if (client.cgiPid != -1) {
+		kill(client.cgiPid, SIGKILL);
+		waitpid(client.cgiPid, &status, 0);
+	}
+	if (client.cgiIn != -1) {
+		this->justRemovedFds.insert(client.cgiIn);
+		close(client.cgiIn);
+		this->cgiPipes.erase(client.cgiIn);
+	}
+	if (client.cgiOut != -1) {
+		this->justRemovedFds.insert(client.cgiOut);
+		close(client.cgiOut);
+		this->cgiPipes.erase(client.cgiOut);
+	}
+	client.cgiPid = client.cgiIn = client.cgiOut = -1;
+	client.cgiWrittenBytes = 0;
+}
+
 void	Server::cgiTimeoutResponse(ClientConnection &client)
 {
-	this->justRemovedFds.insert(client.cgiIn);
-	this->justRemovedFds.insert(client.cgiOut);
-	client.terminateCGIProcess(&(this->cgiPipes));
+	this->terminateClientCGI(client);
 	client.response_buffer = client.responseBuilder->errorResponseViaCode(504);
 	client.state = SENDING_RESPONSE;
 	this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);

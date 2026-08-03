@@ -69,6 +69,7 @@ class Server
 		void	writeRequestBodyToCGI(ClientConnection &caller);
 		void	removeClient(ClientConnection &client);
 		void	checkOnClients();
+		void	terminateClientCGI(ClientConnection &client);
 		void	cgiTimeoutResponse(ClientConnection &client);
 		void	checkProcessStatus(ClientConnection &client);
 		void	callEventHandler(const struct epoll_event &event);

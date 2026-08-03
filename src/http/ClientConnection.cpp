@@ -45,8 +45,14 @@ ClientConnection::~ClientConnection()
 		request = NULL;
 	}
 	if (this->fd != -1) close(this->fd);
-	if (this->cgiPid != -1)
-		this->terminateCGIProcess();
+	if (this->cgiPid) {
+		kill(this->cgiPid, SIGKILL);
+		waitpid(this->cgiPid, NULL, 0);
+	}
+	if (this->cgiIn != -1)
+		close(this->cgiIn);
+	if (this->cgiOut != -1)
+		close(this->cgiOut);
 }
 
 // =========================================================================
@@ -101,23 +107,24 @@ void ClientConnection::cleanUpClient()
 	bytesSent = 0;
 }
 
-void	ClientConnection::terminateCGIProcess(std::map<int, int> *cgiPipes)
-{
-	int	status;
-	
-	kill(this->cgiPid, SIGKILL);
-	waitpid(this->cgiPid, &status, 0);
-	if (this->cgiIn != -1) close(this->cgiIn);
-	if (this->cgiOut != -1) close(this->cgiOut);
-	if (cgiPipes) {
-		if (this->cgiIn != -1)
-			cgiPipes->erase(this->cgiIn);
-		if (this->cgiOut != -1)
-			cgiPipes->erase(this->cgiOut);
-	}
-	this->cgiPid = this->cgiIn = this->cgiOut = -1;
-	this->cgiWrittenBytes = 0;
-}
+// void	ClientConnection::terminateCGIProcess(std::map<int, int> *cgiPipes)
+// {
+// 	int	status;
+//
+// 	kill(this->cgiPid, SIGKILL);
+// 	waitpid(this->cgiPid, &status, 0);
+// 	if (this->cgiIn != -1) close(this->cgiIn);
+// 	if (this->cgiOut != -1) close(this->cgiOut);
+// 	if (cgiPipes) {
+// 		if (this->cgiIn != -1)
+// 			cgiPipes->erase(this->cgiIn);
+// 		if (this->cgiOut != -1)
+// 			cgiPipes->erase(this->cgiOut);
+// 	}
+// 	this->cgiPid = this->cgiIn = this->cgiOut = -1;
+// 	this->cgiWrittenBytes = 0;
+// }
+
 /**
  * @brief Request handling execution.
  */

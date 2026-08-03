@@ -57,7 +57,7 @@ class ClientConnection
 		std::string		remoteAddr;
 		bool	timeout;
 
-		void	terminateCGIProcess(std::map<int, int> *cgiPipes = NULL);
+		// void	terminateCGIProcess(std::map<int, int> *cgiPipes = NULL);
 
 		void	processRequest();
 		void	cleanUpClient();

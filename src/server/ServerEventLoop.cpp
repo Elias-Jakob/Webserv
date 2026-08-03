@@ -50,11 +50,7 @@ void	Server::removeClient(ClientConnection &client)
 {
 	std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
 	this->justRemovedFds.insert(client.fd);
-	if (client.cgiPid != -1) {
-		if (client.cgiIn != -1) this->justRemovedFds.insert(client.cgiIn);
-		if (client.cgiOut != -1) this->justRemovedFds.insert(client.cgiOut);
-		client.terminateCGIProcess(&(this->cgiPipes));
-	}
+	this->terminateClientCGI(client);
 	close(client.fd);
 	this->clients.erase(client.fd);
 }
@@ -108,8 +104,7 @@ void	Server::callEventHandler(const struct epoll_event &event)
 		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
 		std::cout << "Coming from callEventHandler catch..." << std::endl;
-		if (!this->justRemovedFds.count(event.data.fd))
-			this->removeClient(*caller);
+		this->removeClient(*caller);
 	}
 }
 

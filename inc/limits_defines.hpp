@@ -18,6 +18,7 @@
 #define WRTIE_TIMEOUT 10
 
 // Resource & Performance
+# define RECV_BUFFER_SIZE 4096
 #define MAX_FILE_UPLOADS 10
 #define CGI_TIMEOUT 30
 
