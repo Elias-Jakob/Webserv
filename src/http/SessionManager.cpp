@@ -130,6 +130,7 @@ void	SessionManager::setData(const std::string &sessionId, const std::string &ke
 	if (sessionIt == _sessions.end())
 		return ;
 	sessionIt->second.data[key] = value;
+	std::cout << RED << key << " = " << value << RESET << std::endl;
 }
 
 /**
@@ -142,10 +143,10 @@ std::map<std::string, std::string>	SessionManager::getAllData(const std::string 
 	if (sessionIt == _sessions.end())
 		return (std::map<std::string, std::string>());
 	t_SessionData temp = sessionIt->second;
-	std::cout << temp.createdAt << std::endl;
+	// std::cout << temp.createdAt << std::endl;
 	std::map<std::string, std::string>::iterator it = temp.data.begin();
 	while (it != temp.data.end()) {
-		std::cout << it->first << "=" << it->second << std::endl;	
+		// std::cout << RED << it->first << "=" << it->second << RESET << std::endl;
 		it++;
 	}
 	return (sessionIt->second.data);

@@ -5,13 +5,27 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Document</title>
 </head>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('status') === 'login_success') {
+    alert('Login successful!');
+  }
+  if (params.get('status') === 'logout_success'){
+	alert('Logout successful!');
+    // Or display a nice message in a div instead
+  }
+</script>
 <body>
 	<form action="/login" method="POST">
     	<input type="text" name="username" placeholder="Your Name">
     	<input type="text" name="password" placeholder="Your password">
 		<!-- <input type="text" name="last_name" placeholder="Lastname"> -->
-    	<button type="submit">Submit</button>
+    	<button type="submit">Login</button>
+	</form>
+	<form action="/logout" method="POST">
+		<button type="logout">Logout</button>
 	</form>
 	<a href="./text.html">text</a>
+	<a href="./index.html">text</a>
 </body>
 </html>

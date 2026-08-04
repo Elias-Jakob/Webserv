@@ -252,6 +252,8 @@ bool	HttpRequest::isValidPostRequest()
 //	REMOVE to avoid 411 if not allowed Method
 	if (data._requestLine.method == "POST")
 	{
+		if (data._locationObj->cgi)
+			return true;
 		it = data._headers.find("content-length");
 		if (it != data._headers.end() && it->second[0] == "0" && data._fullMessageBody.size() == 0) {
 			data._errorCode = 200;

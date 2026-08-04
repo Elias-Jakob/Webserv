@@ -26,8 +26,11 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 	readBytes = read(caller.cgiOut, buf, sizeof(buf) - 1);
 	if (readBytes == -1)
 		return ;
-	else if (readBytes > 0)
+	else if (readBytes > 0) {
+		// std::cout << RED << "CGI_OUTPUT:\n" << buf << RESET << std::endl; // debug
+		// std::cout << GREEN << "caller.buffer:\n" << caller.response_buffer << RESET << std::endl;
 		caller.response_buffer.append(buf);
+	}
 	else {
 		if (caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);

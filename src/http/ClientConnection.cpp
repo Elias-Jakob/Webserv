@@ -70,7 +70,7 @@ void ClientConnection::processRequest()
 		_currentMethod = executor->createMethod(request->getMethod(), request->getLocationObj());
 		if (_currentMethod == NULL)
 			response_buffer = responseBuilder->errorResponseViaCode(405);
-		else if (request->getMethod() == "POST" && !request->hasBodyContentLength())
+		else if (request->getMethod() == "POST" && !request->hasBodyContentLength() && !request->getLocationObj()->cgi)
 			response_buffer = responseBuilder->errorResponseViaCode(411);
 		else {
 			sessionHandling();
@@ -148,6 +148,7 @@ void ClientConnection::executeRequest()
 			result.statusCode = "200";
 			state = CGI_PROCESSING;
 			cgi_path = result.statusPhrase;
+			// std::cout << RED << "BUFFER: " << response_buffer << RESET << std::endl;
 			result.statusPhrase = "OK";
 		}
 		else if (!result.success) {
@@ -228,6 +229,7 @@ void ClientConnection::applyCgiSessionHeaders()
 
 	const std::string prefix = "X-Session-Set: ";
 	size_t pos;
+	std::cout << YELLOW << response_buffer << RESET << std::endl;
 	while ((pos = response_buffer.find(prefix)) != std::string::npos)
 	{
 		size_t lineStart = pos + prefix.size();

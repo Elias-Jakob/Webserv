@@ -336,6 +336,7 @@ std::string ResponseBuilder::buildFullResponse(
 	std::string response;
 
 	response = statusLine + messageHeaders + resultBody;
+	// std::cout << BLUE << response << RESET << std::endl;
 	return response;
 }
 

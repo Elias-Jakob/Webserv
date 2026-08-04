@@ -49,38 +49,17 @@ def send(body_text, extra_headers=None, status=None):
 
 
 query = parse_qs(os.environ.get("QUERY_STRING", ""))
-already_logged_in = os.environ.get("SESSION_ISLOGGEDIN", "false") == "true"
+# already_logged_in = os.environ.get("SESSION_ISLOGGEDIN", "false") == "true"
 current_name = os.environ.get("SESSION_NAME", "")
-# logging_out = os.environ.get("SESSION_ISLOGGEDIN", "true") == "false"
+logging_out = os.environ.get("SESSION_ISLOGGEDIN", "true") == "false"
 
-if query.get("action", [""])[0] == "logout":
-    send("logged out\n", [
-        "X-Session-Set: isLoggedIn=false",
-        "X-Session-Set: name=",
-    ])
-    sys.exit(0)
+username = current_name
 
-if os.environ.get("REQUEST_METHOD") == "GET":
-    if already_logged_in:
-        send(f"already logged in as {current_name}\n")
-    else:
-        send("not logged in\n")
-    sys.exit(0)
-
-form = parse_qs(read_body().decode(errors="replace"))
-username = form.get("username", [""])[0]
-password = form.get("password", [""])[0]
-
-# if username in USERS and USERS[username] == password:
-#     send(f"login OK: {username}\n", [
-#         "X-Session-Set: isLoggedIn=true",
-#         f"X-Session-Set: name={username}",
-#     ])
-if username in USERS and USERS[username] == password:
+if username in USERS:
     # Redirect to form with success message
     sys.stdout.buffer.write(b"Status: 303 See Other\r\n")
-    sys.stdout.buffer.write(b"Location: /form.html?status=login_success\r\n")
-    sys.stdout.buffer.write(b"X-Session-Set: isLoggedIn=true\r\n")
+    sys.stdout.buffer.write(b"Location: /form.html?status=logout_success\r\n")
+    sys.stdout.buffer.write(b"X-Session-Set: isLoggedIn=false\r\n")
     sys.stdout.buffer.write(f"X-Session-Set: name={username}\r\n".encode())
     sys.stdout.buffer.write(b"Content-Length: 0\r\n\r\n")
     sys.stdout.buffer.flush()
