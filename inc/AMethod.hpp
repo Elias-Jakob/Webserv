@@ -46,6 +46,7 @@ class AMethod
 		std::string getRedirectURL();
 		std::string	getLastModified();
 		std::string	getEtag();
+		std::string getUploadLocation();
 
 	protected:
 		std::string _method;
@@ -57,7 +58,7 @@ class AMethod
 		std::string _resource;
 		std::string	_phrase;
 		std::string	_code;
-
+		std::string _uploadLocation;
 		std::string	_contentType;
 		s_ContentData	_contentData;
 		std::map<std::string, s_FormField>	_parsedBody;

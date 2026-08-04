@@ -54,6 +54,7 @@ typedef struct s_executionResult
 	bool		keep_alive;
 	std::string	lastModified;
 	std::string	etag;
+	std::string	uploadedLocation;
 }				t_executionResult;
 
 typedef struct	s_query

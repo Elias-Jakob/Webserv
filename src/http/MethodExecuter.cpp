@@ -39,7 +39,7 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request,
 		result.statusPhrase = method->getPhrase();
 
 		result.body = method->getBody();
-
+		result.uploadedLocation = method->getUploadLocation();
 		if (method->isDirList())
 			result.contentType = "text/html";
 		else

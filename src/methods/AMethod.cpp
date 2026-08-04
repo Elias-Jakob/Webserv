@@ -209,3 +209,8 @@ std::string AMethod::getEtag()
 {
     return _etag;
 }
+
+std::string AMethod::getUploadLocation()
+{
+    return _uploadLocation;
+}
