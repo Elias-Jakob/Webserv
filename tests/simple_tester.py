@@ -23,8 +23,8 @@ import socket
 import threading
 
 # ---- die zwei angeforderten Konstanten ----
-THREAD_COUNT = 500
-REQUESTS_PER_THREAD = 10
+THREAD_COUNT = 100
+REQUESTS_PER_THREAD = 10000
 
 STOP_ON_FAILURE = False  # False = nach einem Fehler einfach weiterlaufen lassen
 SUCCESS_STATUS = 200  # Achtung: ein erfolgreicher Upload liefert bei vielen
@@ -110,7 +110,7 @@ def build_steps():
 
 def worker(thread_id):
     global ok_count, fail_count
-    keep_alive = False  # thread_id % 2 == 0
+    keep_alive = thread_id % 2 == 0
     sock = None
     port = "no port available"
 
