@@ -283,6 +283,8 @@ std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 		messageHeaders += "Connection: keep-alive\r\n";
 	else
 		messageHeaders += "Connection: close\r\n";
+	if (result.statusCode == "201")
+		messageHeaders += "Location: " + result.uploadedLocation + "\r\n";
 	// messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
 	// if (result.lastModified.size() > 0)
 	// 	messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
@@ -315,6 +317,8 @@ std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result, con
 		messageHeaders += "Connection: close\r\n";
 	// messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
 	messageHeaders += cookieHead; // cookie-header
+	if (result.statusCode == "201")
+		messageHeaders += "Location: " + result.uploadedLocation + "\r\n";
 	// if (result.lastModified.size() > 0)
 	// 	messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
 	// if (result.etag.size() > 0)

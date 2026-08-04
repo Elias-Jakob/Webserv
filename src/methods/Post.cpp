@@ -168,7 +168,7 @@ bool	Post::uploadFile()
 	}
 	std::string uploadPath = "." + _reqUri + "/";//+ _location->uploadStore + "/";
 	std::string	fullPath = uploadPath + filename;
-	_uploadLocation = fullPath;
+	_uploadLocation = _reqUri + "/" + filename;
 	std::cout << "\tuploadPath = " << uploadPath
 		<< "\n\tfullPath =" << fullPath << std::endl;
 	if (it->second.value.size() > MAX_BODY_SIZE)
