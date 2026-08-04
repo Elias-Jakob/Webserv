@@ -13,11 +13,12 @@
 // Network & Connction
 # define EPOLL_MAX_EVENTS 10
 #define MAX_CONNECTIONS 32
-# define KEEP_ALIVE_TIMEOUT 20
+# define KEEP_ALIVE_TIMEOUT 60
 #define READ_TIMEOUT 10
 #define WRTIE_TIMEOUT 10
 
 // Resource & Performance
+# define RECV_BUFFER_SIZE 4096
 #define MAX_FILE_UPLOADS 10
 #define CGI_TIMEOUT 30
 

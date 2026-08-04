@@ -37,7 +37,7 @@ ClientConnection::ClientConnection() : fd(-1),
  */
 ClientConnection::~ClientConnection()
 {
-	std::cout << "ClientConnection destroyed, cleaning up..." << std::endl;
+	std::cout << "ClientConnection destroyed, cleaning up..." << this->remoteAddr << std::endl;
 	std::cout << "==========================================\n"
 			  << "===========================================" << std::endl;
 	if (request)
@@ -45,10 +45,15 @@ ClientConnection::~ClientConnection()
 		delete request;
 		request = NULL;
 	}
-	if (this->fd != -1)
-		close(this->fd);
-	if (this->cgiPid != -1)
-		this->terminateCGIProcess();
+	if (this->fd != -1) close(this->fd);
+	if (this->cgiPid != -1) {
+		kill(this->cgiPid, SIGKILL);
+		waitpid(this->cgiPid, NULL, 0);
+	}
+	if (this->cgiIn != -1)
+		close(this->cgiIn);
+	if (this->cgiOut != -1)
+		close(this->cgiOut);
 }
 
 // =========================================================================
@@ -104,27 +109,6 @@ void ClientConnection::cleanUpClient()
 	sessionCookie = "";
 }
 
-// void	ClientConnection::terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes)
-void ClientConnection::terminateCGIProcess(std::map<int, ClientConnection*> *cgiPipes)
-{
-	int status;
-
-	kill(this->cgiPid, SIGKILL);
-	waitpid(this->cgiPid, &status, 0);
-	if (this->cgiIn != -1)
-		close(this->cgiIn);
-	if (this->cgiOut != -1)
-		close(this->cgiOut);
-	if (cgiPipes)
-	{
-		if (this->cgiIn != -1)
-			cgiPipes->erase(this->cgiIn);
-		if (this->cgiOut != -1)
-			cgiPipes->erase(this->cgiOut);
-	}
-	this->cgiPid = this->cgiIn = this->cgiOut = -1;
-	this->cgiWrittenBytes = 0;
-}
 /**
  * @brief Request handling execution.
  */

@@ -104,13 +104,14 @@ bool HttpRequest::parsingComplete()
 bool	HttpRequest::keepConnectionAlive()
 {
 	std::map<std::string, std::vector<std::string> >::iterator it;
+
 	it = data._headers.find("connection");
-	if (it != data._headers.end() && !it->second.empty()) {
-		if (it->second[0] == "keep-alive")
+	if (it != data._headers.end() && !it->second.empty())
+	{
+		if (it->second[0] == "keep-alive" ||
+				(it->second[0] != "close" && data._requestLine.version == "HTTP/1.1"))
 			return true;
 	}
-	if (data._requestLine.version == "HTTP/1.1")
-		return (true);
 	return false;
 }
 

@@ -15,6 +15,7 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <set>
 # include <stdexcept>
 # include <cerrno>
 # include <cstring> // std::strerror
@@ -55,12 +56,10 @@ class Server
 		struct addrinfo	addrHints;
 		std::vector<int>	listenSockets;
 		std::map<int, ClientConnection>	clients;
-		// cgiPipes stores pointers into `clients` (keyed by pipe fd) instead of
-		// copies: ClientConnection owns raw pointers with no copy constructor,
-		// so copying it into a second container caused a double-free.
-		std::map<int, ClientConnection*>	cgiPipes;
+		std::map<int, int>	cgiPipes;
 		std::map<int, size_t>	listenFdToConfigIndex; // Maps listening fd → server config index
 		std::map<int, std::string>	listenFdToInterface; // Maps listening fd → "127.0.0.1:8080"
+		std::set<int>	justRemovedFds;
 
 		int		setupSocketAddr(const char *interface, const char *port);
 		void	initListenSocket(std::vector<t_Configs>::iterator &conf);
@@ -72,6 +71,7 @@ class Server
 		void	writeRequestBodyToCGI(ClientConnection &caller);
 		void	removeClient(ClientConnection &client);
 		void	checkOnClients();
+		void	terminateClientCGI(ClientConnection &client);
 		void	cgiTimeoutResponse(ClientConnection &client);
 		void	checkProcessStatus(ClientConnection &client);
 		void	callEventHandler(const struct epoll_event &event);

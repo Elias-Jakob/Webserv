@@ -24,11 +24,12 @@ std::string	utils::addrToStr(struct sockaddr addr)
 	if (addr.sa_family == AF_INET) {
 		struct sockaddr_in	*addr_in = reinterpret_cast<struct sockaddr_in *>(&addr);
 		uint32_t	ip = ntohl(addr_in->sin_addr.s_addr);
+		uint16_t	port = ntohs(addr_in->sin_port);
 		result = utils::numToStr<uint32_t>((ip >> 24) & 0xFF) + "." +
 			utils::numToStr<uint32_t>((ip >> 16) & 0xFF) + "." +
 			utils::numToStr<uint32_t>((ip >> 8) & 0xFF) + "." +
 			utils::numToStr<uint32_t>(ip & 0xFF) + ":" +
-			utils::numToStr<in_port_t>(addr_in->sin_port);
+			utils::numToStr<uint16_t>(port);
 		// TODO: check if the port portion is correct
 	}
 	// TODO: support ipv6
