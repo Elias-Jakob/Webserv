@@ -31,9 +31,6 @@ class ClientConnection
 {
 	public:
 		ClientConnection();
-		// TODO: implement copy constructor and assignment operator
-		// ClientConnection(const ClientConnection &other);
-		// ClientConnection	&operator=(const ClientConnection &other);
 		~ClientConnection();
 
 		int				fd;
@@ -70,8 +67,6 @@ class ClientConnection
 		void	executeRequest();
 		void	deleteMethod();
 		void	sessionHandling();
-		// ClientConnection(const ClientConnection &other);
-		// ClientConnection	&operator=(const ClientConnection &other);
 };
 
 #endif

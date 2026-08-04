@@ -1,8 +1,5 @@
 # include "CGIProcessLauncher.hpp"
 
-// CGIProcessLauncher::CGIProcessLauncher() : epollFd(NULL),
-// 	cgiPipes(NULL), path(NULL) {}
-
 CGIProcessLauncher::CGIProcessLauncher(Epoll &epoll, std::map<int, int> &cgiPipes) :
 	epoll(epoll), cgiPipes(cgiPipes)
 {
@@ -15,7 +12,7 @@ CGIProcessLauncher::~CGIProcessLauncher()
 	this->cleanUp(true);
 }
 
-void	CGIProcessLauncher::cleanUp(bool closeAll)// = true)
+void	CGIProcessLauncher::cleanUp(bool closeAll)
 {
 	if (closeAll) {
 		if (this->stdinPipe[1] != -1) close(this->stdinPipe[1]);
@@ -45,22 +42,13 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 	}
 	else if (pid) {
 		std::cout << "Child process id = " << pid << std::endl;
-		// 1. add to cgi proce 1. add to cgi process info to processes list
-		// 2. add cgi stdout to list of interest of epoll
-		// 3. write request body into the cgi process
-		// 3. (not in here but in parent process) read from the cgis out -> pass to cgi body parsing
-
-		// TODO: check if there's already a cgi running for the client
 		client.cgiPid = pid;
 		client.cgiIn = this->stdinPipe[1];
 		client.cgiOut = this->stdoutPipe[0];
 		this->cleanUp(false);
-		// Writing input to the cgi
 		client.cgiWrittenBytes = 0;
 		this->cgiPipes.insert(std::pair<int, int>(client.cgiIn, client.fd));
-		// Reading output from the cgi
 		this->cgiPipes.insert(std::pair<int, int>(client.cgiOut, client.fd));
-
 		this->epoll.ctl(client.cgiIn, EPOLL_CTL_ADD, EPOLLOUT);
 		this->epoll.ctl(client.cgiOut, EPOLL_CTL_ADD, EPOLLIN);
 	}

@@ -32,7 +32,6 @@ void	Server::handleIncoming(ClientConnection &caller)
 				this->cgiLauncher.newProcess(caller);
 			}
 			catch (const std::exception &e) {
-				// to be tested
 				this->terminateClientCGI(caller);
 				caller.response_buffer = caller.responseBuilder->errorResponseViaCode(500);
 				caller.state = SENDING_RESPONSE;

@@ -30,10 +30,7 @@ std::string	utils::addrToStr(struct sockaddr addr)
 			utils::numToStr<uint32_t>((ip >> 8) & 0xFF) + "." +
 			utils::numToStr<uint32_t>(ip & 0xFF) + ":" +
 			utils::numToStr<uint16_t>(port);
-		// TODO: check if the port portion is correct
 	}
-	// TODO: support ipv6
-	// else if (addr.sa_family == AF_INET6)
 	else result = "Unknown AF";
 	return (result);
 }

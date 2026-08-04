@@ -84,7 +84,7 @@ void	Server::cgiTimeoutResponse(ClientConnection &client)
 }
 
 /**
-	* @brief Check if cgi process exited
+	* @brief Check if cgi process terminated
 */
 void	Server::checkProcessStatus(ClientConnection &client)
 {
