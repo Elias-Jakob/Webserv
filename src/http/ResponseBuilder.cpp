@@ -438,15 +438,18 @@ bool ResponseBuilder::availableErrorPage(
 			 std::string>::iterator *itErrorPage,
 	const std::string &listeningInterface)
 {
-	for (size_t i = 0; i < _serverConfigs.size(); i++)
-	{
-		for (size_t j = 0; j < _serverConfigs[i].listenInterfaces.size(); j++)
-		{
-			if (_serverConfigs[i].listenInterfaces[j] == listeningInterface)
-			{
+	for (size_t i = 0; i < _serverConfigs.size(); i++) {
+		for (size_t j = 0; j < _serverConfigs[i].listenInterfaces.size(); j++) {
+			if (_serverConfigs[i].listenInterfaces[j] == listeningInterface) {
 				*itErrorPage = _serverConfigs[i].errorPages.find(errorCode);
-				if (*itErrorPage != _serverConfigs[i].errorPages.end())
+				if (*itErrorPage != _serverConfigs[i].errorPages.end()) {
+					struct stat resourceInfo;
+					std::map<int, std::string>::iterator it = *itErrorPage;
+					std::string errorPage = it->second;
+					if (stat(errorPage.c_str(), &resourceInfo) != 0)
+						return false;
 					return true;
+				}
 			}
 		}
 	}
