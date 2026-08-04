@@ -5,11 +5,11 @@ void	Server::writeRequestBodyToCGI(ClientConnection &caller)
 	ssize_t	writtenBytes;
 	std::string	requestBody = caller.request->getRequestBody();
 	
+	if (caller.state != CGI_PROCESSING)
+		return ;
 	if (!caller.request->getRequestBody().empty()) {
-		// writtenBytes = write(caller.cgiIn, requestBody.c_str() + caller.cgiWrittenBytes,
-		// 	requestBody.size() - caller.cgiWrittenBytes);
-		writtenBytes = write(caller.cgiIn, requestBody.c_str(),
-			requestBody.size());
+		writtenBytes = write(caller.cgiIn, requestBody.c_str() + caller.cgiWrittenBytes,
+			requestBody.size() - caller.cgiWrittenBytes);
 		if (writtenBytes == -1)
 			return ;
 		caller.cgiWrittenBytes += writtenBytes;
@@ -27,6 +27,8 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 	char		buffer[RECV_BUFFER_SIZE] = { 0 };
 	ssize_t	readBytes;
 
+	if (caller.state != CGI_PROCESSING)
+		return ;
 	readBytes = read(caller.cgiOut, buffer, sizeof(buffer));
 	if (readBytes == -1)
 		return ;
@@ -40,12 +42,6 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 		this->justRemovedFds.insert(caller.cgiOut);
 		this->cgiPipes.erase(caller.cgiOut);
 		caller.cgiOut = -1;
-		// if (caller.cgiIn != -1) {
-		// 	this->justRemovedFds.insert(caller.cgiIn);
-		// 	close(caller.cgiIn);
-		// 	this->cgiPipes.erase(caller.cgiIn);
-		// 	caller.cgiIn = -1;
-		// }
 		caller.state = SENDING_RESPONSE;
 		this->epoll.ctl(caller.fd, EPOLL_CTL_MOD, EPOLLOUT);
 	}
@@ -94,8 +90,6 @@ void	Server::checkProcessStatus(ClientConnection &client)
 	if (pid > 0) {
 		if (!WIFEXITED(status) && !WIFSIGNALED(status))
 			return ;
-		// if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-		// 	this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 			error = 500;
 	}
@@ -105,18 +99,7 @@ void	Server::checkProcessStatus(ClientConnection &client)
 	}
 	client.cgiPid = -1;
 	if (error) {
-		// if (client.cgiIn != -1) {
-		// 	this->justRemovedFds.insert(client.cgiIn);
-		// 	close(client.cgiIn);
-		// 	this->cgiPipes.erase(client.cgiIn);
-		// 	client.cgiIn = -1;
-		// }
-		// if (client.cgiOut != -1) {
-		// 	this->justRemovedFds.insert(client.cgiOut);
-		// 	close(client.cgiOut);
-		// 	this->cgiPipes.erase(client.cgiOut);
-		// 	client.cgiOut = -1;
-		// }
+		this->terminateClientCGI(client);
 		client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 		client.state = SENDING_RESPONSE;
 		this->epoll.ctl(client.fd, EPOLL_CTL_MOD, EPOLLOUT);

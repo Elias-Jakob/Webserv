@@ -16,7 +16,8 @@ int	main(int argc, char *argv[])
 			throw std::invalid_argument("Error: wrong number of arguments...\n"
 				"Expected usage: ./webserv <webserver.conf>");
 		// TODO: signal
-		if (signal(SIGINT, &sigIntHandler) == SIG_ERR || signal(SIGPIPE, SIG_IGN) == SIG_ERR) // TODO: handle SIGPIPE as well?
+		if (signal(SIGINT, &sigIntHandler) == SIG_ERR ||
+				signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 			throw std::runtime_error(std::strerror(errno));
 		//
 		Server	serv(conf.parseFile(argv[1]));

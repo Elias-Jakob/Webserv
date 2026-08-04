@@ -52,18 +52,17 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 
 		// TODO: check if there's already a cgi running for the client
 		client.cgiPid = pid;
-		// Writing input to the cgi
 		client.cgiIn = this->stdinPipe[1];
-		this->cgiPipes.insert(std::pair<int, int>(this->stdinPipe[1], client.fd));
-
-		this->epoll.ctl(this->stdinPipe[1], EPOLL_CTL_ADD, EPOLLOUT);
-
-		// Reading output from the cgi
 		client.cgiOut = this->stdoutPipe[0];
-		this->cgiPipes.insert(std::pair<int, int>(this->stdoutPipe[0], client.fd));
-
-		this->epoll.ctl(this->stdoutPipe[0], EPOLL_CTL_ADD, EPOLLIN);
 		this->cleanUp(false);
+		// Writing input to the cgi
+		client.cgiWrittenBytes = 0;
+		this->cgiPipes.insert(std::pair<int, int>(client.cgiIn, client.fd));
+		// Reading output from the cgi
+		this->cgiPipes.insert(std::pair<int, int>(client.cgiOut, client.fd));
+
+		this->epoll.ctl(client.cgiIn, EPOLL_CTL_ADD, EPOLLOUT);
+		this->epoll.ctl(client.cgiOut, EPOLL_CTL_ADD, EPOLLIN);
 	}
 	else
 		this->runChildProcess(client);

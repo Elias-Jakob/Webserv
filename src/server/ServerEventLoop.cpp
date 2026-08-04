@@ -79,22 +79,10 @@ void	Server::callEventHandler(const struct epoll_event &event)
 			throw std::runtime_error("Error condition happened on the associated file descriptor");
 		if (event.data.fd == caller->fd) {
 			caller->inactiveTime = std::time(NULL);
-			if (event.events & EPOLLIN) {
+			if (event.events & EPOLLIN)
 				this->handleIncoming(*caller);
-				return;
-			}
-			if (event.events & EPOLLOUT){// && !this->justRemovedFds.count(event.data.fd))
+			if (event.events & EPOLLOUT)
 				this->handleOutgoing(*caller);
-				return;
-			}
-			// if (event.events & EPOLLHUP)
-			// 	std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
-			// << " state=" << caller->state << " EPOLLIN = " << (event.events & EPOLLIN) << " EPOLLOUT = " << (event.events & EPOLLOUT) << std::endl;
-			// if (!(event.events & (EPOLLIN | EPOLLOUT)) && event.events & EPOLLHUP) {
-			// 	throw std::runtime_error("Hang up happened on the associated file descriptor" + caller->remoteAddr);
-			// 		std::cerr << "HUP on fd=" << event.data.fd << " remoteAddr=" << caller->remoteAddr
-			// 			<< " state=" << caller->state << std::endl;
-			// }
 		}
 		else if (event.data.fd == caller->cgiIn && event.events & EPOLLOUT)
 			this->writeRequestBodyToCGI(*caller);
