@@ -14,7 +14,7 @@ void	Server::handleOutgoing(ClientConnection &caller)
 		return;
 	if (PRINT_RESPONSE)
 		std::cout << "Response (size = " << caller.response_buffer.size() << "): "
-			<< caller.response_buffer << std::endl;
+			<< GREEN << caller.response_buffer << RESET << std::endl;
 	if (!caller.keep_alive || caller.timeout)
 	{
 		std::cout << ((caller.timeout) ? "Timeout: close caller connection" :

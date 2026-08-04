@@ -26,8 +26,11 @@ void	Server::handleCGIOutput(ClientConnection &caller)
 	readBytes = read(caller.cgiOut, buf, sizeof(buf) - 1);
 	if (readBytes == -1)
 		return ;
-	else if (readBytes > 0)
+	else if (readBytes > 0) {
+		// std::cout << RED << "CGI_OUTPUT:\n" << buf << RESET << std::endl; // debug
+		// std::cout << GREEN << "caller.buffer:\n" << caller.response_buffer << RESET << std::endl;
 		caller.response_buffer.append(buf);
+	}
 	else {
 		if (caller.response_buffer.empty())
 			caller.response_buffer = this->responseBuilder.errorResponseViaCode(500);
@@ -57,9 +60,15 @@ void	Server::checkProcessStatus(ClientConnection &client)
 		return ;
 	if (pid > 0) {
 		if (WIFEXITED(status)) {
-			client.response_buffer = (WEXITSTATUS(status) != 0) ?
-				this->responseBuilder.errorResponseViaCode(500) :
-				this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+			if (WEXITSTATUS(status) != 0)
+				client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+			else {
+				client.applyCgiSessionHeaders();
+				if (client.sendCookie)
+					client.response_buffer = this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive, client.cookieHeader);
+				else
+					client.response_buffer = this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+			}
 		} else if (WIFSIGNALED(status))
 			client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 	}

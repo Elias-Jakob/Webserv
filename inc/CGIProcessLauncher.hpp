@@ -10,7 +10,7 @@
 class CGIProcessLauncher
 {
 	public:
-		CGIProcessLauncher(Epoll &epoll, std::map<int, ClientConnection&> &cgiPipes);
+		CGIProcessLauncher(Epoll &epoll, std::map<int, ClientConnection*> &cgiPipes);
 		~CGIProcessLauncher();
 
 		void	newProcess(ClientConnection &client);
@@ -20,7 +20,7 @@ class CGIProcessLauncher
 		CGIProcessLauncher	&operator=(const CGIProcessLauncher &other);
 
 		Epoll	&epoll;
-		std::map<int, ClientConnection&>	&cgiPipes;
+		std::map<int, ClientConnection*>	&cgiPipes;
 		// struct epoll_event	epEvent;
 		pid_t	pid;
 		int	stdinPipe[2];

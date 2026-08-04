@@ -192,7 +192,7 @@ std::vector<std::string> RequestHeadsParser::splitPath(const std::string &path)
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
 		}
-		else if ((path[i] == '/' || path[i] == '.') && i > 0) {
+		else if ((path[i] == '/') && i > 0) {
 			end = i;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
@@ -205,8 +205,8 @@ std::vector<std::string> RequestHeadsParser::splitPath(const std::string &path)
 			break ;
 		}
 	}
-	// for (size_t i = 0; i < parts.size(); i++) // print parts
-	// 	std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
+	for (size_t i = 0; i < parts.size(); i++) // print parts
+		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
 }
 
@@ -255,7 +255,7 @@ void	RequestHeadsParser::modifyURI(std::vector<std::string> &pathParts)
 
 void RequestHeadsParser::modifyURIforCGI()
 {
-	std::vector<std::string> pathParts = splitPath(data->_scriptName);
+	std::vector<std::string> pathParts = splitPath(data->_requestLine.requestURI);
 	size_t	idx_server;
 	for (idx_server = 0; idx_server < data->_serverConfigs.size(); idx_server++) {
 		if (isListeningTo(idx_server, data->_listeningInterface))
@@ -273,7 +273,10 @@ void RequestHeadsParser::modifyURIforCGI()
 		}
 		newURI += part;
 	}
+	std::cout << RED << newURI << RESET << std::endl;
 	data->_requestLine.requestURI = newURI;
+	if (data->_locationObj->cgiPath.size() > 1)
+		data->_requestLine.requestURI = data->_locationObj->cgiPath;
 	data->_scriptName = data->_requestLine.requestURI;
 	// PATH_INFO
 	pathParts = splitPath(data->_pathInfo);
@@ -318,6 +321,8 @@ void	RequestHeadsParser::findLocation(std::vector<std::string> pathParts)
 						setScriptName(pathParts, posScript);
 						setPathInfo(pathParts, posScript);
 						data->_locationObj = loc;
+						std::cout << GREEN << "location -> " << data->_locationObj->path
+							<< RESET << std::endl;
 						return ;
 					}
 				}
@@ -362,6 +367,7 @@ void	RequestHeadsParser::setScriptName(std::vector<std::string> &parts, size_t n
 {
 	for (size_t i = 1; i < n; i++)
 		data->_scriptName += parts[i];
+	std::cout << "SCRIPT_NAME: " << data->_scriptName << std::endl;
 }
 
 void	RequestHeadsParser::setPathInfo(std::vector<std::string> &parts, size_t start)

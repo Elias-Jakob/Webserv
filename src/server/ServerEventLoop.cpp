@@ -61,9 +61,9 @@ ClientConnection	*Server::identifyEventCaller(int fd)
 	std::map<int, ClientConnection>::iterator	isClient = this->clients.find(fd);
 	if (isClient != this->clients.end())
 		return (&isClient->second);
-	std::map<int, ClientConnection &>::iterator	isPipe = this->cgiPipes.find(fd);
+	std::map<int, ClientConnection*>::iterator	isPipe = this->cgiPipes.find(fd);
 	if (isPipe != this->cgiPipes.end())
-		return (&isPipe->second);
+		return (isPipe->second);
 	return (NULL);
 }
 
@@ -158,5 +158,6 @@ void	Server::eventLoop()
 			this->callEventHandler(events[i]);
 		}
 		this->checkOnClients();
+		this->sessionManager.removeExpiredSessions(); // valid place for removing cookies?
 	}
 }
