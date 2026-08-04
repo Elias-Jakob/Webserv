@@ -25,18 +25,7 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 	HttpRequest	*request = client.request;
 	std::ostringstream	content_len;
 	t_MultiStrMap	headers;
-	/*
-	meta-variable-name = "AUTH_TYPE" | "CONTENT_LENGTH" |
-													"CONTENT_TYPE" | "GATEWAY_INTERFACE" |
-													"PATH_INFO" | "PATH_TRANSLATED" |
-													"QUERY_STRING" | "REMOTE_ADDR" |
-													"REMOTE_HOST" | "REMOTE_IDENT" |
-													"REMOTE_USER" | "REQUEST_METHOD" |
-													"SCRIPT_NAME" | "SERVER_NAME" |
-													"SERVER_PORT" | "SERVER_PROTOCOL" |
-													"SERVER_SOFTWARE"
-	*/
-	// Done count = 12; total = 17
+
 	this->envs.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	this->envs.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
