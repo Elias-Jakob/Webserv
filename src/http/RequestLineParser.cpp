@@ -105,7 +105,10 @@ bool RequestLineParser::decodeURI()
 			newUri += data->_requestLine.requestURI.substr(pos, posPercent - pos);
 			std::string hex = data->_requestLine.requestURI.substr(posPercent + 1, 2);
 			char c = (char) std::strtol(hex.c_str(), NULL, 16);
-			if (c < 32 || c > 127) // valid character in URI?
+			// if (c < 32 || c > 127) // valid character in URI?
+			if (c < 32)
+				return false;
+			if (c >= 127)
 				return false;
 			newUri += c;
 			pos = posPercent + 3;

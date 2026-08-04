@@ -273,7 +273,10 @@ void RequestHeadsParser::modifyURIforCGI()
 		}
 		newURI += part;
 	}
+	
 	data->_requestLine.requestURI = newURI;
+	if (data->_locationObj->cgiPath.size() > 1)
+		data->_requestLine.requestURI = data->_locationObj->cgiPath;
 	data->_scriptName = data->_requestLine.requestURI;
 	// PATH_INFO
 	pathParts = splitPath(data->_pathInfo);
@@ -318,6 +321,8 @@ void	RequestHeadsParser::findLocation(std::vector<std::string> pathParts)
 						setScriptName(pathParts, posScript);
 						setPathInfo(pathParts, posScript);
 						data->_locationObj = loc;
+						std::cout << GREEN << "location -> " << data->_locationObj->path
+							<< RESET << std::endl;
 						return ;
 					}
 				}
@@ -362,6 +367,7 @@ void	RequestHeadsParser::setScriptName(std::vector<std::string> &parts, size_t n
 {
 	for (size_t i = 1; i < n; i++)
 		data->_scriptName += parts[i];
+	std::cout << "SCRIPT_NAME: " << data->_scriptName << std::endl;
 }
 
 void	RequestHeadsParser::setPathInfo(std::vector<std::string> &parts, size_t start)

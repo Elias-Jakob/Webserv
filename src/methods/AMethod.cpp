@@ -106,15 +106,19 @@ bool	AMethod::checkCGI()
         std::cout << "\tNo extensions in config" << std::endl;
 		return false;
     }
+    std::cout << YELLOW << "1" << RESET << std::endl;
     std::string fileExt;
 	size_t		pos;
-
+    std::cout << YELLOW << _resource << RESET << std::endl;
 	pos = _resource.find_last_of('.');
 	if (pos == std::string::npos) {
         std::cout << "\tNo . in _resource" << std::endl;
 		return false;
     }
+    std::cout << YELLOW << "2" << RESET << std::endl;
+
 	fileExt = _resource.substr(pos);
+    std::cout << "fileExt: " << fileExt << "\nsize extensions: " << _location->cgiExtensions.size() << std::endl;
 	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
 	{
 		if (_location->cgiExtensions[i] == fileExt)
@@ -122,6 +126,7 @@ bool	AMethod::checkCGI()
 			return executeCGI(_resource);
 		}
 	}
+    std::cout << YELLOW << "3" << RESET << std::endl;
 	return false;
 }
 
@@ -130,6 +135,7 @@ bool	AMethod::checkCGI()
 bool	AMethod::executeCGI(const std::string &script)
 {
     struct stat resourceInfo;
+    std::cout << BLUE << "script: " << script << RESET << std::endl;
     if (stat(script.c_str(), &resourceInfo) != 0)
     {
         HttpStatus::setStatus(404, _code, _phrase);

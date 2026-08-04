@@ -3,7 +3,7 @@
 
 // Request parsing limits
 #define MAX_BODY_SIZE 1000000000
-#define MAX_HEADERS 16
+#define MAX_HEADERS 32
 #define MAX_HEADER_LENGTH 256
 #define MAX_HEADER_NAME_LENGTH 32
 #define MAX_HEADER_VALUE_LENGTH 256
@@ -23,6 +23,9 @@
 
 // Query
 # define MAX_QUERY_STRING_LENGTH 2048
+
+// SessionManager
+# define SWEEP_INTERVAL 60
 
 // COLOR DEFINES
 #define RESET   "\033[0m"

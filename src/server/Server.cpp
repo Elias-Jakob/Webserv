@@ -1,7 +1,12 @@
 # include "Server.hpp"
 
-Server::Server(std::vector<t_Configs> &configs) : configs(configs), epoll(), cgiLauncher(epoll, cgiPipes)
-{}
+Server::Server(std::vector<t_Configs> &configs) : 
+	configs(configs), 
+	epoll(), 
+	cgiLauncher(epoll, cgiPipes)
+{
+	srand(time(NULL));
+}
 
 Server::~Server()
 {

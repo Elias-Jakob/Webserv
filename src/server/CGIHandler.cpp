@@ -57,9 +57,15 @@ void	Server::checkProcessStatus(ClientConnection &client)
 		return ;
 	if (pid > 0) {
 		if (WIFEXITED(status)) {
-			client.response_buffer = (WEXITSTATUS(status) != 0) ?
-				this->responseBuilder.errorResponseViaCode(500) :
-				this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+			if (WEXITSTATUS(status) != 0)
+				client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
+			else {
+				client.applyCgiSessionHeaders();
+				if (client.sendCookie)
+					client.response_buffer = this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive, client.cookieHeader);
+				else
+					client.response_buffer = this->responseBuilder.cgiResponse(client.response_buffer, client.keep_alive);
+			}
 		} else if (WIFSIGNALED(status))
 			client.response_buffer = this->responseBuilder.errorResponseViaCode(500);
 	}

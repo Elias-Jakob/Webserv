@@ -66,6 +66,22 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 	this->envs.push_back("REMOTE_ADDR=" + client.remoteAddr);
 	for (t_MultiStrMap::iterator	it = headers.begin(); it != headers.end(); ++it)
 		this->envs.push_back(cgi::toMetaFormat(it->first) + "=" + cgi::strJoin(it->second));
+
+	// session-management: expose the session id and its current key/value bag.
+	// The server has no notion of what these keys mean (login-state, cart, ...);
+	// it only provides the storage/transport mechanism.
+	if (client.sessionManager && !client.sessionCookie.empty()) {
+		this->envs.push_back("SESSION_ID=" + client.sessionCookie);
+		std::map<std::string, std::string> sessionData =
+			client.sessionManager->getAllData(client.sessionCookie);
+		for (std::map<std::string, std::string>::iterator it = sessionData.begin();
+				it != sessionData.end(); ++it) {
+			std::string key = it->first;
+			for (std::string::iterator c = key.begin(); c != key.end(); ++c)
+				*c = std::toupper(static_cast<unsigned char>(*c));
+			this->envs.push_back("SESSION_" + key + "=" + it->second);
+		}
+	}
 	return (cgi::getArray(this->envs));
 }
 

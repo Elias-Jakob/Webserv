@@ -35,6 +35,7 @@ OBJ = $(SRC:%.cpp=$(OBJDIR)/%.o)
 DEPS = $(OBJ:.o=.d)
 
 CXX = c++
+# CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -g
 CXXFLAGS = -Wall -Werror -Wextra -std=c++98 -g
 INCFLAGS = -I$(INCDIR)
 NAME = webserv

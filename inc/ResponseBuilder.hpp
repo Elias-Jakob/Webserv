@@ -29,6 +29,12 @@ class ResponseBuilder
 		
 		// for cookie & session-management
 		std::string response(t_executionResult result, const std::string &cookieHead);
+		std::string redirectResponse(
+							t_executionResult *result,
+							const std::string &redirectURL,
+							const std::string &cookieHeader);
+		std::string cgiResponse(const std::string &cgiBody, const bool &keepAlive,
+								const std::string &cookieHeader);
 		
 		std::string errorResponse(HttpRequest *request, const std::string &listeningInterface);
 		std::string	errorResponseViaCode(int errorCode);

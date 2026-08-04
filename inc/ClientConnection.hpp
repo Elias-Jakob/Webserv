@@ -52,6 +52,7 @@ class ClientConnection
 		
 		bool			sendCookie; // for session-management
 		std::string		cookieHeader; // for session-management
+		std::string		sessionCookie;
 
 		std::time_t	cgiStartTime;
 		pid_t	cgiPid;
@@ -62,13 +63,15 @@ class ClientConnection
 		std::string		remoteAddr;
 		bool	timeout;
 
-		void	terminateCGIProcess(std::map<int, ClientConnection&> *cgiPipes = NULL);
+		void	terminateCGIProcess(std::map<int, ClientConnection*> *cgiPipes = NULL);
 
 		void	processRequest();
 		void	cleanUpClient();
+		void	applyCgiSessionHeaders();
 	private:
 		void	executeRequest();
 		void	deleteMethod();
+		void	sessionHandling();
 		// ClientConnection(const ClientConnection &other);
 		// ClientConnection	&operator=(const ClientConnection &other);
 };
