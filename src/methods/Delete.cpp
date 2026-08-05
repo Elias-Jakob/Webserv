@@ -77,8 +77,8 @@ bool Delete::resourceExistsAndIsFile(void)
 }
 
 /**
-	* @brief Builds the realpath of _resource with the realpath of the
-	*	root-directory of this->_location to compare them.
+	* @brief Lexically normalizes _resource and the location's root-directory
+	*	(no filesystem access) and compares them to block path traversal.
 	* @param path the location of resource to be deleted.
 	* @return false: path's dont match up.
 				true: success.
@@ -89,22 +89,13 @@ bool Delete::isDeletable(const std::string &path)
 	if (access(path.c_str(), W_OK) != 0)
 		return false;
 
-    char realPath[PATH_MAX];
-	if (realpath(path.c_str(), realPath) == NULL)
-		return false;
-	
-	char	resolvedRoot[PATH_MAX];
-	std::string	tmpRoot = "." + _location->alias;
-	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
-		return false;
+	std::string	docRoot = utils::normalizePath("." + _location->alias);
+	std::string	resolved = utils::normalizePath(path);
 
-	std::string docRoot = std::string(resolvedRoot) + '/';
-	std::string resolved = std::string(realPath) + '/';
-
-	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
+	if (!docRoot.empty()
+		&& resolved != docRoot
+		&& resolved.compare(0, docRoot.size() + 1, docRoot + "/") != 0)
 		return false;
-    if (resolved.find("/.") != std::string::npos)
-        return false;
     return true;
 }
 

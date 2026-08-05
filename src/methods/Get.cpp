@@ -172,33 +172,26 @@ bool	Get::serveFile(struct stat &fileInfo)
 }
 
 /**
-	* @brief Converts identified-Resource & _location->root's relative-PATH 
-	*	to the Real-PATH. (./www/file.html => /dirOne/ProjectFolder/www/file.html)
+	* @brief Lexically normalizes path & _location's root-directory (no
+	*	filesystem access) and compares them to block path traversal.
 	* @param path -> identified resource (./www/file.html)
-	* @return false (if realpath could not be created 
-					|| resource-PATH & root-PATH not matching).
+	* @return false (if path escapes the root, or resolves through a symlink).
 */
 bool Get::isFileAccessible(const std::string &path)
 {
 	if (access(path.c_str(), R_OK) != 0)
 		return false;
 
-	char realPath[PATH_MAX];
-	if (realpath(path.c_str(), realPath) == NULL)
+	struct stat	linkInfo;
+	if (lstat(path.c_str(), &linkInfo) != 0 || S_ISLNK(linkInfo.st_mode))
 		return false;
 
-	char resolvedRoot[PATH_MAX];
-	std::string	tmpRoot = "." + _location->alias;
-	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
-		return false;
+	std::string	docRoot = utils::normalizePath("." + _location->alias);
+	std::string	resolved = utils::normalizePath(path);
 
-	std::string docRoot = std::string(resolvedRoot) + '/';
-	std::string resolved = std::string(realPath) + '/'; // trailing slash so dirs match too
-
-	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
-		return false;
-
-	if (resolved.find("/..") != std::string::npos)
+	if (!docRoot.empty()
+		&& resolved != docRoot
+		&& resolved.compare(0, docRoot.size() + 1, docRoot + "/") != 0)
 		return false;
 
 	return true;

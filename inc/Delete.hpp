@@ -2,12 +2,11 @@
 # define DELETE_HPP
 
 # include "AMethod.hpp"
+# include "utils.hpp"
 # include <sys/stat.h> // stat
 # include <fcntl.h> // unlink
 # include <iostream>
 # include <unistd.h>
-# include <limits.h>
-# include <stdlib.h> // realpath()
 # include <errno.h>
 # include <stdio.h>
 

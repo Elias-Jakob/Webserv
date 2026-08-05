@@ -18,7 +18,7 @@
 	- [X] cgi env setting correct? SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED
 	- [] Copy & assignment operators
 	- [X] server max_body_size (location falls back to server-level if not set)
-	- [] setting good limits (limits_defines.hpp)
+	- [X] setting good limits (limits_defines.hpp)
 
 * TestCases from /tests/
 	* GET /../etc/passwd

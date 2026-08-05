@@ -20,6 +20,7 @@ namespace utils {
 		return (ss.str());
 	}
 	std::string	addrToStr(struct sockaddr addr);
+	std::string	normalizePath(const std::string &path);
 }
 
 #endif // !UTILS_HPP
