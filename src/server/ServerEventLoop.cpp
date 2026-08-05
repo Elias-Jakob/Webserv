@@ -49,7 +49,8 @@ void	Server::acceptNewClient(int listenFd)
 
 void	Server::removeClient(ClientConnection &client)
 {
-	std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
+	if (DEBUG_PRINT)
+		std::cout << "removeClient: " << client.fd << " " << client.remoteAddr << std::endl;
 	this->justRemovedFds.insert(client.fd);
 	this->terminateClientCGI(client);
 	close(client.fd);
@@ -92,7 +93,6 @@ void	Server::callEventHandler(const struct epoll_event &event)
 	} catch (const std::runtime_error &e) {
 		std::cerr << "Error in Server::callEventHandler: " << e.what() << "\nRemoving client "
 			<< caller->remoteAddr << std::endl;
-		std::cout << "Coming from callEventHandler catch..." << std::endl;
 		this->removeClient(*caller);
 	}
 }
@@ -106,7 +106,6 @@ void	Server::checkOnClients()
 		try {
 			if (it->second.cgiPid != -1)
 				this->checkProcessStatus(it->second);
-			// client timeout
 			if (current - it->second.inactiveTime >= KEEP_ALIVE_TIMEOUT && !it->second.timeout) {
 				std::cout << "Removed inactive client " << it->second.remoteAddr
 					<< " after timeout of " << current - it->second.inactiveTime << std::endl;
@@ -122,7 +121,6 @@ void	Server::checkOnClients()
 				} else
 					this->cgiTimeoutResponse(it->second);
 			}
-			// cgi timeout
 			else if (it->second.cgiPid != -1 && current - it->second.cgiStartTime >= CGI_TIMEOUT)
 				this->cgiTimeoutResponse(it->second);
 			it++;

@@ -7,7 +7,6 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 
-// WARNING: check if it's still alright to implement templated functions in the header. like here with numToStr
 namespace utils {
 	unsigned char	tolower(unsigned char c);
 	int	strToInt(const std::string &str);

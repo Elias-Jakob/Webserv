@@ -6,7 +6,8 @@ void	Server::handleOutgoing(ClientConnection &caller)
 
 	if (caller.state != SENDING_RESPONSE)
 		return ;
-	std::cout << "Send gets called here client: " << caller.remoteAddr << std::endl;
+	if (DEBUG_PRINT)
+		std::cout << "Send gets called here client: " << caller.remoteAddr << std::endl;
 	sentBytes = send(caller.fd, caller.response_buffer.c_str() + caller.bytesSent,
 		caller.response_buffer.size() - caller.bytesSent, 0);
 	if (sentBytes == -1)
@@ -19,8 +20,9 @@ void	Server::handleOutgoing(ClientConnection &caller)
 			<< GREEN << caller.response_buffer << RESET << std::endl;
 	if (!caller.keep_alive || caller.timeout)
 	{
-		std::cout << ((caller.timeout) ? "Timeout: close caller connection" :
-			"Client connection is not set to keep-alive, closing socket...") << std::endl;
+		if (DEBUG_PRINT)
+			std::cout << "Closing client connection ("
+				<< ((caller.timeout) ? "Timeout)" : "Connection: close)") << std::endl;
 		this->removeClient(caller);
 		return ;
 	}

@@ -29,18 +29,13 @@ ClientConnection::ClientConnection() :
 	cgiOut(-1),
 	cgiWrittenBytes(0),
 	timeout(false)
-{
-	std::cout << "ClientConnection created" << std::endl;
-}
+{}
 
 /**
  * @brief Deconstructs this object and the request object.
  */
 ClientConnection::~ClientConnection()
 {
-	std::cout << "ClientConnection destroyed, cleaning up..." << this->remoteAddr << std::endl;
-	std::cout << "==========================================\n"
-			  << "===========================================" << std::endl;
 	if (request) {
 		delete request;
 		request = NULL;

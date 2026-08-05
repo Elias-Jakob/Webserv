@@ -19,13 +19,11 @@
 # include <stdexcept>
 # include <cerrno>
 # include <cstring> // std::strerror
-// # include <cstdlib> // std::exit
 # include <algorithm> // for std::find
 # include <ctime>
 
 // POSIX
 # include <sys/socket.h>
-// # include <sys/epoll.h>
 # include <sys/wait.h>
 # include <stdlib.h>
 # include <unistd.h>

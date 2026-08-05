@@ -41,7 +41,8 @@ void	CGIProcessLauncher::newProcess(ClientConnection &client)
 		throw std::runtime_error(std::strerror(errno));
 	}
 	else if (pid) {
-		std::cout << "Child process id = " << pid << std::endl;
+		if (DEBUG_PRINT)
+			std::cout << "Child process id = " << pid << std::endl;
 		client.cgiPid = pid;
 		client.cgiIn = this->stdinPipe[1];
 		client.cgiOut = this->stdoutPipe[0];

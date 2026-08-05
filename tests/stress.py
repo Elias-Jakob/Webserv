@@ -73,7 +73,6 @@ def build_steps():
     if method == "POST":
         return [("POST", "/submit", f"payload={rand_name()}")]
 
-    # TODO: add valid DELETE test
     name = f"/upload/{rand_name()}.txt"
     return [("POST", name, f"seed {rand_name()}"), ("DELETE", name, "")]
 

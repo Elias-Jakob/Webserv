@@ -7,18 +7,21 @@ void	Server::handleIncoming(ClientConnection &caller)
 
 	if (caller.state != IDLE && caller.state != READING_REQUEST)
 		return ;
-	std::cout << "ClientRead() for: " << caller.remoteAddr << std::endl;
+	if (DEBUG_PRINT)
+		std::cout << "handleIncoming: " << caller.remoteAddr << std::endl;
 	caller.state = READING_REQUEST;
 	bytesRecv = recv(caller.fd, buffer, sizeof(buffer), 0);
 	if (bytesRecv == -1)
 		return ;
 	else if (bytesRecv == 0)
 	{
-		std::cout << "Client closed connection" << std::endl;
+		if (DEBUG_PRINT)
+			std::cout << "Client closed connection" << std::endl;
 		this->removeClient(caller);
 		return ;
 	}
-	std::cout << "Received " << bytesRecv << " bytes from " << caller.remoteAddr << std::endl;
+	if (DEBUG_PRINT)
+		std::cout << "Received " << bytesRecv << " bytes from " << caller.remoteAddr << std::endl;
 	caller.request->parseRequest(std::string(buffer, bytesRecv), bytesRecv);
 	if (caller.request->parsingComplete()) {
 		caller.state = PROCESSING;
@@ -27,7 +30,8 @@ void	Server::handleIncoming(ClientConnection &caller)
 			try {
 				if (caller.cgiPid != -1 || caller.cgiIn != -1 || caller.cgiOut != -1) {
 					this->terminateClientCGI(caller);
-					std::cout << "Re-request CGI: Interupting/Terminating previouse CGI process" << std::endl;
+					if (DEBUG_PRINT)
+						std::cout << "Re-request CGI: Interupting/Terminating previouse CGI process" << std::endl;
 				}
 				this->cgiLauncher.newProcess(caller);
 			}
