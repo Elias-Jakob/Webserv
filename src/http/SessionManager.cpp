@@ -26,8 +26,6 @@ std::string	SessionManager::createNewSession()
 		if (addCookieToSessions(sessionID))
 			return sessionID;
 	}
-	std::cout << RED << "session_id creation failed" 
-		<< RESET << std::endl; // to delete
 	return "";
 }
 
@@ -39,12 +37,7 @@ bool	SessionManager::isValidCookie(const std::string &sessionId)
 		return false;
 	time_t now = time(NULL);
 
-	std::cout << BLUE << "time now: " << now << "; time created: " << it->second.createdAt
-		<< RESET << std::endl; // to delete later
-
 	if (now > it->second.createdAt + _maxAge) {
-		std::cout << YELLOW << "COOKIE expired... Need to create new one" 
-			<< RESET << std::endl; // to delete later
 		return false;
 	}
 	return true;
@@ -59,7 +52,6 @@ size_t	SessionManager::sessionsSize()
 std::string	SessionManager::createSessionHeaderForResponse(const std::string &sessionId)
 {
 	std::string sessionHeader;
-	// look up _session to get the data?
 	std::stringstream	maxAgeVal;
 	maxAgeVal << _maxAge;
 	std::string maxAge = "Max-Age=" + maxAgeVal.str();
@@ -101,7 +93,6 @@ void	SessionManager::deleteSession(const std::string &sessionCookie)
 	if (it != _sessions.end()) {
 		_sessions.erase(it);
 	}
-
 }
 
 /**
@@ -130,7 +121,6 @@ void	SessionManager::setData(const std::string &sessionId, const std::string &ke
 	if (sessionIt == _sessions.end())
 		return ;
 	sessionIt->second.data[key] = value;
-	std::cout << RED << key << " = " << value << RESET << std::endl;
 }
 
 /**
@@ -142,13 +132,6 @@ std::map<std::string, std::string>	SessionManager::getAllData(const std::string 
 	std::map<std::string, t_SessionData>::iterator sessionIt = _sessions.find(sessionId);
 	if (sessionIt == _sessions.end())
 		return (std::map<std::string, std::string>());
-	t_SessionData temp = sessionIt->second;
-	// std::cout << temp.createdAt << std::endl;
-	std::map<std::string, std::string>::iterator it = temp.data.begin();
-	while (it != temp.data.end()) {
-		// std::cout << RED << it->first << "=" << it->second << RESET << std::endl;
-		it++;
-	}
 	return (sessionIt->second.data);
 }
 
@@ -193,7 +176,6 @@ bool	SessionManager::addCookieToSessions(const std::string &newCookie)
 	std::map<std::string, t_SessionData>::iterator it = _sessions.find(newCookie);
 	if (it == _sessions.end()) {
 		_sessions[newCookie] = sessionData;
-		std::cout << "added new Session..." << std::endl;
 		return true;
 	}
 	return false;

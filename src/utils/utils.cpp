@@ -1,4 +1,5 @@
 # include "utils.hpp"
+# include <vector>
 
 unsigned char	utils::tolower(unsigned char c)
 {
@@ -32,5 +33,36 @@ std::string	utils::addrToStr(struct sockaddr addr)
 			utils::numToStr<uint16_t>(port);
 	}
 	else result = "Unknown AF";
+	return (result);
+}
+
+/**
+	* @brief lexically resolves '.' and '..' segments of path (no filesystem
+	*	access, no symlink resolution) as a realpath()-free alternative.
+	* @return the normalized path, with no leading/trailing slash
+	*	(empty string means "no segments left", i.e. the root itself).
+*/
+std::string	utils::normalizePath(const std::string &path)
+{
+	std::vector<std::string>	stack;
+	std::stringstream			ss(path);
+	std::string					segment;
+
+	while (std::getline(ss, segment, '/')) {
+		if (segment.empty() || segment == ".")
+			continue;
+		if (segment == "..") {
+			if (!stack.empty())
+				stack.pop_back();
+			continue;
+		}
+		stack.push_back(segment);
+	}
+	std::string	result;
+	for (size_t i = 0; i < stack.size(); i++) {
+		if (i > 0)
+			result += "/";
+		result += stack[i];
+	}
 	return (result);
 }

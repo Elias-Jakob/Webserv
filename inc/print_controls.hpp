@@ -2,24 +2,14 @@
 # define PRINT_CONTROLS_HPP
 
 // MAIN DATA
-# define PRINT_REQUEST 			1
-# define PRINT_PARSED_REQUEST	0
+# define PRINT_RAW_REQUEST		1
+# define PRINT_PARSED_REQUEST	1
 # define PRINT_RESPONSE 		1
 # define PRINT_SERVER_CONFIG	1
-
-// METHODS
-# define METHOD_PRINT			0
-# define DELETE_PRINT			0
-# define POST_PRINT				1
-# define GET_PRINT				1
-
-// PARSER
-# define BODYPARSER_PRINT		0
-# define MULTIPART_PRINT		1
-
-// Method builder
-# define BUILDER_PRINT			1
+# define PRINT_LOCATION			1
+# define PRINT_MODIFIED_URI		1
 
 // DEBUG
 # define DEBUG_PRINT			0
+
 #endif

@@ -1,2 +1,2 @@
-hey
-name = Kevin
+age = 25
+name = 

@@ -15,6 +15,7 @@
 # include "HttpRequest.hpp"
 # include "cgi.hpp"
 # include "utils.hpp"
+# include <ctime>
 /**
 	* @class ResponseBuilder
 	* @brief Builds the full Http-Response to a string.

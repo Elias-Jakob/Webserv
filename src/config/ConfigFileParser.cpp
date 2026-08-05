@@ -19,6 +19,8 @@ ConfigFileParser::~ConfigFileParser(){}
 std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 {
 	// check filename
+	if (filePath.size() < 5 || filePath.substr(filePath.size() - 5) != ".conf")
+		throw std::invalid_argument("Error: config file must end with '.conf'");
 	std::ifstream	fs(filePath.c_str());
 	std::string		str;
 	std::string		buffer;
@@ -31,6 +33,7 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 	}
 
 	tokenize(str);
+	validateBraces();
 	parseToDataStructure();
 	if (PRINT_SERVER_CONFIG)
 		printServers();
@@ -47,7 +50,6 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 
 void ConfigFileParser::tokenize(const std::string &input)
 {
-	std::cout << "TOKENIZATION" << std::endl;
 	size_t start = 0;
 	size_t end = 0;
 	bool	inToken = false;
@@ -71,8 +73,6 @@ void ConfigFileParser::tokenize(const std::string &input)
 					inToken = true;
 				}
 			}
-			else if ((input[i] != ' ' && input[i] != '\n')&& !inToken)
-				std::cout << "SYNTAX_ERROR = " << input[i] << std::endl;
 		}
 	}
 	if (inToken) {
@@ -136,6 +136,26 @@ e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
 	return STR;
 }
 
+/**
+	* @brief verifies '{' / '}' counts match before any structural parsing runs.
+*/
+void	ConfigFileParser::validateBraces()
+{
+	int	depth = 0;
+
+	for (size_t i = 0; i < _tokens.size(); i++) {
+		if (_tokens[i].type == BRACE_OPEN)
+			depth++;
+		else if (_tokens[i].type == BRACE_CLOSE) {
+			depth--;
+			if (depth < 0)
+				throw std::runtime_error("Error: unmatched '}' in config file");
+		}
+	}
+	if (depth != 0)
+		throw std::runtime_error("Error: missing '}' in config file");
+}
+
 // =========================================================================
 // PARSING
 // =========================================================================
@@ -146,9 +166,10 @@ e_TokenType	ConfigFileParser::getTokenType(std::string tokenStr)
 void ConfigFileParser::parseToDataStructure()
 {
 	for (size_t i = 0; i < _tokens.size(); i++) {
-		if (_tokens[i].type == SERVER) {
+		if (_tokens[i].type == SERVER)
 			createServer(&i);
-		}
+		else
+			throw std::runtime_error("Error: unexpected token '" + _tokens[i].val + "' outside server block");
 	}
 }
 
@@ -160,21 +181,29 @@ size_t ConfigFileParser::createServer(size_t *i)
 	size_t		j;
 	t_Configs	serverConfigs;
 
+	serverConfigs.sizeIsSet = false;
+	serverConfigs.maxBodySize = 0;
 	*i += 1;
+	if (*i >= _tokens.size() || _tokens[*i].type != BRACE_OPEN)
+		throw std::runtime_error("Error: expected '{' after 'server'");
 	for (j = *i; j < _tokens.size(); j++) {
 		if (tokenIsErrorPage(j))
 			setErrorPage(&serverConfigs, &j);
-		else if (_tokens[j].type == ASSIGN 
-					&& checkIdentifier(_tokens[j - 1].val))
-				setValue(_tokens[j - 1].val, j, &serverConfigs);
+		else if (_tokens[j].type == ASSIGN) {
+			if (!checkIdentifier(_tokens[j - 1].val))
+				throw std::runtime_error("Error: unknown directive '" + _tokens[j - 1].val + "' in server block");
+			setValue(_tokens[j - 1].val, j, &serverConfigs);
+		}
 		else if (_tokens[j].type == LOCATION)
 			j += createLocation(j, &serverConfigs);
-		else if (_tokens[j].type == SERVER || _tokens[j].type == BRACE_CLOSE)
-		{
-			std::cout << "SERVER_BLOCK END" << std::endl;
+		else if (_tokens[j].type == SERVER)
+			throw std::runtime_error("Error: missing '}' to close server block");
+		else if (_tokens[j].type == BRACE_CLOSE) {
 			break ;
 		}
 	}
+	if (j >= _tokens.size())
+		throw std::runtime_error("Error: missing '}' to close server block");
 	*i = j;
 	parseEndpoints(&serverConfigs);
 	_servers.push_back(serverConfigs);
@@ -185,7 +214,11 @@ size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs)
 {
 	t_Location	location;
 	size_t		j = i;
-	
+
+	if (i + 1 >= _tokens.size() || _tokens[i + 1].type != PATH_LOCATION)
+		throw std::runtime_error("Error: expected a path after 'location'");
+	if (i + 2 >= _tokens.size() || _tokens[i + 2].type != BRACE_OPEN)
+		throw std::runtime_error("Error: expected '{' after location path");
 	initLocation(&location, i);
 	while (insideLocation(j)) {
 		if (_tokens[j].type == ASSIGN) {
@@ -194,6 +227,8 @@ size_t ConfigFileParser::createLocation(size_t i, t_Configs *serverConfigs)
 		}
 		j++;
 	}
+	if (j >= _tokens.size())
+		throw std::runtime_error("Error: missing '}' to close location block");
 	serverConfigs->locations.push_back(location);
 	return (j - i);
 }
@@ -315,8 +350,7 @@ size_t	ConfigFileParser::setVariableValue(e_VarName varName, t_Location *locatio
 				location->redirectURL = _tokens[*pos + 2].val;
 			return *pos + 2;
 		case ERROR:
-			std::cout << "ERROR " << _tokens[*pos -1].val << std::endl;
-			return *pos + 1;
+			throw std::runtime_error("Error: unknown directive '" + _tokens[*pos - 1].val + "' in location block");
 	}
 	return *pos + 1;
 }
@@ -356,14 +390,14 @@ void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serve
 {
 	if (j + 1 >= _tokens.size())
 		return ;
-	if (id == "listen") {
+	if (id == "listen")
 		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
-		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
-	}
 	else if (id == "server_name")
 		serverConfigs->serverName = _tokens[j + 1].val;
-	else if (id == "client_max_body_size")
+	else if (id == "client_max_body_size") {
 		serverConfigs->maxBodySize = convertStrToSize(_tokens[j + 1].val);
+		serverConfigs->sizeIsSet = true;
+	}
 	else if (id == "root")
 		serverConfigs->root = _tokens[j + 1].val;
 }

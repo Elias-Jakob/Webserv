@@ -12,14 +12,12 @@ Delete::Delete() : AMethod()
 Delete::Delete(std::string name) : AMethod()
 {
 	_method = name;
-	std::cout << "DELETE method constructed" << std::endl;
 }
 
 Delete::Delete(std::string name, t_Location *location) : AMethod()
 {
 	_method = name;
 	_location = location;
-	std::cout << "DELETE method constructed with location" << std::endl;
 }
 
 Delete::~Delete(){}
@@ -37,15 +35,9 @@ Delete::~Delete(){}
 */
 bool	Delete::execute()
 {
-	if (DELETE_PRINT)
-	{
-		std::cout << "Delete::execute()" << std::endl;
-		std::cout << "\tlocation = [" << _location->path << "]" <<std::endl;
-	}
 	if (!resourceExistsAndIsFile())
 		return false;
-	if (!isDeletable(_resource))
-	{
+	if (!isDeletable(_resource)) {
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
@@ -68,35 +60,25 @@ bool	Delete::execute()
 */
 bool Delete::resourceExistsAndIsFile(void)
 {
-	if (DELETE_PRINT)
-		std::cout << "Delete::resourceExistsAndIsFile(), " << _resource << std::endl;
-
 	struct stat fileInfo;
-	if (stat(_resource.c_str(), &fileInfo) != 0)
-	{
+	if (stat(_resource.c_str(), &fileInfo) != 0) {
 		HttpStatus::setStatus(404, _code, _phrase);
-		std::cout << "IS not file or not found" << std::endl;
 		return false;
 	}
-	if (S_ISDIR(fileInfo.st_mode))
-	{
+	if (S_ISDIR(fileInfo.st_mode)) {
 		HttpStatus::setStatus(403, _code, _phrase);
-		_body = "Cannot delete directories";
 		return false;
 	}
-	if (S_ISLNK(fileInfo.st_mode))
-	{
+	if (S_ISLNK(fileInfo.st_mode)) {
 		HttpStatus::setStatus(403, _code, _phrase);
     	return false;
 	}
-	if (DELETE_PRINT)
-		std::cout << "Deleted -> " << _resource << std::endl;
 	return true;
 }
 
 /**
-	* @brief Builds the realpath of _resource with the realpath of the
-	*	root-directory of this->_location to compare them.
+	* @brief Lexically normalizes _resource and the location's root-directory
+	*	(no filesystem access) and compares them to block path traversal.
 	* @param path the location of resource to be deleted.
 	* @return false: path's dont match up.
 				true: success.
@@ -107,22 +89,13 @@ bool Delete::isDeletable(const std::string &path)
 	if (access(path.c_str(), W_OK) != 0)
 		return false;
 
-    char realPath[PATH_MAX];
-	if (realpath(path.c_str(), realPath) == NULL)
-		return false;
-	
-	char	resolvedRoot[PATH_MAX];
-	std::string	tmpRoot = "." + _location->alias;
-	if (realpath(tmpRoot.c_str(), resolvedRoot) == NULL)
-		return false;
+	std::string	docRoot = utils::normalizePath("." + _location->alias);
+	std::string	resolved = utils::normalizePath(path);
 
-	std::string docRoot = std::string(resolvedRoot) + '/';
-	std::string resolved = std::string(realPath) + '/';
-
-	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
+	if (!docRoot.empty()
+		&& resolved != docRoot
+		&& resolved.compare(0, docRoot.size() + 1, docRoot + "/") != 0)
 		return false;
-    if (resolved.find("/.") != std::string::npos)
-        return false;
     return true;
 }
 
@@ -133,9 +106,7 @@ bool Delete::isDeletable(const std::string &path)
 */
 bool	Delete::deleteResource()
 {
-	std::cout << "would delete Resource" << std::endl;
-	if (unlink(_resource.c_str()) != 0)
-	{
+	if (unlink(_resource.c_str()) != 0) {
 		HttpStatus::setStatus(500, _code, _phrase);
 		perror("unlink");
 		return false;

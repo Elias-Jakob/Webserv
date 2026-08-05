@@ -23,7 +23,6 @@ class HttpStatus
 	static const int NOT_FOUND = 404;
 	static const int METHOD_NOT_ALLOWED = 405;
 	static const int INTERNAL_SERVER_ERROR = 500;
-	static const int IS_CGI = 601;
 };
 
 #endif

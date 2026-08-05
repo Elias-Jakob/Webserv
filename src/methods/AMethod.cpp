@@ -4,20 +4,25 @@
 // Constructors & Destructor
 // =========================================================================
 
-AMethod::AMethod(): _method("unset"), _location(NULL), _isAutoIndex(false)
+AMethod::AMethod() : 
+    _method("unset"), 
+    _location(NULL), 
+    _isAutoIndex(false),
+    _isCGI(false)
 {
-    if (METHOD_PRINT)
-    	std::cout << "AMethod::AMethod() -> default constructed" << std::endl;
 }
 
-AMethod::AMethod(std::string name): _method(name), _location(NULL), _isAutoIndex(false)
+AMethod::AMethod(std::string name) : 
+    _method(name), 
+    _location(NULL), 
+    _isAutoIndex(false),
+    _isCGI(false)
 {
-    if (METHOD_PRINT)
-    	std::cout << "AMethod::AMethod() -> parameterized constructed " << _method << std::endl;
 }
 
 AMethod::~AMethod()
-{}
+{
+}
 
 // =========================================================================
 // Public Methods
@@ -31,9 +36,6 @@ AMethod::~AMethod()
 */
 bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI)
 {
-    if (METHOD_PRINT)
-        std::cout << "AMethod::setRequiredData()" << std::endl;
-	
     setHeaders(req->getRequestHeaders());
 	setBody(req->getParsedBody());
 	setContentData(req->getContentData());
@@ -47,8 +49,6 @@ bool    AMethod::setRequiredData(HttpRequest *req, const std::string modifiedURI
 */
 bool    AMethod::isUploadLocation()
 {
-    if (POST_PRINT)
-        std::cout << "AMethod::isUploadLocation() => " << _location->upload << std::endl;
     return _location->upload;
 }
 
@@ -57,8 +57,6 @@ bool    AMethod::isUploadLocation()
 */
 bool    AMethod::isSubmitLocation()
 {
-    if (POST_PRINT)
-        std::cout << "AMethod::isSubmitLocation() => " << _location->formSubmit << std::endl;
     return _location->formSubmit;
 }
 
@@ -80,53 +78,52 @@ bool    AMethod::isDirList()
 */
 std::string AMethod::getContentType()
 {
-	size_t pos = _resource.find_last_of('.');
+    size_t pos = _resource.find_last_of('.');
     if (pos == std::string::npos)
         return "application/octet-stream";  // default
-    
+
     std::string ext = _resource.substr(pos);
     
-    if (ext == ".html" || ext == ".htm")    return "text/html";
-    if (ext == ".css")                      return "text/css";
-    if (ext == ".js")                       return "application/javascript";
-    if (ext == ".json")                     return "application/json";
-    if (ext == ".png")                      return "image/png";
-    if (ext == ".jpg" || ext == ".jpeg")    return "image/jpeg";
-    if (ext == ".gif")                      return "image/gif";
-    if (ext == ".txt")                      return "text/plain";
-    if (ext == ".pdf")                      return "application/pdf";
-    
+    if (ext == ".html" || ext == ".htm")
+        return "text/html";
+    if (ext == ".css")
+        return "text/css";
+    if (ext == ".js")
+        return "application/javascript";
+    if (ext == ".json")                     
+        return "application/json";
+    if (ext == ".png")                      
+        return "image/png";
+    if (ext == ".jpg" || ext == ".jpeg")    
+        return "image/jpeg";
+    if (ext == ".gif")                      
+        return "image/gif";
+    if (ext == ".txt")                      
+        return "text/plain";
+    if (ext == ".pdf")                      
+        return "application/pdf";
+
     return "application/octet-stream";
 }
 
 bool	AMethod::checkCGI()
 {
-	std::cout << "AMethod::checkCGI()" << std::endl;
-	if (_location->cgiExtensions.size() < 1) {
-        std::cout << "\tNo extensions in config" << std::endl;
+	if (_location->cgiExtensions.size() < 1)
 		return false;
-    }
-    std::cout << YELLOW << "1" << RESET << std::endl;
+
     std::string fileExt;
 	size_t		pos;
-    std::cout << YELLOW << _resource << RESET << std::endl;
 	pos = _resource.find_last_of('.');
 	if (pos == std::string::npos) {
-        std::cout << "\tNo . in _resource" << std::endl;
 		return false;
     }
-    std::cout << YELLOW << "2" << RESET << std::endl;
 
 	fileExt = _resource.substr(pos);
-    std::cout << "fileExt: " << fileExt << "\nsize extensions: " << _location->cgiExtensions.size() << std::endl;
-	for (size_t i = 0; i < _location->cgiExtensions.size(); i++)
-	{
-		if (_location->cgiExtensions[i] == fileExt)
-		{
+	for (size_t i = 0; i < _location->cgiExtensions.size(); i++) {
+		if (_location->cgiExtensions[i] == fileExt) {
 			return executeCGI(_resource);
 		}
 	}
-    std::cout << YELLOW << "3" << RESET << std::endl;
 	return false;
 }
 
@@ -135,20 +132,13 @@ bool	AMethod::checkCGI()
 bool	AMethod::executeCGI(const std::string &script)
 {
     struct stat resourceInfo;
-    std::cout << BLUE << "script: " << script << RESET << std::endl;
-    if (stat(script.c_str(), &resourceInfo) != 0)
-    {
+    if (stat(script.c_str(), &resourceInfo) != 0) {
         HttpStatus::setStatus(404, _code, _phrase);
         return false;
     }
-	HttpStatus::setStatus(601, _code, _phrase);
-	_phrase = script;
-	// _phrase = _resource;
-	// BUG:
-    // _phrase = _location->cgiPath;
-    // std::cout << _location->cgiPath << std::endl;
-    // _phrase = "./" + _location->cgiPath;
-    // std::cout << _phrase << std::endl;
+	HttpStatus::setStatus(200, _code, _phrase);
+	_isCGI = true;
+	_cgiScript = script;
 	return true;
 }
 
@@ -213,4 +203,14 @@ std::string AMethod::getEtag()
 std::string AMethod::getUploadLocation()
 {
     return _uploadLocation;
+}
+
+bool	AMethod::isCGI()
+{
+    return _isCGI;
+}
+
+std::string	AMethod::getCGIScript()
+{
+    return _cgiScript;
 }

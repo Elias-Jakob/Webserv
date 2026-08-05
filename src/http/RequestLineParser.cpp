@@ -22,8 +22,6 @@ RequestLineParser::~RequestLineParser()
 
 bool	RequestLineParser::parseRequestLine()
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::parseRequestLine()" << std::endl;
 	skipEmptyLines();
     size_t posCRLF = data->_messageBuffer.find("\r\n", data->_current_pos);
 	if (posCRLF == std::string::npos)
@@ -43,7 +41,7 @@ bool	RequestLineParser::parseRequestLine()
 	if (!validURI() || !validMethod() || !validHttpVersion() || !decodeURI())
 		return setErrorCode(400);
 	extractFileExtension();
-	data->_current_pos = posCRLF + 2;  // Skip \r\n
+	data->_current_pos = posCRLF + 2;
 	if (foundEndOfRequest()) {
 		data->_state = PARSING_COMPLETE;
 		return false;
@@ -107,7 +105,6 @@ bool RequestLineParser::decodeURI()
 			newUri += data->_requestLine.requestURI.substr(pos, posPercent - pos);
 			std::string hex = data->_requestLine.requestURI.substr(posPercent + 1, 2);
 			char c = (char) std::strtol(hex.c_str(), NULL, 16);
-			// if (c < 32 || c > 127) // valid character in URI?
 			if (c < 32)
 				return false;
 			if (c >= 127)
@@ -166,9 +163,6 @@ void	RequestLineParser::skipEmptyLines()
  */
 void	RequestLineParser::handleQuery()
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::handleQuery()" << std::endl;
-
 	size_t posQuery = data->_requestLine.requestURI.find('?');
 	if (posQuery == std::string::npos)
 		return ;
@@ -189,13 +183,9 @@ void	RequestLineParser::handleQuery()
  */
 void	RequestLineParser::setQueryPairs(const std::string &queryStr)
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::setQueryPairs()"
-			<< "\n\tQuery = " << queryStr << std::endl;
 	size_t	start = 0;
 	size_t	end = 0;
-	while (end < queryStr.size())
-	{
+	while (end < queryStr.size()) {
 		end = queryStr.find('&', start);
 		if (end == std::string::npos)
 			end = queryStr.size();
@@ -204,29 +194,17 @@ void	RequestLineParser::setQueryPairs(const std::string &queryStr)
 			setQueryKeyValue(queryStr, start, posEqual, end);
 		start = ++end;
 	}
-	// Print
-	if (PRINT_REQUEST) {
-		std::cout << "QUERY-Key-Value-Pairs:" << std::endl;
-		for (size_t i = 0; i < data->_requestLine.query.size(); i++)
-		{
-			std::cout << "\t(\"" << data->_requestLine.query[i].key
-				<< "\"=\"" << data->_requestLine.query[i].value << "\")"
-				<< std::endl;
-		}
-	}
 }
 
 void	RequestLineParser::extractFileExtension()
 {
 	size_t	posExt = data->_requestLine.requestURI.find('.');
-	if (posExt != std::string::npos)
-	{
+	if (posExt != std::string::npos) {
 		size_t	i = 0;
 		size_t	uriLen = data->_requestLine.requestURI.size();
 		while (1 + posExt + i < uriLen && isalpha(data->_requestLine.requestURI[1 + posExt + i]))
 			i++;
 		data->_fileExtension = data->_requestLine.requestURI.substr(posExt, i + 1);
-		std::cout << "\t_fileExtension: "<< data->_fileExtension << std::endl;
 	}
 }
 
@@ -273,9 +251,6 @@ bool RequestLineParser::foundEndOfRequest()
  */
 void	RequestLineParser::setQueryKeyValue(const std::string &queryStr, size_t start, size_t posEqual, size_t end)
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::setQueryKeyValue()" << std::endl;
-
 	t_query	query;
 	query.key = queryStr.substr(start, posEqual - start);
 	query.value = queryStr.substr(posEqual + 1, end - posEqual - 1);
