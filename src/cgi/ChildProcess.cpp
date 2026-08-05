@@ -31,7 +31,7 @@ char	**CGIProcessLauncher::createEnvp(const ClientConnection &client)
 	this->envs.push_back("SERVER_SOFTWARE=webserv/1.0");
 	if (!request->getRequestBody().empty())
 		this->envs.push_back("CONTENT_LENGTH=" +
-			utils::numToStr(request->getRequestBody().size() + 1));
+			utils::numToStr(request->getRequestBody().size()));
 	if (!request->getContentData().type.empty())
 		this->envs.push_back("CONTENT_TYPE=" + request->getContentData().type);
 	this->envs.push_back("REQUEST_METHOD=" + request->getMethod());
@@ -79,16 +79,14 @@ void	CGIProcessLauncher::runChildProcess(const ClientConnection &client)
 	char	**argv = NULL, **envp = NULL;
 	std::string	cgiDir;
 
-	if (client.cgi_path.find("/") != std::string::npos)
-		cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
-	if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
-			|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1) {
-		this->cleanUp();
-		throw std::runtime_error("dup2: " + std::string(std::strerror(errno)));
-	}
-	close(this->stdinPipe[0]);
-	close(this->stdoutPipe[1]);
 	try {
+		if (client.cgi_path.find("/") != std::string::npos)
+			cgiDir = client.cgi_path.substr(0, client.cgi_path.find_last_of("/"));
+		if (dup2(this->stdinPipe[0], STDIN_FILENO) == -1
+				|| dup2(this->stdoutPipe[1], STDOUT_FILENO) == -1)
+			throw std::runtime_error("dup2: " + std::string(std::strerror(errno)));
+		close(this->stdinPipe[0]);
+		close(this->stdoutPipe[1]);
 		if (!cgiDir.empty() && chdir(cgiDir.c_str()) == -1)
 			throw std::runtime_error("chdir: " + std::string(std::strerror(errno)));
 		argv = this->createArgv(client);
