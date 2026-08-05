@@ -13,6 +13,10 @@
 * <ToDo list>
 	- [] formSubmit() appendToFile()
 	- [] config file -> ".conf" check
+	- [] cgi env setting correct? SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED
+	- [] Copy & assignment operators
+	- [] server max_body_size
+	- [] setting good limits (limits_defines.hpp)
 
 * TestCases from /tests/
 	* GET /../etc/passwd

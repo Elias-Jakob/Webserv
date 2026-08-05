@@ -237,7 +237,10 @@ void	RequestHeadsParser::modifyURI(std::vector<std::string> &pathParts)
 
 void RequestHeadsParser::modifyURIforCGI()
 {
-	std::vector<std::string> pathParts = splitPath(data->_requestLine.requestURI);
+	std::string	scriptURI = data->_requestLine.requestURI;
+	if (!data->_pathInfo.empty())
+		scriptURI = scriptURI.substr(0, scriptURI.size() - data->_pathInfo.size());
+	std::vector<std::string> pathParts = splitPath(scriptURI);
 	size_t	idx_server;
 	for (idx_server = 0; idx_server < data->_serverConfigs.size(); idx_server++) {
 		if (isListeningTo(idx_server, data->_listeningInterface))
@@ -257,7 +260,6 @@ void RequestHeadsParser::modifyURIforCGI()
 	data->_requestLine.requestURI = newURI;
 	if (data->_locationObj->cgiPath.size() > 1)
 		data->_requestLine.requestURI = data->_locationObj->cgiPath;
-	data->_scriptName = data->_requestLine.requestURI;
 	pathParts = splitPath(data->_pathInfo);
 	std::string	newPathInfo;
 	for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
@@ -306,15 +308,20 @@ void	RequestHeadsParser::findLocation(std::vector<std::string> pathParts)
 
 size_t	RequestHeadsParser::posOfScriptName(std::vector<std::string> &parts, std::vector<std::string> cgiExt, size_t n)
 {
-	size_t idx_scrpt = 0;
+	size_t idx_scrpt = n;
 	bool	found = false;
 	size_t	idx_found = 0;
 
-	while (idx_scrpt < parts.size()) {
-		for (size_t i = 0; i < cgiExt.size(); i++) {
-			if (parts[idx_scrpt] == cgiExt[i] && found == false) {
-				found = true;
-				idx_found = idx_scrpt;
+	while (idx_scrpt < parts.size() && !found) {
+		size_t dotPos = parts[idx_scrpt].find_last_of('.');
+		if (dotPos != std::string::npos) {
+			std::string ext = parts[idx_scrpt].substr(dotPos);
+			for (size_t i = 0; i < cgiExt.size(); i++) {
+				if (ext == cgiExt[i]) {
+					found = true;
+					idx_found = idx_scrpt;
+					break ;
+				}
 			}
 		}
 		idx_scrpt++;
