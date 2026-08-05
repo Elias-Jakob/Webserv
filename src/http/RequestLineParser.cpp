@@ -60,6 +60,8 @@ bool	RequestLineParser::validHttpVersion()
 	size_t pos_version = data->_requestLine.version.find("HTTP/");
 	if (pos_version == std::string::npos) 
 		return false;
+	if (data->_requestLine.version.size() < 8)
+		return false;
 	else if ((data->_requestLine.version[5] < '0' || data->_requestLine.version[5] > '9')
 			|| (data->_requestLine.version[7] < '0' || data->_requestLine.version[7] > '9' )
 			|| (data->_requestLine.version[6] != '.'))
@@ -220,7 +222,8 @@ void	RequestLineParser::extractFileExtension()
 	if (posExt != std::string::npos)
 	{
 		size_t	i = 0;
-		while (isalpha(data->_requestLine.requestURI[1 + posExt + i]))
+		size_t	uriLen = data->_requestLine.requestURI.size();
+		while (1 + posExt + i < uriLen && isalpha(data->_requestLine.requestURI[1 + posExt + i]))
 			i++;
 		data->_fileExtension = data->_requestLine.requestURI.substr(posExt, i + 1);
 		std::cout << "\t_fileExtension: "<< data->_fileExtension << std::endl;

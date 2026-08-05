@@ -38,6 +38,7 @@ class Get : public AMethod
 		virtual bool		serveFile(struct stat &fileInfo);
 		
 		bool 		isFileAccessible(const std::string &path);
+		std::string	htmlEscape(const std::string &str);
 		// bool		checkCGI();
 		// bool		executeCGI(const std::string &script);
 		

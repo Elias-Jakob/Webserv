@@ -47,6 +47,19 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request,
 		result.lastModified = method->getLastModified();
 		result.etag = method->getEtag();
 	// }
+	result.isCGI = false;
+	std::stringstream cgiCodeStream;
+	cgiCodeStream << HttpStatus::IS_CGI;
+	if (result.statusCode == cgiCodeStream.str())
+	{
+		// AMethod::executeCGI() uses IS_CGI as an internal marker (not a real
+		// HTTP status) and stashes the script path in statusPhrase; translate
+		// that here so no pseudo-status code leaks past this point.
+		result.isCGI = true;
+		result.cgiScriptPath = result.statusPhrase;
+		result.statusCode = "200";
+		result.statusPhrase = "OK";
+	}
 	return result;
 }
 

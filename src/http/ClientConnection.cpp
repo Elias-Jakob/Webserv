@@ -128,12 +128,9 @@ void ClientConnection::executeRequest()
 		std::cout << "IN ELSE" << std::endl;
 		keep_alive = request->keepConnectionAlive();
 		result.keep_alive = keep_alive;
-		if (result.statusCode == "601") {
-			result.statusCode = "200";
+		if (result.isCGI) {
 			state = CGI_PROCESSING;
-			cgi_path = result.statusPhrase;
-			// std::cout << RED << "BUFFER: " << response_buffer << RESET << std::endl;
-			result.statusPhrase = "OK";
+			cgi_path = result.cgiScriptPath;
 		}
 		else if (!result.success) {
 			if (this->sendCookie)
