@@ -7,14 +7,16 @@
 AMethod::AMethod() : 
     _method("unset"), 
     _location(NULL), 
-    _isAutoIndex(false)
+    _isAutoIndex(false),
+    _isCGI(false)
 {
 }
 
 AMethod::AMethod(std::string name) : 
     _method(name), 
     _location(NULL), 
-    _isAutoIndex(false)
+    _isAutoIndex(false),
+    _isCGI(false)
 {
 }
 
@@ -134,8 +136,9 @@ bool	AMethod::executeCGI(const std::string &script)
         HttpStatus::setStatus(404, _code, _phrase);
         return false;
     }
-	HttpStatus::setStatus(601, _code, _phrase);
-	_phrase = script;
+	HttpStatus::setStatus(200, _code, _phrase);
+	_isCGI = true;
+	_cgiScript = script;
 	return true;
 }
 
@@ -200,4 +203,14 @@ std::string AMethod::getEtag()
 std::string AMethod::getUploadLocation()
 {
     return _uploadLocation;
+}
+
+bool	AMethod::isCGI()
+{
+    return _isCGI;
+}
+
+std::string	AMethod::getCGIScript()
+{
+    return _cgiScript;
 }

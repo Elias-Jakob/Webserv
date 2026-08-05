@@ -5,7 +5,7 @@
 	2. check tests/ -> if failed clarify why
 	3. cleanup
 	4. configFileParser
-	5. CGI problem with 601 _phrase as uri.
+	5. CGI: SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED correct?
 	6. Unallowed functions (realpath, timefunction) isFileAccessible()
 	7. Copy constructer & assignment operator overloads.
 	8. server max_body_size = // not checked?
@@ -22,4 +22,3 @@
 	- [X] https
 	- [X] methods
 	- [X] parsers
-	- [] 

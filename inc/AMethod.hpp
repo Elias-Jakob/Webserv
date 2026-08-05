@@ -47,6 +47,8 @@ class AMethod
 		std::string	getLastModified();
 		std::string	getEtag();
 		std::string getUploadLocation();
+		bool		isCGI();
+		std::string	getCGIScript();
 
 	protected:
 		std::string _method;
@@ -66,6 +68,8 @@ class AMethod
 		bool		_isAutoIndex;
 		std::string	_lastModified;
 		std::string	_etag;
+		bool		_isCGI;
+		std::string	_cgiScript;
 
 	private:
 		AMethod(const AMethod& other);
