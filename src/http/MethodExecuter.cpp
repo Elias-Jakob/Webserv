@@ -21,37 +21,29 @@ MethodExecuter::~MethodExecuter()
 	* @param request the parsed request.
 	* @return t_executionResult result.
 	**/
-t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request, const std::string &listeningInterface)
+t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request)
 {
-	std::cout << "MethodExecuter::execute()" << std::endl;
 	t_executionResult	result;
 	std::string			modifiedURI;
 
-	// modifiedURI = modifyRequestURI(request, listeningInterface);
-	std::cout << listeningInterface << std::endl;
 	modifiedURI = request->getRequestLine().requestURI;
 	method->setRequiredData(request, modifiedURI);
 
 	result.success = method->execute(); // execution
-	// if (result.success)
-	// {
-		result.statusCode = method->getCode();
-		result.statusPhrase = method->getPhrase();
-
-		result.body = method->getBody();
-		result.uploadedLocation = method->getUploadLocation();
-		if (method->isDirList())
-			result.contentType = "text/html";
-		else
-			result.contentType = method->getContentType();
-		result.lastModified = method->getLastModified();
-		result.etag = method->getEtag();
-	// }
+	result.statusCode = method->getCode();
+	result.statusPhrase = method->getPhrase();
+	result.body = method->getBody();
+	result.uploadedLocation = method->getUploadLocation();
+	if (method->isDirList())
+		result.contentType = "text/html";
+	else
+		result.contentType = method->getContentType();
+	result.lastModified = method->getLastModified();
+	result.etag = method->getEtag();
 	result.isCGI = false;
 	std::stringstream cgiCodeStream;
 	cgiCodeStream << HttpStatus::IS_CGI;
-	if (result.statusCode == cgiCodeStream.str())
-	{
+	if (result.statusCode == cgiCodeStream.str()) {
 		// AMethod::executeCGI() uses IS_CGI as an internal marker (not a real
 		// HTTP status) and stashes the script path in statusPhrase; translate
 		// that here so no pseudo-status code leaks past this point.
@@ -71,18 +63,11 @@ t_executionResult MethodExecuter::execute(AMethod *method, HttpRequest *request,
  */
 bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 {
-	std::cout << "\nMethodExecuter::setConfig()" << std::endl;
 	_serverConfigs = serverConfigs;
-	std::cout << "\n===========" << std::endl;
-	for (size_t i = 0; i < _serverConfigs.size(); i++)
-	{
-		std::cout << "server_name = " << _serverConfigs[i].serverName << std::endl;
-		std::cout << "IP:Port n = " << _serverConfigs[i].listenInterfaces.size() << std::endl;
-		for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
-		{
+	for (size_t i = 0; i < _serverConfigs.size(); i++) {
+		for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++) {
 			std::map<std::string, std::string> tmp_locs;
-			for (size_t i_loc = 0; i_loc < _serverConfigs[i].locations.size(); i_loc++)
-			{
+			for (size_t i_loc = 0; i_loc < _serverConfigs[i].locations.size(); i_loc++) {
 				if (_serverConfigs[i].locations[i_loc].alias.size() > 0)
 					tmp_locs[_serverConfigs[i].locations[i_loc].path] = _serverConfigs[i].locations[i_loc].alias;
 				if (_serverConfigs[i].locations[i_loc].uploadStore.size() > 0)
@@ -90,24 +75,6 @@ bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 			}
 			_rootedLocs[_serverConfigs[i].listenInterfaces[i_ip]] = tmp_locs;
 		}
-	}
-
-// PRINT ROOTED_LOCATIONs
-	std::cout << "_rootedLocs.size() = " << _rootedLocs.size() << std::endl;
-	std::map<std::string, std::map<std::string, std::string> >::iterator	it = _rootedLocs.begin();
-	std::map<std::string, std::map<std::string, std::string> >::iterator	ite = _rootedLocs.end();
-	while (it != ite)
-	{
-		std::cout << "Listen: " << it->first << "\n{"<< std::endl;
-		std::map<std::string, std::string>::iterator itLocs = it->second.begin();
-		std::map<std::string, std::string>::iterator iteLocs = it->second.end();
-		while (itLocs != iteLocs)
-		{
-			std::cout << "\t" << itLocs->first << " => " << itLocs->second << std::endl;
-			itLocs++;
-		}
-		it++;
-		std::cout << "}" << std::endl;
 	}
 	setDefaultLocation();
 	return true;
@@ -118,57 +85,31 @@ bool	MethodExecuter::setConfig(std::vector<t_Configs> serverConfigs)
 */
 std::string	MethodExecuter::modifyRequestURI(HttpRequest *req, const std::string &listeningInterface)
 {
-	std::cout << "MethodExecuter::modifyRequestURI()... " << req->getRequestLine().requestURI << std::endl;
 	std::string					uri;
 	std::vector<std::string>	uriParts;
 
 	uriParts = splitPath(req->getRequestLine().requestURI);
-	for(size_t i = 0; i < uriParts.size(); i++)
-		std::cout << "\t" << i << ": ("<< uriParts[i] << ")" << std::endl;
-	std::cout << "uriParts.size() = " << uriParts.size() << std::endl;
-	// std::string host = req->getHost();
 	std::map<std::string, std::map<std::string, std::string> >::iterator it_host = _rootedLocs.find(listeningInterface);
-	if (it_host != _rootedLocs.end())
-	{
-		// std::map<std::string, std::string>::iterator it = _rootedLocations.begin();
-		// std::map<std::string, std::string>::iterator ite = _rootedLocations.end();
-		std::map<std::string, std::string>::iterator it = it_host->second.begin();
-		std::map<std::string, std::string>::iterator ite = it_host->second.end();
-		std::cout << "ROOTED_LOCATIONS: " << std::endl;
-		while (it != ite) {
-			std::cout << "\t" << it->first << " -> " << it->second << std::endl;
-			it++;
-		}
-
-		for (size_t i = 0; i < uriParts.size(); i++) // lookup rooted Locations & replace if found
-		{
-			std::cout << "loop to replace.." << i << std::endl;
+	if (it_host != _rootedLocs.end()) {
+		for (size_t i = 0; i < uriParts.size(); i++) {
 			std::map<std::string, std::string>::iterator it = it_host->second.find(uriParts[i]);
-			if (it != it_host->second.end())
-			{
+			if (it != it_host->second.end()) {
 				if (i == 0 && uriParts.size() > 1) {
-					std::cout << "\t" << it->second << " -> " << uriParts[i+1] << std::endl;
 					if (it->second != uriParts[i+1]) {
 						uriParts[i] = it->second;
-						std::cout << "\t -replace[0]: " << uriParts[i] << " <-> " << it->second << std::endl;
 					}
 				}
 				else {
-					std::cout << "\t - replace: " << uriParts[i] << " <-> " << it->second << std::endl;
 					uriParts[i] = it->second;
 				}
 			}
 		}
 	}
-	else
-		std::cout << "no Rooted locations found..." << std::endl;
-	for (size_t i = 0; i < uriParts.size(); i++) // create new uri
-	{
+	for (size_t i = 0; i < uriParts.size(); i++) {
 		if (uriParts[i] == "/")
 			continue;
 		uri += uriParts[i];
 	}
-	std::cout << "MethodExecuter::modifyRequestURI() ==> " << uri << std::endl;
 	return uri;
 }
 
@@ -198,15 +139,11 @@ bool	MethodExecuter::isAllowedMethod(t_Location *location, const std::string &me
 {
 	if (location->redirect)
 		return true;
-	for (size_t i = 0; i < location->allowedMethods.size(); i++)
-	{
-		if (method == location->allowedMethods[i])
-		{
-			std::cout << "MethodExecuter()::isAllowedMethod() ==> TRUE" << std::endl;
+	for (size_t i = 0; i < location->allowedMethods.size(); i++) {
+		if (method == location->allowedMethods[i]) {
 			return true;
 		}
 	}
-	std::cout << "MethodExecuter()::isAllowedMethod() ==> FALSE" << std::endl;
 	return false;
 }
 
@@ -218,21 +155,15 @@ bool	MethodExecuter::isAllowedMethod(t_Location *location, const std::string &me
 **/
 AMethod	*MethodExecuter::createMethod(const std::string &methodName, t_Location *locationObj)
 {
-	std::cout << "MethodExecuter::createMethod() -> " << methodName << std::endl;
 	AMethod		*tempMethod = NULL;
 	t_Location	*location = NULL;
 
 	location = locationObj;
-	// location = availableLocation(path, listeningInterface, methodName); // 
-	if (!location)
-	{
+	if (!location) {
 		location = &_defaultLocation;
-		std::cout << "\tSet _defaultLocation for resource" << std::endl;
 	}
-	if (location != NULL)
-	{
-		if (isAllowedMethod(location, methodName)) // Implement for all Methods
-		{
+	if (location != NULL) {
+		if (isAllowedMethod(location, methodName)) {
 			if (methodName == "GET")
 				tempMethod = createGet(methodName, location);
 			if (methodName == "DELETE")	
@@ -245,7 +176,6 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, t_Location 
 		}
 		else
 			return NULL;
-		std::cout << "location.alias = " << location->alias << std::endl;
 	}
 	if (location != NULL && !isAllowedMethod(location, methodName))
 		return NULL;
@@ -264,17 +194,10 @@ AMethod	*MethodExecuter::createMethod(const std::string &methodName, t_Location 
 
 bool MethodExecuter::isListening(size_t i, const std::string &listeningInterface)
 {
-	std::cout << "isListening()\n\tlisteningInterface: " << listeningInterface << std::endl;
-	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++)
-	{
-		std::cout << "\t" << _serverConfigs[i].listenInterfaces[i_ip] << std::endl;
+	for (size_t i_ip = 0; i_ip < _serverConfigs[i].listenInterfaces.size(); i_ip++) {
 		if (listeningInterface == _serverConfigs[i].listenInterfaces[i_ip])
-		{
-			std::cout << "isListening() ==> TRUE" << std::endl;
 			return true;
-		}
 	}
-	std::cout << "isListening() ==> FALSE" << std::endl;
 	return false;
 }
 
@@ -283,9 +206,11 @@ bool MethodExecuter::isListening(size_t i, const std::string &listeningInterface
 	*	fitting t_Location struct.
 	* @returns most fitting location struct.
 */
-t_Location	*MethodExecuter::availableLocation(const std::string &path, const std::string &listeningInterface, const std::string &methodName)
+t_Location	*MethodExecuter::availableLocation(
+	const std::string &path, 
+	const std::string &listeningInterface, 
+	const std::string &methodName)
 {
-	std::cout << "\nMethodExecuter::availableLocation(), path = " << path << std::endl;
 	t_Location					*loc;
 	t_Location					*defLoc;
 	std::vector<std::string>	pathParts;
@@ -293,52 +218,26 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 	loc = NULL;
 	defLoc = NULL;
 	pathParts = splitPath(path);
-
-// check for file-extension for an cgi_extension
-	size_t	pos_ext = path.find(".bla", 0);
-	if (pos_ext == std::string::npos)
-		std::cout << "  Did not find file extension!" << std::endl;
-	else
-		std::cout << "  Found file extension!" << std::endl;
-	
-	std::cout << "===== LOOP =====" << std::endl;
-	for (size_t i = 0; i < _serverConfigs.size(); i++)
-	{
-		std::cout << i << std::endl;
+	for (size_t i = 0; i < _serverConfigs.size(); i++) {
 		if (!isListening(i, listeningInterface))
 			continue ;
-		for (size_t k = 0; k < pathParts.size(); k++)
-		{
-			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++)
-			{	
-				std::cout << pathParts[k] << " == " 
-							<< _serverConfigs[i].locations[j].path << std::endl;
+		for (size_t k = 0; k < pathParts.size(); k++) {
+			for (size_t j = 0; j < _serverConfigs[i].locations.size(); j++) {	
 				if (!defLoc && _serverConfigs[i].locations[j].path == "/")
 					defLoc = &_serverConfigs[i].locations[j];
-				if (_serverConfigs[i].locations[j].path == pathParts[k])// && k == pathParts.size() - 1)
-				{
+				if (_serverConfigs[i].locations[j].path == pathParts[k]) {
 					if (_serverConfigs[i].locations[j].cgi) { 
-						if (isAllowedMethod(&_serverConfigs[i].locations[j], methodName)) {
+						if (isAllowedMethod(&_serverConfigs[i].locations[j], methodName))
 							loc = &_serverConfigs[i].locations[j];
-							std::cout << "set CGI path" << std::endl;
-							std::cout << "extensions.size() = " << loc->cgiExtensions.size() << std::endl;
-						}
 					}
-					else {
+					else
 						loc = &_serverConfigs[i].locations[j];
-						std::cout << "location: " << _serverConfigs[i].locations[j].path
-							<< " => " << pathParts[k] << " => " << _serverConfigs[i].locations[j].alias << std::endl;
-					}
 				}
 			}
 		}
 	}
 	if (!loc && defLoc)
 		loc = defLoc;
-	if (loc != NULL) // print result
-		std::cout << "\t ==> location " << loc->path << " => " << loc->alias << " {..}" << std::endl;
-	else
-		std::cout << "\t ==> location NULL" << std::endl;
 	return loc;
 }
 
@@ -349,68 +248,54 @@ t_Location	*MethodExecuter::availableLocation(const std::string &path, const std
 */
 std::vector<std::string> MethodExecuter::splitPath(const std::string &path)
 {
-	std::cout << "MethodExecuter::splitPath()" << std::endl;
 	std::vector<std::string>	parts;
 	std::string	temp;
 	size_t	start = 0;
 	size_t	end = 0;
 
-	for (size_t i = 0; i < path.size(); i++)
-	{
-		if (path[i] == '/' && i == 0)
-		{
+	for (size_t i = 0; i < path.size(); i++) {
+		if (path[i] == '/' && i == 0) {
 			end = i+1;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
-			// start = end;
 		}
-		else if ((path[i] == '/' || path[i] == '.') && i > 0)
-		{
+		else if ((path[i] == '/' || path[i] == '.') && i > 0) {
 			end = i;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
 			start = end;
 		}
-		else if (i + 1 == path.size())
-		{
+		else if (i + 1 == path.size()) {
 			end = i+1;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
 			break ;
 		}
 	}
-	for (size_t i = 0; i < parts.size(); i++) // print parts
-		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
 }
 
 std::vector<std::string> MethodExecuter::splitPathDir(const std::string &path)
 {
-	std::cout << "MethodExecuter::splitPathDir()" << std::endl;
 	std::vector<std::string>	parts;
 	std::string					temp;
 	size_t						start = 0;
 	size_t						end = 0;
 
-	for (size_t i = 0; i < path.size(); i++)
-	{
-		if (path[i] == '/' && i > 0)
-		{
+	for (size_t i = 0; i < path.size(); i++) {
+		if (path[i] == '/' && i > 0) {
 			end = i;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
 			start = end;
 		}
-		else if (i + 1 == path.size())
-		{
+		else if (i + 1 == path.size()) {
 			end = i+1;
 			temp = path.substr(start, end - start);
 			parts.push_back(temp);
 			break ;
 		}
 	}
-	// for (size_t i = 0; i < parts.size(); i++) // print parts
-	// 	std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
 }
 

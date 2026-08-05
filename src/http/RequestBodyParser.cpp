@@ -105,8 +105,6 @@ bool	RequestBodyParser::extractBody()
 **/
 bool RequestBodyParser::createBodyParser()
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::createBodyParser()" << std::endl;
 	std::map<std::string, std::vector<std::string> >::iterator it;
 	it = data->_headers.find("content-type");
 	if (it == data->_headers.end()) {
@@ -141,8 +139,6 @@ bool RequestBodyParser::createBodyParser()
 // "application/octet-stream"
 std::string RequestBodyParser::parseContentType(std::vector<std::string> value)
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::parseContentType" << std::endl;
 	std::string	temp;
 	std::string	parameter;
 	std::string type;
@@ -181,11 +177,11 @@ ABodyParser *RequestBodyParser::createFormParser()
 
 /**
  * @brief no chunk-extension yet.
+ * chunked_size == (size_t) -1 signal for incomplete data
+ * chunked_data.empty() && chunked_size!= 0 -> not enough data
  */
 bool	RequestBodyParser::unchunkBody()
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::unchunkBody()" << std::endl;
 	size_t	posEnd = data->_messageBuffer.find("\r\n", data->_current_pos);
 	if (posEnd == std::string::npos)
 		return false;
@@ -197,16 +193,12 @@ bool	RequestBodyParser::unchunkBody()
 			done = true;
 			break ;
 		}
-		if (chunked_size == (size_t)-1)	 // signal for incomplete data
-		{
+		if (chunked_size == (size_t)-1)
 			return false;
-		}
 		std::string	chunked_data = chunkedData(chunked_size);
-		// If empty string AND size != 0, not enough data yet
-		if (chunked_data.empty() && chunked_size != 0)
-		{
+		if (chunked_data.empty() && chunked_size != 0) {
 			data->_current_pos = pos_cpy;
-			return false; // wait for more data from network
+			return false;
 		}
 		if (chunked_data.size() > MAX_BODY_SIZE)
 			return setErrorCode(413);
@@ -217,17 +209,13 @@ bool	RequestBodyParser::unchunkBody()
 
 std::string	RequestBodyParser::chunkedData(size_t chunked_size)
 {
-	if (PRINT_REQUEST)
-		std::cout << "\tHttpRequest::unchunkData()" << std::endl;
-
 	if (data->_current_pos + chunked_size + 2 > data->_messageBuffer.size())
-		return ""; // Not enough data yet, signal to wait
+		return "";
 
 	size_t posEndData = data->_messageBuffer.find("\r\n", data->_current_pos);
-	if (posEndData == std::string::npos) {
-		std::cout << "\tNO CRLF!" << std::endl;
-		return ""; // CRLF not found, need more data
-	}
+	if (posEndData == std::string::npos)
+		return "";
+
 	std::string dataTemp = data->_messageBuffer.substr(data->_current_pos, chunked_size);
 	data->_current_pos = posEndData + 2;
 	return dataTemp;
@@ -235,15 +223,13 @@ std::string	RequestBodyParser::chunkedData(size_t chunked_size)
 
 size_t	RequestBodyParser::chunkedSize()
 {
-	if (PRINT_REQUEST)
-		std::cout << "\tHttpRequest::chunkedSize()" << std::endl;
 	size_t	posEndSize = data->_messageBuffer.find("\r\n", data->_current_pos);
 	if (posEndSize == std::string::npos)
-		return (size_t)-1; // Signal: incomplete chunk header, need more data
+		return (size_t)-1;
 	std::string sizeStr = data->_messageBuffer.substr(data->_current_pos, posEndSize - data->_current_pos);
 	for (size_t i = 0; i < sizeStr.size(); i++) {
-		if ((sizeStr[i] < '0' || sizeStr[i] > '9') && (sizeStr[i]< 'a' || sizeStr[i] > 'f'))
-		{
+		if ((sizeStr[i] < '0' || sizeStr[i] > '9') 
+			&& (sizeStr[i]< 'a' || sizeStr[i] > 'f')) {
 			setErrorCode(400);
 			return 0;
 		}

@@ -21,8 +21,6 @@ RequestHeadsParser::~RequestHeadsParser()
 
 bool RequestHeadsParser::parseHeaderLine()
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::parseHeaderLine()" << std::endl;
     size_t endOfHeaders = data->_messageBuffer.find("\r\n\r\n", data->_current_pos);
     if (endOfHeaders == std::string::npos)
         return false;
@@ -38,17 +36,9 @@ bool RequestHeadsParser::parseHeaderLine()
 		setCurrentPos(lineEnd + 2);
     }
 	setCurrentPos(endOfHeaders + 4);
-	// test-cookie
-	std::map<std::string, std::vector<std::string> >::iterator it = data->_headers.find("cookie");
-	if (it != data->_headers.end()) {
-		std::cout << "\nFOUND COOKIE: " << it->second[0] << std::endl;
-	}
-	else {
-		std::cout << "\nNO COOKIE FOUND\n" << std::endl;
-	}
-	// test end;
+
 	std::vector<std::string> pathParts = splitPath(data->_requestLine.requestURI);
-	findLocation(pathParts); // find corresponding t_Locatio
+	findLocation(pathParts);
 	modifyURI(pathParts);
 	return true;
 }
@@ -68,11 +58,11 @@ std::string	RequestHeadsParser::extractHeader(size_t *lineEnd)
 
 bool	RequestHeadsParser::setHeaderPair(const std::string &line)
 {
-    size_t colonPos = line.find(':'); // find delimiter for key":"value
+    size_t colonPos = line.find(':');
     if (colonPos != std::string::npos && colonPos != 0) {
         std::string key = line.substr(0, colonPos);
 		toLowerCase(key);
-		size_t valueStart = colonPos + 1;// Skip ": " and any leading spaces
+		size_t valueStart = colonPos + 1;
            while (valueStart < line.size() && line[valueStart] == ' ')
                valueStart++;
 		std::string value = line.substr(valueStart);
@@ -105,15 +95,13 @@ std::vector<std::string> RequestHeadsParser::splitHeaderValByComma(std::string v
 	size_t	start = 0;
 	size_t	end = 0;
 
-	while(end < i)
-	{
+	while(end < i) {
 		end = val.find(',', start);
 		size_t spaces = skipLWS(val, start, end);
 		start+= spaces;
 		if (end < i)
 			split.push_back(val.substr(start, end - start));
-		else if (end >= i)
-		{
+		else if (end >= i) {
 			split.push_back(val.substr(start, val.size()));
 			break ;
 		}
@@ -205,8 +193,6 @@ std::vector<std::string> RequestHeadsParser::splitPath(const std::string &path)
 			break ;
 		}
 	}
-	for (size_t i = 0; i < parts.size(); i++) // print parts
-		std::cout << "\tpart[" << i << "] = " << parts[i] << std::endl;
 	return parts;
 }
 
@@ -243,10 +229,6 @@ void	RequestHeadsParser::modifyURI(std::vector<std::string> &pathParts)
 		}
 		if (data->_locationObj->formSubmit)
 			newURI += "/" + data->_locationObj->formUploadFile;
-		if (DEBUG_PRINT) {
-			std::cout << "URI:\t\t" << data->_requestLine.requestURI << std::endl;
-			std::cout << "mod-URI:\t" << newURI << std::endl;
-		}
 		data->_requestLine.requestURI = newURI;
 	}
 	else if (data->_locationObj->cgi)
@@ -261,7 +243,6 @@ void RequestHeadsParser::modifyURIforCGI()
 		if (isListeningTo(idx_server, data->_listeningInterface))
 			break ;
 	}
-	std::cout << pathParts.size() << std::endl;
 	std::string newURI;
 	if (data->_serverConfigs[idx_server].root.size() > 0)
 		newURI = data->_serverConfigs[idx_server].root;
@@ -273,12 +254,10 @@ void RequestHeadsParser::modifyURIforCGI()
 		}
 		newURI += part;
 	}
-	std::cout << RED << newURI << RESET << std::endl;
 	data->_requestLine.requestURI = newURI;
 	if (data->_locationObj->cgiPath.size() > 1)
 		data->_requestLine.requestURI = data->_locationObj->cgiPath;
 	data->_scriptName = data->_requestLine.requestURI;
-	// PATH_INFO
 	pathParts = splitPath(data->_pathInfo);
 	std::string	newPathInfo;
 	for (size_t iUri = 1; iUri < pathParts.size(); iUri++) {
@@ -291,17 +270,10 @@ void RequestHeadsParser::modifyURIforCGI()
 	}
 	data->_pathInfo = newPathInfo;
 	data->_pathTranslated = data->_serverConfigs[idx_server].root + data->_pathInfo;
-	// std::cout << "\nSCRIPT_NAME: " << data->_scriptName
-	// 	<< "\nPATH_INFO: " << data->_pathInfo
-	// 	<< "\nPATH_TRANSLATED: " << data->_pathTranslated
-	// 	<< std::endl;
 }
 
 void	RequestHeadsParser::findLocation(std::vector<std::string> pathParts)
 {
-	if (PRINT_REQUEST)
-		std::cout << "HttpRequest::findLocation()" << std::endl;
-
 	t_Location	*loc = NULL;
 	t_Location	*defLoc = NULL;
 	bool		isCGI = false;
@@ -321,8 +293,6 @@ void	RequestHeadsParser::findLocation(std::vector<std::string> pathParts)
 						setScriptName(pathParts, posScript);
 						setPathInfo(pathParts, posScript);
 						data->_locationObj = loc;
-						std::cout << GREEN << "location -> " << data->_locationObj->path
-							<< RESET << std::endl;
 						return ;
 					}
 				}
@@ -339,6 +309,7 @@ size_t	RequestHeadsParser::posOfScriptName(std::vector<std::string> &parts, std:
 	size_t idx_scrpt = 0;
 	bool	found = false;
 	size_t	idx_found = 0;
+
 	while (idx_scrpt < parts.size()) {
 		for (size_t i = 0; i < cgiExt.size(); i++) {
 			if (parts[idx_scrpt] == cgiExt[i] && found == false) {
@@ -367,7 +338,6 @@ void	RequestHeadsParser::setScriptName(std::vector<std::string> &parts, size_t n
 {
 	for (size_t i = 1; i < n; i++)
 		data->_scriptName += parts[i];
-	std::cout << "SCRIPT_NAME: " << data->_scriptName << std::endl;
 }
 
 void	RequestHeadsParser::setPathInfo(std::vector<std::string> &parts, size_t start)

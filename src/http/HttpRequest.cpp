@@ -25,7 +25,6 @@ HttpRequest::HttpRequest()
 */
 HttpRequest::~HttpRequest()
 {
-	std::cout << "HttpRequest deconstructed" << std::endl;
 	if (_bodyParser) {
 		delete _bodyParser;
 		_bodyParser = NULL;
@@ -63,7 +62,9 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage, size_t bytesRe
 		return setErrorCode(400);
 	}
 	data._messageBuffer += partialMessage;
-	std::cout << "Request: \n" << partialMessage << std::endl;
+	if (PRINT_RAW_REQUEST) {
+		std::cout << YELLOW << partialMessage << RESET << std::endl;
+	}
 	while (data._state != PARSING_COMPLETE && data._state != PARSING_ERROR) {
 		switch (data._state) {
 			case PARSING_REQUEST_LINE:
@@ -81,8 +82,6 @@ bool	HttpRequest::parseRequest(const std::string &partialMessage, size_t bytesRe
 					return true;
 				if (data._requestLine.method == "POST")
 					requestBodyParser->parseBody();
-				if (PRINT_PARSED_REQUEST)
-					printRequest();
 				data._state = PARSING_COMPLETE;
 				break;
 			case PARSING_ERROR:
@@ -117,25 +116,18 @@ bool	HttpRequest::keepConnectionAlive()
 
 bool HttpRequest::validRequest()
 {
-	std::cout << "HttpRequest::validRequest()" << std::endl;
 	if (data._errorCode != 0)
 		return false;
 	if (!isImplementedMethod())
 		return setErrorCode(405);
 	if (!isHttpVersionSupported())
 		return setErrorCode(505);
-	// if (!isValidURI(data._requestLine.requestURI))
-	// 	return setErrorCode(403);
 	if (!isValidHost())
 		return false;
 	if (!isValidPostRequest())
 		return false;
-	if (data._errorCode != 0) {
-		std::cout << "\t==> FALSE" << std::endl;
-		printRequest();
+	if (data._errorCode != 0)
 		return false;
-	}
-	std::cout << "\t==> TRUE" << std::endl;
 	return true;
 }
 
@@ -164,7 +156,6 @@ void HttpRequest::setCurrentPos(size_t pos)
 */
 bool HttpRequest::setErrorCode(int code)
 {
-	std::cout << "setErrorCode(" << code << ")\n";
 	data._errorCode = code;
 	data._state = PARSING_ERROR;
 	return false;
@@ -175,16 +166,11 @@ bool HttpRequest::foundEndOfRequest()
 	size_t end = 0;
 
 	end = data._messageBuffer.find("\r\n\r\n", 0);
-	if (end != std::string::npos)
-	{
-		if (end == data._current_pos - 2)
-		{
-			std::cout << "HttpRequest::foundEndOfRequest() => TRUE" << std::endl;
+	if (end != std::string::npos) {
+		if (end == data._current_pos - 2) {
 			return true;
 		}
 	}
-	// std::cout << "current_pos" << _current_pos << ", end of request" << end << std::endl;
-	std::cout << "HttpRequest::foundEndOfRequest() => FALSE" << std::endl;
 	return false;
 }
 
@@ -199,7 +185,7 @@ bool	HttpRequest::isAllowedMethod()
 	return false;
 }
 
-bool HttpRequest::isImplementedMethod() // 501
+bool HttpRequest::isImplementedMethod()
 {
 	if (data._requestLine.method == "GET"
 		|| data._requestLine.method == "POST"
@@ -209,7 +195,7 @@ bool HttpRequest::isImplementedMethod() // 501
 	return false;
 }
 
-bool HttpRequest::isHttpVersionSupported() // 505
+bool HttpRequest::isHttpVersionSupported()
 {
 	if (data._requestLine.version == "HTTP/1.1" || data._requestLine.version == "HTTP/1.0")
 		return true;
@@ -250,7 +236,6 @@ bool	HttpRequest::isValidHost()
 bool	HttpRequest::isValidPostRequest()
 {
     std::map<std::string, std::vector<std::string> >::iterator it;
-//	REMOVE to avoid 411 if not allowed Method
 	if (data._requestLine.method == "POST")
 	{
 		if (data._locationObj->cgi)
@@ -268,17 +253,6 @@ bool	HttpRequest::isValidPostRequest()
 	}
 	return true;
 }
-
-/**
-	* @brief checks for path traversal (../../etc/passwd)
-*/
-// bool	HttpRequest::isValidURI(const std::string &uri)
-// {
-// 	if (uri.find("..") != std::string::npos
-// 		|| uri.find("//") != std::string::npos)
-// 		return false;
-// 	return true;
-// }
 
 // =========================================================================
 // Getters & Setters
@@ -382,7 +356,7 @@ bool	HttpRequest::hasBodyContentLength()
 
 void HttpRequest::printRequest(void)
 {
-	std::cout << "====================" << std::endl;
+	std::cout << "PARSED_REQUEST:" << std::endl;
 	std::cout << "Request-Line:\n{" << std::endl;
 	std::cout << "\tAMethod: [" << data._requestLine.method << "]" << std::endl;
 	std::cout << "\tPath: [" << data._requestLine.requestURI << "]" << std::endl;
@@ -411,5 +385,4 @@ void HttpRequest::printRequest(void)
 	if (data._fullMessageBody.size() < 100)
 		std::cout << data._fullMessageBody;
 	std::cout << "\n}" << std::endl;
-	std::cout << "====================" << std::endl;
 }

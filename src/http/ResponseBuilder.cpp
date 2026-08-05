@@ -23,8 +23,6 @@ ResponseBuilder::~ResponseBuilder()
  */
 std::string ResponseBuilder::response(t_executionResult result)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::formatResponse()" << result.statusCode << std::endl;
 	std::string statusLine = buildStatusLine(&result);
 	std::string messageHeaders = buildResponseHeaders(result);
 	std::string response = buildFullResponse(statusLine, messageHeaders, result.body);
@@ -34,8 +32,6 @@ std::string ResponseBuilder::response(t_executionResult result)
 // For cookie & session-management.
 std::string ResponseBuilder::response(t_executionResult result, const std::string &cookieHead)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::formatResponse()" << result.statusCode << std::endl;
 	std::string statusLine = buildStatusLine(&result);
 	std::string messageHeaders = buildResponseHeaders(result, cookieHead);
 	std::string response = buildFullResponse(statusLine, messageHeaders, result.body);
@@ -49,8 +45,6 @@ std::string ResponseBuilder::redirectResponse(
 	t_executionResult *result,
 	const std::string &redirectURL)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::redirectResponse()" << std::endl;
 	std::string statusLine = buildStatusLine(result);
 
 	std::string headers = "Location: " + redirectURL + "\r\n";
@@ -68,8 +62,6 @@ std::string ResponseBuilder::redirectResponse(
 	const std::string &redirectURL,
 	const std::string &cookieHeader)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::redirectResponse()" << std::endl;
 	std::string statusLine = buildStatusLine(result);
 
 	std::string headers = "Location: " + redirectURL + "\r\n";
@@ -93,8 +85,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody,
 	status = cgi::checkForHeaders(body, "status: ");
 	if (status.empty())
 		status = "HTTP/1.1 200 OK\r\n";
-	else
-	{
+	else {
 		status = status.substr(status.find(" "));
 		badStatus = utils::strToInt(status);
 		if (badStatus >= HttpStatus::BAD_REQUEST)
@@ -102,8 +93,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody,
 		status = "HTTP/1.1" + status;
 	}
 	headerEnd = body.find("\r\n\r\n");
-	if (headerEnd != std::string::npos)
-	{
+	if (headerEnd != std::string::npos) {
 		headers = body.substr(0, headerEnd + 2);
 		body.erase(0, headerEnd + 4);
 	}
@@ -128,8 +118,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
 	status = cgi::checkForHeaders(body, "status: ");
 	if (status.empty())
 		status = "HTTP/1.1 200 OK\r\n";
-	else
-	{
+	else {
 		status = status.substr(status.find(" "));
 		badStatus = utils::strToInt(status);
 		if (badStatus >= HttpStatus::BAD_REQUEST)
@@ -137,8 +126,7 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
 		status = "HTTP/1.1" + status;
 	}
 	headerEnd = body.find("\r\n\r\n");
-	if (headerEnd != std::string::npos)
-	{
+	if (headerEnd != std::string::npos) {
 		headers = body.substr(0, headerEnd + 2);
 		body.erase(0, headerEnd + 4);
 	}
@@ -155,17 +143,13 @@ std::string ResponseBuilder::cgiResponse(const std::string &cgiBody, const bool 
  */
 std::string ResponseBuilder::errorResponse(HttpRequest *request, const std::string &listeningInterface)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::errorResponse()" << std::endl;
 	int errorCode = request->getErrorCode();
 	std::string codeStr;
 	std::string phrase;
 	HttpStatus::setStatus(errorCode, codeStr, phrase);
 
 	std::string status = statusLine(request->getRequestLine(), codeStr, phrase);
-
 	std::string body = buildBody(errorCode, codeStr, phrase, listeningInterface);
-
 	std::string headers = setErrorResponseHeaders(body.size());
 
 	std::string response = buildFullResponse(status, headers, body);
@@ -177,19 +161,13 @@ std::string ResponseBuilder::errorResponse(HttpRequest *request, const std::stri
  */
 std::string ResponseBuilder::errorResponseViaCode(int errorCode)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::buildErrorResponse()" << std::endl;
-
 	std::string statusCode;
 	std::string statusPhrase;
 	HttpStatus::setStatus(errorCode, statusCode, statusPhrase);
 
 	std::string statusLine = "HTTP/1.1 " + statusCode + " " + statusPhrase + "\r\n";
-	// std::string	statusLine = setErrorStatusLine(errorCode);
 	std::string body = generateErrorPage(statusCode, statusPhrase);
-
 	std::string headers = setErrorResponseHeaders(body.size());
-
 	std::string response = buildFullResponse(statusLine, headers, body);
 	return response;
 }
@@ -199,20 +177,14 @@ std::string ResponseBuilder::errorResponseViaCode(int errorCode)
  */
 std::string ResponseBuilder::errorResponseViaResult(t_executionResult result, const std::string &listeningInterface)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::errorResponseViaResult()" << std::endl;
 	int errorCode = atoi(result.statusCode.c_str());
 	std::string codeStr;
 	std::string phrase;
 	HttpStatus::setStatus(errorCode, codeStr, phrase);
 
-	// std::string status = statusLine(request->getRequestLine(), codeStr, phrase);
 	std::string statusLine = buildStatusLine(&result);
-
 	std::string body = buildBody(errorCode, codeStr, phrase, listeningInterface);
-
 	std::string headers = setErrorResponseHeaders(body.size());
-
 	std::string response = buildFullResponse(statusLine, headers, body);
 	return response;
 }
@@ -223,9 +195,6 @@ std::string ResponseBuilder::errorResponseViaResult(t_executionResult result, co
 bool ResponseBuilder::setConfig(std::vector<t_Configs> serverConfigs)
 {
 	_serverConfigs = serverConfigs;
-	// if (BUILDER_PRINT)
-	// 	std::cout << "ResponseBuilder::setConfig() : server_name = "
-	// 		<< _serverConfig->serverName << std::endl;
 	return true;
 }
 
@@ -238,8 +207,6 @@ bool ResponseBuilder::setConfig(std::vector<t_Configs> serverConfigs)
  */
 std::string ResponseBuilder::buildStatusLine(t_executionResult *result)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::buildStatusLine()" << std::endl;
 	std::string statusLine;
 
 	statusLine = result->HttpVersion + " " + result->statusCode + " " + result->statusPhrase + "\r\n";
@@ -265,8 +232,6 @@ std::string ResponseBuilder::setErrorStatusLine(int errorCode)
  */
 std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
 	std::string messageHeaders;
 	std::stringstream ss;
 
@@ -285,11 +250,6 @@ std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 		messageHeaders += "Connection: close\r\n";
 	if (result.statusCode == "201")
 		messageHeaders += "Location: " + result.uploadedLocation + "\r\n";
-	// messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
-	// if (result.lastModified.size() > 0)
-	// 	messageHeaders += "Last-Modified: " + result.lastModified + "\r\n";
-	// if (result.etag.size() > 0)
-	// 	messageHeaders += "ETag: " + result.etag + "\r\n";
 	messageHeaders += "\r\n";
 	return messageHeaders;
 }
@@ -297,8 +257,6 @@ std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result)
 // For cookie &session-management
 std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result, const std::string &cookieHead)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::buildResponseHeaders()" << std::endl;
 	std::string messageHeaders;
 	std::stringstream ss;
 
@@ -315,8 +273,7 @@ std::string ResponseBuilder::buildResponseHeaders(t_executionResult &result, con
 		messageHeaders += "Connection: keep-alive\r\n";
 	else
 		messageHeaders += "Connection: close\r\n";
-	// messageHeaders += "Set-Cookie: session_id=abc123xyz; Path=/; Max-Age=30\r\n";
-	messageHeaders += cookieHead; // cookie-header
+	messageHeaders += cookieHead;
 	if (result.statusCode == "201")
 		messageHeaders += "Location: " + result.uploadedLocation + "\r\n";
 	// if (result.lastModified.size() > 0)
@@ -335,12 +292,9 @@ std::string ResponseBuilder::buildFullResponse(
 	const std::string &messageHeaders,
 	const std::string &resultBody)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::buildFullResponse()" << std::endl;
 	std::string response;
 
 	response = statusLine + messageHeaders + resultBody;
-	// std::cout << BLUE << response << RESET << std::endl;
 	return response;
 }
 
@@ -349,8 +303,6 @@ std::string ResponseBuilder::buildFullResponse(
  */
 std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::setErrorResponseHeaders()" << std::endl;
 	std::string headers;
 	std::stringstream ss;
 	ss << contentLength;
@@ -371,8 +323,6 @@ std::string ResponseBuilder::setErrorResponseHeaders(size_t contentLength)
  */
 std::string ResponseBuilder::generateErrorPage(const std::string &code, const std::string &phrase)
 {
-	if (BUILDER_PRINT)
-		std::cout << "ResponseBuilder::generateErrorPage()" << std::endl;
 	std::string body;
 
 	body = "<!DOCTYPE html>\n";
@@ -398,8 +348,7 @@ std::string ResponseBuilder::getHttpDate()
 	time_t now = time(0);
 	struct tm *tm;
 	tm = gmtime(&now);
-	if (tm == NULL)
-	{
+	if (tm == NULL) {
 		perror("gmtime:");
 		return "";
 	}
@@ -468,16 +417,11 @@ std::string ResponseBuilder::buildBody(int errorCode,
 									   const std::string &phrase,
 									   const std::string &listeningInterface)
 {
-	std::cout << "ResponseBuilder::buildBody()" << std::endl;
 	std::string body;
 
 	std::map<int, std::string>::iterator itErrorPage;
 	if (availableErrorPage(errorCode, &itErrorPage, listeningInterface))
-	{
-		std::cout << "\t SHOULD READ ERROR FILE" << std::endl;
 		body = getErrorPage(itErrorPage);
-		// body = "read error_page";
-	}
 	else
 		body = generateErrorPage(codeStr, phrase);
 	return body;
@@ -488,14 +432,8 @@ std::string ResponseBuilder::buildBody(int errorCode,
  */
 std::string ResponseBuilder::getErrorPage(std::map<int, std::string>::iterator itErrorPage)
 {
-	std::cout << "ResponseBuilder::getErrorPage()" << std::endl;
 	std::string pagePath = "." + itErrorPage->second;
-	std::cout << "\tPath to error_page (" << pagePath << ")" << std::endl;
 	struct stat fileInfo;
-	if (stat(pagePath.c_str(), &fileInfo) != 0)
-	{
-		std::cout << "stat failed" << std::endl;
-	}
 	std::ifstream errorPageStream(pagePath.c_str(), std::ios::binary);
 	if (!errorPageStream)
 	{
@@ -504,7 +442,6 @@ std::string ResponseBuilder::getErrorPage(std::map<int, std::string>::iterator i
 	std::string buffer(fileInfo.st_size, '\0');
 	errorPageStream.read(&buffer[0], fileInfo.st_size);
 	std::string body = buffer;
-	std::cout << "errorPage = " << body << std::endl;
 	return buffer;
 }
 

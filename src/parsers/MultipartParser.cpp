@@ -2,11 +2,11 @@
 
 MultipartParser::MultipartParser()
 {
-    std::cout << "MultipartParser constructed" << std::endl;
 }
 
 MultipartParser::~MultipartParser()
-{}
+{
+}
 
 /**
 	* Helper: Trim whitespace from both ends
@@ -62,13 +62,11 @@ std::string	extractHeaderValue(std::string &rest, size_t *pos)
 	std::string part;
 
 	semiPos = rest.find(';', *pos);
-	if (semiPos == std::string::npos)
-	{
+	if (semiPos == std::string::npos) {
 		part = trim(rest.substr(*pos));
 		*pos = rest.length();
 	}
-	else
-	{
+	else {
 		part = trim(rest.substr(*pos, semiPos - *pos));
 		*pos = semiPos + 1;
 	}
@@ -82,8 +80,7 @@ bool	setHeaderValParameter(std::map<std::string, std::string> &params, std::stri
 	std::string	value;
 
 	eqPos = part.find('=');
-	if (eqPos != std::string::npos)
-	{
+	if (eqPos != std::string::npos) {
 		key = trim(part.substr(0, eqPos));
 		value = unquote(part.substr(eqPos + 1));
 		params[key] = value;
@@ -98,28 +95,20 @@ bool	setHeaderValParameter(std::map<std::string, std::string> &params, std::stri
 static void parseHeaderLine(const std::string &line, std::string &headerName, 
                            std::string &headerValue, std::map<std::string, std::string> &params)
 {
-	std::cout << "parseHeaderLine()..." << std::endl;
 	std::string	rest;
 	if (!extractHeaderName(line, headerName, rest))
 		return ;
-
 	size_t pos = 0;
 	bool first = true;
-	while (pos < rest.length()) // get parameter->attributes
-	{
+	while (pos < rest.length()) {
 		std::string	part = extractHeaderValue(rest, &pos);
-		if (first) // set headerValue
-		{
+		if (first) {
 			headerValue = part;
 			first = false;
 		}
-		else // set headerVal-parameter
-		{
-			// setHeaderValParameter(params, rest); // why does this funtion not work???
-			// Remaining parts are key=value parameters
+		else {
 			size_t eqPos = part.find('=');
-			if (eqPos != std::string::npos)
-			{
+			if (eqPos != std::string::npos) {
 				std::string key = trim(part.substr(0, eqPos));
 				std::string value = unquote(part.substr(eqPos + 1));
 				params[key] = value;
@@ -138,15 +127,13 @@ static std::string	extractHeaderLineAdjustPos(const std::string &rawHeaders, siz
 	size_t lineEnd;
 
 	lineEnd = rawHeaders.find("\r\n", *pos);
-	if (lineEnd == std::string::npos)
-	{
+	if (lineEnd == std::string::npos) {
 		line = rawHeaders.substr(*pos);
 		*pos = rawHeaders.length();
 	}
-	else
-	{
+	else {
 		line = rawHeaders.substr(*pos, lineEnd - *pos);
-		*pos = lineEnd + 2; // Skip \r\n
+		*pos = lineEnd + 2;
 	}
 	return line;
 }
@@ -157,12 +144,10 @@ static std::string	extractHeaderLineAdjustPos(const std::string &rawHeaders, siz
 **/
 static std::map<std::string, std::map<std::string, std::string> > parseHeaders(const std::string &rawHeaders)
 {
-	std::cout << "parseHeaders()..." << std::endl;
 	std::map<std::string, std::map<std::string, std::string> > headers;
 	size_t		pos = 0;
 
-	while (pos < rawHeaders.length())
-	{
+	while (pos < rawHeaders.length()) {
 		std::string line = extractHeaderLineAdjustPos(rawHeaders, &pos);
 		if (line.empty())
 			continue;
@@ -170,18 +155,9 @@ static std::map<std::string, std::map<std::string, std::string> > parseHeaders(c
 		std::string	headerValue;
 		std::map<std::string, std::string> params;
 		parseHeaderLine(line, headerName, headerValue, params);
-		if (!headerName.empty()) // set header values;
-		{
-			// Store header value as "__value" key
+		if (!headerName.empty()) {
 			params["__value"] = headerValue;
 			headers[headerName] = params;
-			std::cout << "Header: " << headerName << " = " << headerValue << std::endl;
-			for (std::map<std::string, std::string>::iterator it = params.begin(); 
-			     it != params.end(); ++it)
-			{
-				if (it->first != "__value")
-					std::cout << "  " << it->first << " = \"" << it->second << "\"" << std::endl;
-			}
 		}
 	}
 	return headers;
@@ -193,33 +169,28 @@ static std::map<std::string, std::map<std::string, std::string> > parseHeaders(c
 **/
 bool MultipartParser::parse(std::string &body)
 {
-	if (MULTIPART_PRINT)
-		std::cout << "MultipartParser::parse()\n\t body:" << body.size() << std::endl;
 	std::string fullBoundary = "--" + _contentData.boundary;
 	size_t partStart = body.find(fullBoundary);
 	if (!findFirstBoundary(body, &partStart, fullBoundary))
 		return false;
+
 	bool	leave = false;
-	while (partStart < body.length()) // Process each part
-	{
+	while (partStart < body.length()) {
 		s_extractedData	data;
 		size_t			nextBoundary;
 		if (!extractHeadersAndContent(data, body, partStart, fullBoundary, &nextBoundary)) {
-			std::cout << "break" << std::endl;
-			// break ;
 			leave = true;
 		}
 		if (data.headers.count("Content-Disposition") > 0)
 			createFormField(data);
 		if (leave == true)
 			break;
-		partStart = nextBoundary + 2 + fullBoundary.length(); // move to next part
-		if (partStart + 2 <= body.length() && body.substr(partStart, 2) == "--") // Check if this is the final boundary (ends with --)
+		partStart = nextBoundary + 2 + fullBoundary.length();
+		if (partStart + 2 <= body.length() && body.substr(partStart, 2) == "--")
 			break ;
 		if (partStart < body.length() && body.substr(partStart, 2) == "\r\n")
 			partStart += 2;
 	}
-	printParsedResult();
 	return true;
 }
 
@@ -229,8 +200,6 @@ bool MultipartParser::parse(std::string &body)
 **/
 bool	MultipartParser::findFirstBoundary(std::string &body, size_t *partStart, std::string &fullBoundary)
 {
-	if (MULTIPART_PRINT)
-		std::cout << "MultipartParser::findFirstBoundary()" << std::endl;
 	if (*partStart == std::string::npos)
 		return false;
 	*partStart += fullBoundary.length();
@@ -251,35 +220,21 @@ bool	MultipartParser::extractHeadersAndContent(
 							std::string &fullBoundary,
 							size_t *nextBoundary)
 {
-	if (MULTIPART_PRINT)
-		std::cout << "MultipartParser::extractHeadersAndContent()" << std::endl;
 	std::string	rawHeaders;
 	size_t		headersEnd;
 	size_t		contentStart;
 
-	headersEnd = body.find("\r\n\r\n", partStart); // Find headers end
+	headersEnd = body.find("\r\n\r\n", partStart);
 	if (headersEnd == std::string::npos)
-	{
-		std::cout << "\t No header end: partStart = " << partStart << std::endl;
-		std::cout << "Body: \n" << body << std::endl;
 		return false;
-	}
 
 	rawHeaders = body.substr(partStart, headersEnd - partStart);
 	data.headers = parseHeaders(rawHeaders);
-
 	contentStart = headersEnd + 4;
-	// std::cout << "rest: " << body.substr(contentStart - 4) << std::endl;
-	// std::cout << "fullBoundary: " << fullBoundary << std::endl;
 	*nextBoundary = body.find("\r\n" + fullBoundary, contentStart);
 	if (*nextBoundary == std::string::npos) {
-		// std::cout << "no Boundary found" << std::endl;
 		*nextBoundary = body.find(fullBoundary, contentStart);
-		// std::cout << "start: " << contentStart << std::endl;
-		// data.content = body.substr(contentStart, *nextBoundary - contentStart);
 		data.content = body.substr(contentStart);
-		// std::cout << *nextBoundary << " - " << contentStart << std::endl;
-		// std::cout << "data.content: " << data.content << std::endl;
 		return false;
 	}
 	data.content = body.substr(contentStart, *nextBoundary - contentStart);
@@ -291,18 +246,14 @@ bool	MultipartParser::extractHeadersAndContent(
 **/
 bool	MultipartParser::createFormField(t_extractedData &data)
 {
-	if (MULTIPART_PRINT)
-		std::cout << "MultipartParser::createFormField()" << std::endl;
 	std::map<std::string, std::string> disposition;
 	t_FormField	field;
 	std::string	fieldName;
 
 	disposition = data.headers["Content-Disposition"];
-	if (disposition.count("name") > 0)
-	{
+	if (disposition.count("name") > 0) {
 		fieldName = disposition["name"];
 		field.value = data.content;
-		// std::cout << "file_content: " << data.content << std::endl;
 		field.filename = disposition.count("filename") > 0 ? disposition["filename"] : "";
 		field.isFile = !field.filename.empty();
 		if (data.headers.count("Content-Type") > 0)
@@ -310,12 +261,6 @@ bool	MultipartParser::createFormField(t_extractedData &data)
 		else
 			field.contentType = field.isFile ? "application/octet-stream" : "text/plain";
 		_result[fieldName] = field;
-
-		std::cout << "\nParsed field: " << fieldName << std::endl;
-		std::cout << "  isFile: " << (field.isFile ? "yes" : "no") << std::endl;
-		std::cout << "  filename: " << field.filename << std::endl;
-		std::cout << "  contentType: " << field.contentType << std::endl;
-		std::cout << "  value length: " << field.value.length() << std::endl;
 	}
 	return true;
 }

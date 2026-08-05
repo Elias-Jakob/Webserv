@@ -12,14 +12,12 @@ Delete::Delete() : AMethod()
 Delete::Delete(std::string name) : AMethod()
 {
 	_method = name;
-	std::cout << "DELETE method constructed" << std::endl;
 }
 
 Delete::Delete(std::string name, t_Location *location) : AMethod()
 {
 	_method = name;
 	_location = location;
-	std::cout << "DELETE method constructed with location" << std::endl;
 }
 
 Delete::~Delete(){}
@@ -37,15 +35,9 @@ Delete::~Delete(){}
 */
 bool	Delete::execute()
 {
-	if (DELETE_PRINT)
-	{
-		std::cout << "Delete::execute()" << std::endl;
-		std::cout << "\tlocation = [" << _location->path << "]" <<std::endl;
-	}
 	if (!resourceExistsAndIsFile())
 		return false;
-	if (!isDeletable(_resource))
-	{
+	if (!isDeletable(_resource)) {
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
@@ -68,29 +60,19 @@ bool	Delete::execute()
 */
 bool Delete::resourceExistsAndIsFile(void)
 {
-	if (DELETE_PRINT)
-		std::cout << "Delete::resourceExistsAndIsFile(), " << _resource << std::endl;
-
 	struct stat fileInfo;
-	if (stat(_resource.c_str(), &fileInfo) != 0)
-	{
+	if (stat(_resource.c_str(), &fileInfo) != 0) {
 		HttpStatus::setStatus(404, _code, _phrase);
-		std::cout << "IS not file or not found" << std::endl;
 		return false;
 	}
-	if (S_ISDIR(fileInfo.st_mode))
-	{
+	if (S_ISDIR(fileInfo.st_mode)) {
 		HttpStatus::setStatus(403, _code, _phrase);
-		_body = "Cannot delete directories";
 		return false;
 	}
-	if (S_ISLNK(fileInfo.st_mode))
-	{
+	if (S_ISLNK(fileInfo.st_mode)) {
 		HttpStatus::setStatus(403, _code, _phrase);
     	return false;
 	}
-	if (DELETE_PRINT)
-		std::cout << "Deleted -> " << _resource << std::endl;
 	return true;
 }
 
@@ -133,9 +115,7 @@ bool Delete::isDeletable(const std::string &path)
 */
 bool	Delete::deleteResource()
 {
-	std::cout << "would delete Resource" << std::endl;
-	if (unlink(_resource.c_str()) != 0)
-	{
+	if (unlink(_resource.c_str()) != 0) {
 		HttpStatus::setStatus(500, _code, _phrase);
 		perror("unlink");
 		return false;

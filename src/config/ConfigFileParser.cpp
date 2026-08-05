@@ -47,7 +47,6 @@ std::vector<t_Configs>	&ConfigFileParser::parseFile(const std::string &filePath)
 
 void ConfigFileParser::tokenize(const std::string &input)
 {
-	std::cout << "TOKENIZATION" << std::endl;
 	size_t start = 0;
 	size_t end = 0;
 	bool	inToken = false;
@@ -71,8 +70,6 @@ void ConfigFileParser::tokenize(const std::string &input)
 					inToken = true;
 				}
 			}
-			else if ((input[i] != ' ' && input[i] != '\n')&& !inToken)
-				std::cout << "SYNTAX_ERROR = " << input[i] << std::endl;
 		}
 	}
 	if (inToken) {
@@ -169,9 +166,7 @@ size_t ConfigFileParser::createServer(size_t *i)
 				setValue(_tokens[j - 1].val, j, &serverConfigs);
 		else if (_tokens[j].type == LOCATION)
 			j += createLocation(j, &serverConfigs);
-		else if (_tokens[j].type == SERVER || _tokens[j].type == BRACE_CLOSE)
-		{
-			std::cout << "SERVER_BLOCK END" << std::endl;
+		else if (_tokens[j].type == SERVER || _tokens[j].type == BRACE_CLOSE) {
 			break ;
 		}
 	}
@@ -315,7 +310,7 @@ size_t	ConfigFileParser::setVariableValue(e_VarName varName, t_Location *locatio
 				location->redirectURL = _tokens[*pos + 2].val;
 			return *pos + 2;
 		case ERROR:
-			std::cout << "ERROR " << _tokens[*pos -1].val << std::endl;
+			std::cout << "ERROR " << _tokens[*pos -1].val << std::endl; // delete?
 			return *pos + 1;
 	}
 	return *pos + 1;
@@ -356,10 +351,8 @@ void ConfigFileParser::setValue(const std::string id, size_t j, t_Configs *serve
 {
 	if (j + 1 >= _tokens.size())
 		return ;
-	if (id == "listen") {
+	if (id == "listen")
 		serverConfigs->listenInterfaces.push_back(_tokens[j + 1].val);
-		std::cout << "\tLISTEN: " << serverConfigs->listenInterfaces.size() << std::endl;
-	}
 	else if (id == "server_name")
 		serverConfigs->serverName = _tokens[j + 1].val;
 	else if (id == "client_max_body_size")

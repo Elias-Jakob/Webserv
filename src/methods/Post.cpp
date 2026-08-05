@@ -12,16 +12,12 @@ Post::Post() : AMethod()
 Post::Post(std::string name) : AMethod()
 {
 	_method = name;
-	if (POST_PRINT)
-		std::cout << "POST" << std::endl;
 }
 
 Post::Post(std::string name, t_Location *location)
 {
 	_method = name;
 	_location = location;
-	if (POST_PRINT)
-		std::cout << "POST with _location constructed" << std::endl;
 }
 
 Post::~Post()
@@ -36,11 +32,6 @@ Post::~Post()
 */
 bool Post::execute()
 {
-	if (POST_PRINT)
-	{
-		std::cout << "POST->execute()" << std::endl;
-		// printParsedResult();
-	}
 	if (checkCGI())
 		return true;
 	if (!isValidContentType())
@@ -49,16 +40,12 @@ bool Post::execute()
 		HttpStatus::setStatus(403, _code, _phrase);
 		return false;
 	}
-	if (_contentData.type == "application" && isSubmitLocation()) // submit
-	{
+	if (_contentData.type == "application" && isSubmitLocation()) {
 		return submitForm();
 	}
-	else if (_contentData.type == "multipart" || isUploadLocation()) // upload
-	{
+	else if (_contentData.type == "multipart" || isUploadLocation()) {
 		return (uploadFile());
 	}
-	if (POST_PRINT)
-		std::cout << _contentData.type << std::endl;
 	HttpStatus::setStatus(501, _code, _phrase);
 	return false;
 }
@@ -69,40 +56,27 @@ bool Post::execute()
 
 bool	Post::isValidContentType()
 {
-	if (POST_PRINT)
-		std::cout << "Post::isValidContentType() = " << "[" << _contentData.type 
-			<< "] [" << _contentData.subtype << "]" << std::endl;
-	if (_contentData.type.empty())
-	{
-		std::cout << "Error: _contentData.type is empty"<< std::endl;
+	if (_contentData.type.empty()) {
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
-	if (_contentData.type == "application")
-	{
+	if (_contentData.type == "application") {
 		if (_contentData.subtype == "x-www-form-urlencoded")
 			return true;
-		if (_contentData.subtype == "octet-stream") // empty content-type && body
-		{ 
-			std::cout << "post octet-stream" << std::endl;
+		if (_contentData.subtype == "octet-stream") { 
 			return true;
 		}
 	}
-	if (_contentData.type == "multipart")
-	{
+	if (_contentData.type == "multipart") {
 		if( _contentData.subtype == "form-data")
 			return true;
 	}
-	std::cout << "NOT VALID" << std::endl;
-
 	HttpStatus::setStatus(415, _code, _phrase);
 	return false;
 }
 
 bool	Post::submitForm()
 {
-	if (POST_PRINT)
-		std::cout << "Post::submitForm()" << std::endl;
 	std::string	formPath;
 	formPath = "." + _reqUri;
 	if (_location->defaultPage.size() > 0)
@@ -115,21 +89,14 @@ bool	Post::submitForm()
 **/
 bool Post::appendToFile(std::string filename)
 {
-	if (POST_PRINT)
-		std::cout << "Post::appendToFile(): " << filename << std::endl;
 	std::ofstream	output(filename.c_str());
-	if(!output.is_open())
-	{
+	if(!output.is_open()) {
 		HttpStatus::setStatus(500, _code, _phrase);
 		return false;
 	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
 	std::map<std::string, s_FormField>::iterator ite = _parsedBody.end();
-	if (it == ite)
-		std::cout << "WARNING: it = ite" << std::endl;
-	while (it != ite)
-	{	std::cout << "write to file" << std::endl;
-		output << "hey" << std::endl;
+	while (it != ite) {
 		output << it->first << " = " << it->second.value << std::endl;
 		it++;
 	}
@@ -144,21 +111,13 @@ bool Post::appendToFile(std::string filename)
 **/
 bool	Post::uploadFile()
 {
-	if (POST_PRINT)
-		std::cout << "Post::uploadFile()" << std::endl;
 	if (_parsedBody.empty()) {
-		if(POST_PRINT)
-			std::cout << "\t empty body!" << std::endl;
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
 	std::map<std::string, s_FormField>::iterator it = _parsedBody.begin();
 	std::string	recvFilename = it->second.filename;
-	std::cout << "uploadFile:filename = " << recvFilename << std::endl;
-	if (_contentData.subtype != "octet-stream" && !isFileNameValid(recvFilename)) // commented out, because of application/octet-stream.
-	{
-		if (POST_PRINT)
-			std::cout << "\t invalid File" << std::endl;
+	if (_contentData.subtype != "octet-stream" && !isFileNameValid(recvFilename)) {
 		return false;
 	}
 	std::string filename = generateRandomFilename(recvFilename);
@@ -166,25 +125,20 @@ bool	Post::uploadFile()
 		HttpStatus::setStatus(500, _code, _phrase);
 		return false;
 	}
-	std::string uploadPath = "." + _reqUri + "/";//+ _location->uploadStore + "/";
+	std::string uploadPath = "." + _reqUri + "/";
 	std::string	fullPath = uploadPath + filename;
 	_uploadLocation = _reqUri + "/" + filename;
-	std::cout << "\tuploadPath = " << uploadPath
-		<< "\n\tfullPath =" << fullPath << std::endl;
 	if (it->second.value.size() > MAX_BODY_SIZE) {
 		HttpStatus::setStatus(413, _code, _phrase);
 		return false;
 	}
-
 	std::ofstream	outFile(fullPath.c_str(), std::ios::out | std::ios::binary);
 	if (!outFile.is_open()) {
 		perror("ofstream.open:");
 		HttpStatus::setStatus(500, _code, _phrase);
 		return false;
 	}
-
 	outFile.write(it->second.value.c_str(), it->second.value.size());
-
 	outFile.close();
 	HttpStatus::setStatus(201, _code, _phrase);
 	return true;
@@ -202,21 +156,15 @@ bool	Post::isFileNameValid(const std::string &filename)
 	}
 	size_t	start;
 	start = filename.find_first_of('.', 0);
-	if (start == std::string::npos) // no file extension
-	{
-		if (_location->uploadExtensions.size() == 0) // binary file POST
-		{
-			std::cout << "WARNING: no fileExtension && no uploadExtensions configured" << std::endl;
+	if (start == std::string::npos) {
+		if (_location->uploadExtensions.size() == 0)
 			return true;
-		}
 		HttpStatus::setStatus(400, _code, _phrase);
 		return false;
 	}
 	std::string	extension;
 	extension = filename.substr(start, filename.size() - start);
-	std::cout << "Post::isFileNameValid()\n\textension: " << extension << std::endl;
-	for (size_t i = 0; i < _location->uploadExtensions.size(); i++)
-	{
+	for (size_t i = 0; i < _location->uploadExtensions.size(); i++) {
 		if (extension == _location->uploadExtensions[i])
 			return true;
 	}
@@ -273,8 +221,6 @@ std::string	Post::getCurrentTime()
 
 	gettimeofday(&tp, NULL);
 	usec = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-	if (POST_PRINT)
-		std::cout << "usec: " << usec << std::endl;
 	ss << usec;
 	timestamp = ss.str();
 	return timestamp;
@@ -290,8 +236,6 @@ std::string	Post::generateRandomNumber()
 	std::stringstream	ss;
 
 	randNum = rand();
-	if (POST_PRINT)
-		std::cout << "Random number of rand()" << randNum << std::endl;
 	ss << randNum;
 	numStr = ss.str();
 	return numStr;
