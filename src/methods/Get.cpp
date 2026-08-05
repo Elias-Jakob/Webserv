@@ -256,7 +256,7 @@ bool Get::isFileAccessible(const std::string &path)
 	if (resolved.compare(0, docRoot.size(), docRoot) != 0)
 		return false;
 
-	if (resolved.find("/.") != std::string::npos)
+	if (resolved.find("/..") != std::string::npos)
 		return false;
 
 	return true;
@@ -280,18 +280,45 @@ std::string	Get::directoryListing(const std::string &dirPath, const std::string 
 	dir = opendir(dirPath.c_str());
 	if (!dir)
 		return "";
-	html = "<html><body><h1>Index of " + uriPath + "</h1><ul>";
+	html = "<html><body><h1>Index of " + htmlEscape(uriPath) + "</h1><ul>";
 	while ((entry = readdir(dir)) != NULL) // Q: Directory or file entry
 	{
 		std::string name = entry->d_name;
-		if (name == ".")
+		if (name == "." || name == "..")
 			continue ;
-		html += "<li><a href=\"" + uriPath + "/" + name + "\">" + name + "</a></li>";
+		std::string safeName = htmlEscape(name);
+		std::string href = uriPath;
+		if (href.empty() || href[href.size() - 1] != '/')
+			href += "/";
+		html += "<li><a href=\"" + href + safeName + "\">" + safeName + "</a></li>";
 	}
 	closedir(dir);
 	html += "</ul></body></html>";
 	std::cout << "html: " << html << std::endl;
 	return html;
+}
+
+/**
+	* @brief Escapes HTML-significant characters to prevent XSS when embedding
+	*	user-controlled filenames/paths in generated HTML (e.g. directory listing).
+*/
+std::string	Get::htmlEscape(const std::string &str)
+{
+	std::string result;
+	result.reserve(str.size());
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		switch (str[i])
+		{
+			case '&': result += "&amp;"; break;
+			case '<': result += "&lt;"; break;
+			case '>': result += "&gt;"; break;
+			case '"': result += "&quot;"; break;
+			case '\'': result += "&#39;"; break;
+			default: result += str[i];
+		}
+	}
+	return result;
 }
 
 /**

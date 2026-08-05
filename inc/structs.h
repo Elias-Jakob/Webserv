@@ -55,6 +55,8 @@ typedef struct s_executionResult
 	std::string	lastModified;
 	std::string	etag;
 	std::string	uploadedLocation;
+	bool		isCGI;           // true if this request must be handed off to CGI processing
+	std::string	cgiScriptPath;   // path of the CGI script to execute, valid only if isCGI
 }				t_executionResult;
 
 typedef struct	s_query
