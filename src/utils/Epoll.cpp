@@ -1,7 +1,7 @@
 # include "Epoll.hpp"
 
-Epoll::Epoll() : fd(epoll_create1(0)) {
-	if (this->fd == -1 || fcntl(this->fd, F_SETFD, FD_CLOEXEC) == -1)
+Epoll::Epoll() : fd(epoll_create1(EPOLL_CLOEXEC)) {
+	if (this->fd == -1)
 		throw std::runtime_error(std::strerror(errno));
 }
 
