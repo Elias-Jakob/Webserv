@@ -347,14 +347,14 @@ std::string ResponseBuilder::getHttpDate()
 {
 	time_t now = time(0);
 	struct tm *tm;
-	tm = gmtime(&now);
+	tm = std::gmtime(&now);
 	if (tm == NULL) {
 		perror("gmtime:");
 		return "";
 	}
 	char buf[100];
 
-	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
+	std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tm);
 	return std::string(buf);
 }
 
