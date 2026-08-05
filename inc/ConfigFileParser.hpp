@@ -78,6 +78,7 @@ typedef struct s_Location
 
 typedef struct s_Configs
 {
+	bool						sizeIsSet;
 	size_t						maxBodySize;
 	std::string					serverName;
 	std::string					root;
@@ -109,6 +110,7 @@ class ConfigFileParser
 		void		adjustTokens();
 		bool		isValidChar(char c);
 		e_TokenType	getTokenType(std::string tokenStr);
+		void		validateBraces();
 
 		// parsing (server)
 		void 		parseToDataStructure();

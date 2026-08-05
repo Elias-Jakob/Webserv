@@ -5,17 +5,18 @@
 	2. check tests/ -> if failed clarify why
 	3. cleanup
 	4. configFileParser
-	5. CGI: SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED correct?
 	6. Unallowed functions (realpath, timefunction) isFileAccessible()
 	7. Copy constructer & assignment operator overloads.
-	8. server max_body_size = // not checked?
+	9. ConfigFileParser
+		- should throw Error if error occurs?
+		- filename validation?
 
 * <ToDo list>
 	- [] formSubmit() appendToFile()
 	- [] config file -> ".conf" check
-	- [] cgi env setting correct? SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED
+	- [X] cgi env setting correct? SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED
 	- [] Copy & assignment operators
-	- [] server max_body_size
+	- [X] server max_body_size (location falls back to server-level if not set)
 	- [] setting good limits (limits_defines.hpp)
 
 * TestCases from /tests/

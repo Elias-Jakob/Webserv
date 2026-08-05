@@ -253,8 +253,14 @@ bool	RequestBodyParser::validBodySize(size_t contentLength)
 {
 	if (contentLength > MAX_BODY_SIZE)
 		return false;
-	if (data->_locationObj && data->_locationObj->sizeIsSet
-		&& contentLength > data->_locationObj->maxBodySize)
-		return false;
+	if (data->_locationObj && data->_locationObj->sizeIsSet)
+		return contentLength <= data->_locationObj->maxBodySize;
+	for (size_t i = 0; i < data->_serverConfigs.size(); i++) {
+		for (size_t i_ip = 0; i_ip < data->_serverConfigs[i].listenInterfaces.size(); i_ip++) {
+			if (data->_serverConfigs[i].listenInterfaces[i_ip] == data->_listeningInterface
+				&& data->_serverConfigs[i].sizeIsSet)
+				return contentLength <= data->_serverConfigs[i].maxBodySize;
+		}
+	}
 	return true;
 }
