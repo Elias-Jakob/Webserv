@@ -13,7 +13,8 @@
 
 * <ToDo list>
 	- [] formSubmit() appendToFile()
-	- [] config file -> ".conf" check
+	- [X] config file -> ".conf" check
+	- [X] configFileParser -> throw implemented.
 	- [X] cgi env setting correct? SCRIPT_NAME, PATH_INFO, PATH_TRANSLATED
 	- [] Copy & assignment operators
 	- [X] server max_body_size (location falls back to server-level if not set)
