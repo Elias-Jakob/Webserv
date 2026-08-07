@@ -1,5 +1,18 @@
 _This project has been created as part of the 42 curriculum by ejakob && cgeringe._
-
+```mermaid
+---
+title: Full Client Connection Lifecycle
+---
+stateDiagram-v2
+    [*] --> IDLE: connection accepted
+    IDLE --> READING_REQUEST: data available
+    READING_REQUEST --> PROCESSING: static request
+    READING_REQUEST --> CGI_PROCESSING: CGI route matched
+    PROCESSING --> SENDING_RESPONSE: static response built
+    CGI_PROCESSING --> SENDING_RESPONSE: CGI output complete
+    SENDING_RESPONSE --> IDLE: keep-alive
+    SENDING_RESPONSE --> [*]: close connection
+```
 # Description
 
 The objective of this project is to build a simple HTTP webserver in C++98.  
